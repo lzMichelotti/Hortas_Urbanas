@@ -1,67 +1,122 @@
-import sqlalchemy as db
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, Date, ForeignKey, Text
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 DATABASE_URL = "postgresql://horta:horta1234@127.0.0.1:5435/horta_db"
 
-engine = db.create_engine(DATABASE_URL)
-conn = engine.connect() 
-metadata = db.MetaData()
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Hortas = db.Table('Hortas', metadata,
-    db.Column('id', db.Integer(), primary_key=True),
-    db.Column('nome', db.String(255), nullable=False),
-    db.Column('latitude', db.Float),
-    db.Column('longitude', db.Float),
-    db.Column('area_total', db.Float),
-    db.Column('area_produtiva', db.Float),
-    db.Column('area_ociosa', db.Float),
-    db.Column('publico_atendido', db.Text)
-)
+Base = declarative_base()
 
-Produtos = db.Table('Produtos', metadata,
-    db.Column('id', db.Integer(), primary_key=True),
-    db.Column('nome', db.String(255), nullable=False),
-    db.Column('categoria', db.String(50)),
-    db.Column('da_em_arvore', db.Boolean),
-    db.Column('necessita_replantio', db.Boolean)
-)
+class Horta(Base):
+    __tablename__ = 'Hortas'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String(255), nullable=False)
+    
+    # Endereço (Novos campos do PDF)
+    rua = Column(String(255))
+    numero = Column(String(50))
+    bairro = Column(String(100))
+    cep = Column(String(20))
+    cidade = Column(String(100))
+    uf = Column(String(2))
+    
+    latitude = Column(Float)
+    longitude = Column(Float)
+    
+    area_total = Column(Float)
+    publico_atendido = Column(Text)
 
-Ciclos_Producao = db.Table('Ciclos_Producao', metadata,
-    db.Column('id', db.Integer(), primary_key=True),
-    db.Column('horta_id', db.Integer(), db.ForeignKey('Hortas.id'), nullable=False),
-    db.Column('produto_id', db.Integer(), db.ForeignKey('Produtos.id'), nullable=False),
-    db.Column('data_plantio', db.Date),
-    db.Column('previsao_colheita', db.Date),
-    db.Column('data_colheita_real', db.Date, nullable=True),
-    db.Column('status', db.String(50))
-)
+    usuarios = relationship("Usuario", back_populates="horta")
+    canteiros = relationship("Canteiro", back_populates="horta") 
+    intencoes = relationship("IntencaoPlantio", back_populates="horta")
+    demandas = relationship("Demanda", back_populates="horta")
 
-Usuarios = db.Table('Usuarios', metadata,
-    db.Column('id', db.Integer(), primary_key=True),
-    db.Column('horta_id', db.Integer(), db.ForeignKey('Hortas.id'), nullable=True),
-    db.Column('nome', db.String(255), nullable=False),
-    db.Column('cpf', db.String(14), unique=True, nullable=False),
-    #db.Column('email', db.String(255), unique=True, nullable=True),
-    db.Column('senha_hash', db.String(255), nullable=False),
-    db.Column('telefone', db.String(20)),
-    db.Column('privilegio', db.String(50), nullable=False) # Ex: 'ADMIN_HORTA', 'MEMBRO'
-)
+# --- NOVA TABELA: Canteiros ---
+class Canteiro(Base):
+    __tablename__ = 'Canteiros'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    horta_id = Column(Integer, ForeignKey('Hortas.id'), nullable=False)
+    usuario_id = Column(Integer, ForeignKey('Usuarios.id'), nullable=True) # Dono do canteiro
+    
+    identificacao = Column(String(100), nullable=False) # Ex: "Canteiro 01", "Canteiro da Esquina"
+    area_produtiva = Column(Float)
+    area_ociosa = Column(Float)
 
-Intencoes_Plantio = db.Table('Intencoes_Plantio', metadata,
-    db.Column('id', db.Integer(), primary_key=True),
-    db.Column('horta_id', db.Integer(), db.ForeignKey('Hortas.id'), nullable=False),
-    db.Column('produto_id', db.Integer(), db.ForeignKey('Produtos.id'), nullable=False),
-    db.Column('justificativa_comunidade', db.Text), 
-    db.Column('data_desejada_plantio', db.Date, nullable=True),
-    db.Column('status', db.String(50)) # Ex: 'PLANEJADO', 'EXECUTADO', 'CANCELADO'
-)
+    # Relacionamentos
+    horta = relationship("Horta", back_populates="canteiros")
+    usuario = relationship("Usuario", back_populates="canteiros")
+    ciclos = relationship("CicloProducao", back_populates="canteiro")
 
-Demandas = db.Table('Demandas', metadata,
-    db.Column('id', db.Integer(), primary_key=True),
-    db.Column('horta_id', db.Integer(), db.ForeignKey('Hortas.id'), nullable=False),
-    db.Column('tipo_demanda', db.String(50), nullable=False), # Ex: 'INSUMO', 'INFRAESTRUTURA'
-    db.Column('descricao', db.Text, nullable=False), # Ex: "Sementes de tomate", "Mangueira de irrigação"
-    db.Column('status', db.String(50)) # Ex: 'ABERTA', 'ATENDIDA'
-)
+class Produto(Base):
+    __tablename__ = 'Produtos'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String(255), nullable=False)
+    categoria = Column(String(50))
+    da_em_arvore = Column(Boolean)
+    necessita_replantio = Column(Boolean)
 
-metadata.create_all(engine)
-print("Tabelas criadas com sucesso no PostgreSQL")
+    ciclos = relationship("CicloProducao", back_populates="produto")
+    intencoes = relationship("IntencaoPlantio", back_populates="produto")
+
+class CicloProducao(Base):
+    __tablename__ = 'Ciclos_Producao'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    canteiro_id = Column(Integer, ForeignKey('Canteiros.id'), nullable=False) 
+    produto_id = Column(Integer, ForeignKey('Produtos.id'), nullable=False)
+    
+    data_plantio = Column(Date)
+    previsao_colheita = Column(Date)
+    data_colheita_real = Column(Date, nullable=True)
+    status = Column(String(50))
+
+    # Relacionamentos
+    canteiro = relationship("Canteiro", back_populates="ciclos")
+    produto = relationship("Produto", back_populates="ciclos")
+
+class Usuario(Base):
+    __tablename__ = 'Usuarios'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    horta_id = Column(Integer, ForeignKey('Hortas.id'), nullable=True)
+    nome = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False) 
+    cpf = Column(String(14), unique=True, nullable=False)
+    senha_hash = Column(String(255), nullable=False)
+    telefone = Column(String(20), nullable=False) 
+    privilegio = Column(String(50), nullable=False) # ADMIN_SUPREMO, LIDER_HORTA, MEMBRO_CANTEIRO
+
+    # Relacionamentos
+    horta = relationship("Horta", back_populates="usuarios")
+    canteiros = relationship("Canteiro", back_populates="usuario") # Quais canteiros ele cuida
+
+class IntencaoPlantio(Base):
+    __tablename__ = 'Intencoes_Plantio'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    horta_id = Column(Integer, ForeignKey('Hortas.id'), nullable=False)
+    produto_id = Column(Integer, ForeignKey('Produtos.id'), nullable=False)
+    justificativa_comunidade = Column(Text)
+    data_desejada_plantio = Column(Date, nullable=True)
+    status = Column(String(50))
+
+    horta = relationship("Horta", back_populates="intencoes")
+    produto = relationship("Produto", back_populates="intencoes")
+
+class Demanda(Base):
+    __tablename__ = 'Demandas'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    horta_id = Column(Integer, ForeignKey('Hortas.id'), nullable=False)
+    tipo_demanda = Column(String(50), nullable=False)
+    descricao = Column(Text, nullable=False)
+    status = Column(String(50))
+
+    horta = relationship("Horta", back_populates="demandas")
+
+Base.metadata.create_all(bind=engine)
+print("Novas tabelas (Hortas, Canteiros, etc) criadas com sucesso no PostgreSQL")
