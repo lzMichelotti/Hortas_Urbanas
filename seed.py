@@ -60,14 +60,14 @@ try:
     db.add_all(canteiros_iniciais)
     db.commit()
 
-    print("✅ Povoamento concluído com sucesso!")
+    print(" Povoamento concluído com sucesso!")
     print("- Produtos cadastrados.")
     print("- Horta da UFSM cadastrada.")
     print("- Usuários (Admin, Líder e Membro) criados.")
     print("- Canteiros distribuídos.")
 
 except Exception as e:
-    print(f"❌ Erro ao popular o banco: {e}")
+    print(f"Erro ao popular o banco: {e}")
     db.rollback()
 finally:
     db.close()

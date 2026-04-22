@@ -33,7 +33,6 @@ class Horta(Base):
     intencoes = relationship("IntencaoPlantio", back_populates="horta")
     demandas = relationship("Demanda", back_populates="horta")
 
-# --- NOVA TABELA: Canteiros ---
 class Canteiro(Base):
     __tablename__ = 'Canteiros'
     
