@@ -4,3 +4,5 @@ fastapi[standard]
 python-multipart
 bcrypt
 python-jose[cryptography]
+pyjwt
+pwdlib[argon2]

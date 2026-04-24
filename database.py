@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, Date, ForeignKey, Text
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from pydantic import BaseModel
 
 DATABASE_URL = "postgresql://horta:horta1234@127.0.0.1:5435/horta_db"
 
@@ -116,6 +117,7 @@ class Demanda(Base):
     status = Column(String(50))
 
     horta = relationship("Horta", back_populates="demandas")
+
 
 Base.metadata.create_all(bind=engine)
 print("Novas tabelas (Hortas, Canteiros, etc) criadas com sucesso no PostgreSQL")

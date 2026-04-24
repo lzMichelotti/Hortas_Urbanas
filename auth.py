@@ -1,27 +1,59 @@
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
-from fastapi import Depends, APIRouter, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
+import jwt
 import bcrypt
+from jwt.exceptions import InvalidTokenError
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from database import SessionLocal, Usuario 
 
+SECRET_KEY = "7094f1a8b96be055e09c851bf04ce80615938e4c1143306c0185e518d2b9e6fa"
+ALGORITHM = "HS256" 
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
 router = APIRouter(tags=["Autenticação"])
- 
-#-------- BCRYPT -----------#
+
+# -------- SCHEMAS PYDANTIC -------- #
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    id_usuario: str | None = None
+
+
+# -------- FUNÇÕES DE CRIPTOGRAFIA (BCRYPT) -------- #
 def get_password_hash(password: str) -> str:
-    # Embaralha a senha
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed.decode('utf-8')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    # Confere a senha digitada com a do banco
     return bcrypt.checkpw(
         plain_password.encode('utf-8'),
         hashed_password.encode('utf-8')
     )
-# O tokenUrl aponta para a rota "/token" que vamos criar abaixo.
+
+
+# -------- FUNÇÃO PARA GERAR O JWT REAL -------- #
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    
+    # Adiciona a data de validade (exp) no pacote
+    to_encode.update({"exp": expire})
+    # Lacra e assina o pacote usando a sua SECRET_KEY
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+# -------- INJEÇÃO DE DEPENDÊNCIAS -------- #
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def get_db():
@@ -33,56 +65,79 @@ def get_db():
 
 DBDep = Annotated[Session, Depends(get_db)]
 
-##                     ROTA DE LOGIN                         ##
 
-@router.post("/token")
-def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: DBDep):
-    
-    #OAuth2 obriga o nome "username", mas sabemos que o usuário digitou o EMAIL.
+##                    ROTA DE LOGIN                        ##
+
+@router.post("/token", response_model=Token)
+def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: DBDep
+):
+    # 1. Busca pelo Email (mas o formulário OAuth2 chama de username)
     usuario_no_banco = db.query(Usuario).filter(Usuario.email == form_data.username).first()
     
-    # Se não achou ninguém com esse email:
     if not usuario_no_banco:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email ou senha (CPF) incorretos"
+            detail="Email ou senha (CPF) incorretos",
+            headers={"WWW-Authenticate": "Bearer"},
         )
         
-    # CONFERE A SENHA (O CPF):
-    # O form_data.password é o CPF cru que o usuário digitou. 
-    # O usuario_no_banco.senha_hash é o CPF embaralhado que salvamos no banco antes.
-    senha_correta = verify_password(form_data.password, usuario_no_banco.senha_hash)
-    
-    if not senha_correta:
+    # 2. Confere a Senha (O CPF digitado contra a hash do banco)
+    if not verify_password(form_data.password, usuario_no_banco.senha_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email ou senha (CPF) incorretos"
+            detail="Email ou senha (CPF) incorretos",
+            headers={"WWW-Authenticate": "Bearer"},
         )
         
+    # 3. Sucesso! Monta os dados do crachá e gera o JWT
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    # "sub" é o padrão JWT para subject (o dono do token). Guardaremos o ID.
+    access_token = create_access_token(
+        data={"sub": str(usuario_no_banco.id)}, 
+        expires_delta=access_token_expires
+    )
+    
+    return Token(access_token=access_token, token_type="bearer")
 
-    # Por enquanto, retornamos o ID do usuário como se fosse o token para você ver funcionando.
-    # No próximo passo, trocaremos isso pelo Token JWT real.
-    return {"access_token": str(usuario_no_banco.id), "token_type": "bearer"}
 
 ##               A DEPENDÊNCIA (O SEGURANÇA)                 ##
 
 def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: DBDep):
-    # (No futuro, aqui nós vamos abrir o Token JWT)
-    # Por enquanto, como o nosso "token mockado" é o próprio ID do usuário:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Não foi possível validar as credenciais",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
     
-    usuario = db.query(Usuario).filter(Usuario.id == int(token)).first()
+    try:
+        # 1. Tenta abrir o pacote e ler o que tem dentro
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        id_usuario: str = payload.get("sub")
+        
+        if id_usuario is None:
+            raise credentials_exception
+            
+        token_data = TokenData(id_usuario=id_usuario)
+        
+    except InvalidTokenError:
+        # Cai aqui se o token for falso, alterado ou estiver vencido
+        raise credentials_exception
+        
+    # 2. Com o ID em mãos, busca a pessoa no banco de verdade
+    usuario = db.query(Usuario).filter(Usuario.id == int(token_data.id_usuario)).first()
     
-    if not usuario:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciais inválidas",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    if usuario is None:
+        raise credentials_exception
+        
     return usuario
+
 
 ##               ROTA PROTEGIDA (TESTE)                      ##
 
 @router.get("/users/me")
 def read_users_me(current_user: Annotated[Usuario, Depends(get_current_user)]):
-    # Retorna as informações do usuário logado (SQLAlchemy já formata isso)
+    # Retorna o usuário decodificado pelo segurança
     return current_user
