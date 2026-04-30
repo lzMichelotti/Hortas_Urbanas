@@ -1,5 +1,5 @@
 import jwt
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, status
 from typing import Annotated, Optional
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -7,6 +7,7 @@ from datetime import date
 from auth import router as auth_router, get_password_hash
 
 from database import SessionLocal, Horta, Produto, CicloProducao, IntencaoPlantio, Demanda, Canteiro, Usuario
+from auth import get_admin_user, get_lider_user, get_current_user
 
 app = FastAPI()
 
@@ -20,6 +21,11 @@ def get_db():
         db.close()
 
 DBDep = Annotated[Session, Depends(get_db)]
+
+
+def verificar_horta(lider: Usuario, horta_id: int):
+    if lider.privilegio == "LIDER_HORTA" and lider.horta_id != horta_id:
+        raise HTTPException(403, "Sem permissão para esta horta.")
 
 ## ------------------ SCHEMAS PYDANTIC ------------------ ##
 # Validação dos dados que chegam do aplicativo
@@ -71,45 +77,352 @@ class UsuarioCreate(BaseModel):
 
 ## ------------------------ GET ------------------------ ##
 
+# NÍVEIS DE ACESSO
+
+# Nível 1 - Público
+# Hortas são públicas (não precisa autenticação)
+# Ex: GET /hortas
+
+# Nível 2 - Comunidade
+# Requer usuário autenticado (get_current_user)
+# Produtos, Ciclos, Demandas, Intenções
+# Ex: precisa estar logado
+
+# Nível 3 - Diretoria
+# Requer líder da horta (get_lider_user)
+# Canteiros e Usuários
+# + Regra: só pode acessar dados da própria horta (horta_id)
+
+# NÍVEL 1: PÚBLICO (Sem Segurança)
 @app.get("/hortas")
 def read_hortas(db: DBDep):
+    # Aberto para qualquer um ver o mapa de hortas da cidade
     return db.query(Horta).all()
-@app.get("/usuarios")
-def read_users(db: DBDep):
-    return db.query(Usuario).all()
-
-@app.get("/produtos")
-def read_produtos(db: DBDep):
-    return db.query(Produto).all()
-
-@app.get("/produtos/{id}")
-def read_produto_por_id(id: int, db: DBDep):
-    return db.query(Produto).filter(Produto.id == id).first()
 
 @app.get("/hortas/{id}")
 def read_horta_por_id(id: int, db: DBDep):
     return db.query(Horta).filter(Horta.id == id).first()
 
-@app.get("/canteiros")
-def read_canteiros(db: DBDep):
-    return db.query(Canteiro).all()
+
+# NÍVEL 2: COMUNIDADE (Qualquer Logado)
+@app.get("/produtos")
+def read_produtos(
+    db: DBDep, 
+    usuario: Annotated[Usuario, Depends(get_current_user)] # Segurança na porta!
+):
+    return db.query(Produto).all()
+
+@app.get("/produtos/{id}")
+def read_produto_por_id(
+    id: int, 
+    db: DBDep,
+    usuario: Annotated[Usuario, Depends(get_current_user)]
+):
+    return db.query(Produto).filter(Produto.id == id).first()
 
 @app.get("/canteiros/{id}/ciclos")
-def read_ciclos_do_canteiro(id: int, db: DBDep):
+def read_ciclos_do_canteiro(
+    id: int, 
+    db: DBDep,
+    usuario: Annotated[Usuario, Depends(get_current_user)]
+):
     return db.query(CicloProducao).filter(CicloProducao.canteiro_id == id).all()
 
 @app.get("/demandas")
-def read_demandas(db: DBDep):
+def read_demandas(
+    db: DBDep,
+    usuario: Annotated[Usuario, Depends(get_current_user)]
+):
     return db.query(Demanda).all()
 
 @app.get("/intencoes")
-def read_intencoes(db: DBDep):
+def read_intencoes(
+    db: DBDep,
+    usuario: Annotated[Usuario, Depends(get_current_user)]
+):
     return db.query(IntencaoPlantio).all()
+
+
+# NÍVEL 3: DIRETORIA (Líder ou Admin)
+@app.get("/canteiros")
+def read_canteiros(
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)]
+):
+    if lider.privilegio == "LIDER_HORTA":
+        return db.query(Canteiro).filter(Canteiro.horta_id == lider.horta_id).all()
+        
+    return db.query(Canteiro).all()
+
+@app.get("/usuarios")
+def read_users(
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)]
+):
+    # O Líder só vê os membros que pertencem à horta dele E que estão ativos
+    if lider.privilegio == "LIDER_HORTA":
+        return db.query(Usuario).filter(
+            Usuario.horta_id == lider.horta_id, 
+            Usuario.ativo == True 
+        ).all()
+        
+    return db.query(Usuario).filter(Usuario.ativo == True).all()
+
+# ------------------------- PUT -------------------------- ##
+
+@app.put("/hortas/{id}")
+def update_horta(
+    id: int,
+    horta: HortaCreate,
+    db: DBDep,
+    admin: Annotated[Usuario, Depends(get_admin_user)]
+):
+    db_horta = db.query(Horta).filter(Horta.id == id).first()
+
+    if not db_horta:
+        raise HTTPException(404, "Horta não encontrada")
+
+    for key, value in horta.model_dump().items():
+        setattr(db_horta, key, value)
+
+    db.commit()
+    db.refresh(db_horta)
+    return db_horta
+
+@app.put("/canteiros/{id}")
+def update_canteiro(
+    id: int,
+    canteiro: CanteiroCreate,
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)]
+):
+    db_canteiro = db.query(Canteiro).filter(Canteiro.id == id).first()
+
+    if not db_canteiro:
+        raise HTTPException(404, "Canteiro não encontrado")
+
+    if lider.privilegio == "LIDER_HORTA" and db_canteiro.horta_id != lider.horta_id:
+        raise HTTPException(403, "Sem permissão")
+
+    for key, value in canteiro.model_dump().items():
+        setattr(db_canteiro, key, value)
+
+    db.commit()
+    db.refresh(db_canteiro)
+    return db_canteiro
+
+@app.put("/demandas/{id}")
+def update_demanda(
+    id: int,
+    demanda: DemandaCreate,
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)]
+):
+    db_demanda = db.query(Demanda).filter(Demanda.id == id).first()
+
+    if not db_demanda:
+        raise HTTPException(404, "Demanda não encontrada")
+
+    if lider.privilegio == "LIDER_HORTA" and db_demanda.horta_id != lider.horta_id:
+        raise HTTPException(403, "Sem permissão")
+
+    for key, value in demanda.model_dump().items():
+        setattr(db_demanda, key, value)
+
+    db.commit()
+    db.refresh(db_demanda)
+    return db_demanda
+@app.put("/intencoes/{id}")
+def update_intencao(
+    id: int,
+    intencao: IntencaoCreate,
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)]
+):
+    db_intencao = db.query(IntencaoPlantio).filter(IntencaoPlantio.id == id).first()
+
+    if not db_intencao:
+        raise HTTPException(404, "Intenção não encontrada")
+
+    if lider.privilegio == "LIDER_HORTA" and db_intencao.horta_id != lider.horta_id:
+        raise HTTPException(403, "Sem permissão")
+
+    for key, value in intencao.model_dump().items():
+        setattr(db_intencao, key, value)
+
+    db.commit()
+    db.refresh(db_intencao)
+    return db_intencao
+
+@app.put("/ciclos/{id}")
+def update_ciclo(
+    id: int,
+    ciclo: CicloCreate,
+    db: DBDep,
+    usuario: Annotated[Usuario, Depends(get_current_user)]
+):
+    db_ciclo = db.query(CicloProducao).filter(CicloProducao.id == id).first()
+
+    if not db_ciclo:
+        raise HTTPException(404, "Ciclo não encontrado")
+
+    canteiro = db.query(Canteiro).filter(Canteiro.id == db_ciclo.canteiro_id).first()
+
+    if usuario.privilegio == "MEMBRO_CANTEIRO" and canteiro.usuario_id != usuario.id:
+        raise HTTPException(403, "Sem permissão")
+
+    for key, value in ciclo.model_dump().items():
+        setattr(db_ciclo, key, value)
+
+    db.commit()
+    db.refresh(db_ciclo)
+    return db_ciclo
+
+@app.put("/usuarios/{id}")
+def update_usuario(
+    id: int,
+    usuario_update: UsuarioCreate,
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)]
+):
+    db_usuario = db.query(Usuario).filter(Usuario.id == id).first()
+
+    if not db_usuario:
+        raise HTTPException(404, "Usuário não encontrado")
+
+    if lider.privilegio == "LIDER_HORTA" and db_usuario.horta_id != lider.horta_id:
+        raise HTTPException(403, "Sem permissão")
+
+    for key, value in usuario_update.model_dump().items():
+        setattr(db_usuario, key, value)
+
+    db.commit()
+    db.refresh(db_usuario)
+    return db_usuario
+
+## -------------------- DELETE ---------------------- ##
+
+@app.delete("/hortas/{id}")
+def delete_horta(
+    id: int,
+    db: DBDep,
+    admin: Annotated[Usuario, Depends(get_admin_user)]
+):
+    db_horta = db.query(Horta).filter(Horta.id == id).first()
+
+    if not db_horta:
+        raise HTTPException(404, "Horta não encontrada")
+
+    db.delete(db_horta)
+    db.commit()
+
+    return {"detail": "Horta removida com sucesso"}
+
+@app.delete("/canteiros/{id}")
+def delete_canteiro(
+    id: int,
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)]
+):
+    db_canteiro = db.query(Canteiro).filter(Canteiro.id == id).first()
+
+    if not db_canteiro:
+        raise HTTPException(404, "Canteiro não encontrado")
+
+    if lider.privilegio == "LIDER_HORTA" and db_canteiro.horta_id != lider.horta_id:
+        raise HTTPException(403, "Sem permissão")
+
+    db.delete(db_canteiro)
+    db.commit()
+
+    return {"detail": "Canteiro removido com sucesso"}
+
+@app.delete("/demandas/{id}")
+def delete_demanda(
+    id: int,
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)]
+):
+    db_demanda = db.query(Demanda).filter(Demanda.id == id).first()
+
+    if not db_demanda:
+        raise HTTPException(404, "Demanda não encontrada")
+
+    if lider.privilegio == "LIDER_HORTA" and db_demanda.horta_id != lider.horta_id:
+        raise HTTPException(403, "Sem permissão")
+
+    db.delete(db_demanda)
+    db.commit()
+
+    return {"detail": "Demanda removida com sucesso"}
+
+@app.delete("/intencoes/{id}")
+def delete_intencao(
+    id: int,
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)]
+):
+    db_intencao = db.query(IntencaoPlantio).filter(IntencaoPlantio.id == id).first()
+
+    if not db_intencao:
+        raise HTTPException(404, "Intenção não encontrada")
+
+    if lider.privilegio == "LIDER_HORTA" and db_intencao.horta_id != lider.horta_id:
+        raise HTTPException(403, "Sem permissão")
+
+    db.delete(db_intencao)
+    db.commit()
+
+    return {"detail": "Intenção removida com sucesso"}
+
+@app.delete("/ciclos/{id}")
+def delete_ciclo(
+    id: int,
+    db: DBDep,
+    usuario: Annotated[Usuario, Depends(get_current_user)]
+):
+    db_ciclo = db.query(CicloProducao).filter(CicloProducao.id == id).first()
+
+    if not db_ciclo:
+        raise HTTPException(404, "Ciclo não encontrado")
+
+    canteiro = db.query(Canteiro).filter(Canteiro.id == db_ciclo.canteiro_id).first()
+
+    if usuario.privilegio == "MEMBRO_CANTEIRO" and canteiro.usuario_id != usuario.id:
+        raise HTTPException(403, "Sem permissão")
+
+    db.delete(db_ciclo)
+    db.commit()
+
+    return {"detail": "Ciclo removido com sucesso"}
+
+@app.delete("/usuarios/{id}")
+def delete_usuario(
+    id: int,
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)]
+):
+    db_usuario = db.query(Usuario).filter(Usuario.id == id).first()
+
+    if not db_usuario:
+        raise HTTPException(404, "Usuário não encontrado")
+
+    if lider.privilegio == "LIDER_HORTA" and db_usuario.horta_id != lider.horta_id:
+        raise HTTPException(403, "Sem permissão")
+
+    db.delete(db_usuario)
+    db.commit()
+
+    return {"detail": "Usuário removido com sucesso"}
 
 ## ------------------------ POST ------------------------ ##
 
 @app.post("/hortas")
-def create_horta(horta: HortaCreate, db: DBDep):
+def create_horta(
+    horta: HortaCreate, 
+    db: DBDep,
+    admin: Annotated[Usuario, Depends(get_admin_user)] 
+):
     db_horta = Horta(**horta.model_dump())
     db.add(db_horta)
     db.commit()
@@ -117,8 +430,15 @@ def create_horta(horta: HortaCreate, db: DBDep):
     return db_horta
 
 @app.post("/hortas/{horta_id}/canteiros")
-def create_canteiro(horta_id: int, canteiro: CanteiroCreate, db: DBDep):
-    # Desempacota os dados e injeta o ID da horta da URL
+def create_canteiro(
+    horta_id: int, 
+    canteiro: CanteiroCreate, 
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)] #Líder ou Admin
+):
+    # Líder só mexe na própria horta
+    verificar_horta(lider, horta_id)
+
     db_canteiro = Canteiro(**canteiro.model_dump(), horta_id=horta_id)
     db.add(db_canteiro)
     db.commit()
@@ -126,7 +446,14 @@ def create_canteiro(horta_id: int, canteiro: CanteiroCreate, db: DBDep):
     return db_canteiro
 
 @app.post("/hortas/{horta_id}/demandas")
-def create_demanda(horta_id: int, demanda: DemandaCreate, db: DBDep):
+def create_demanda(
+    horta_id: int, 
+    demanda: DemandaCreate, 
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)] #Líder
+):
+    verificar_horta(lider, horta_id)
+        
     db_demanda = Demanda(**demanda.model_dump(), horta_id=horta_id)
     db.add(db_demanda)
     db.commit()
@@ -134,7 +461,14 @@ def create_demanda(horta_id: int, demanda: DemandaCreate, db: DBDep):
     return db_demanda
 
 @app.post("/hortas/{horta_id}/intencoes")
-def create_intencao(horta_id: int, intencao: IntencaoCreate, db: DBDep):
+def create_intencao(
+    horta_id: int, 
+    intencao: IntencaoCreate, 
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)] # Líder
+):
+    verificar_horta(lider, horta_id)
+        
     db_intencao = IntencaoPlantio(**intencao.model_dump(), horta_id=horta_id)
     db.add(db_intencao)
     db.commit()
@@ -142,8 +476,24 @@ def create_intencao(horta_id: int, intencao: IntencaoCreate, db: DBDep):
     return db_intencao
 
 @app.post("/canteiros/{canteiro_id}/ciclos")
-def create_ciclo(canteiro_id: int, ciclo: CicloCreate, db: DBDep):
-    # Desempacota os dados do plantio e injeta o ID do canteiro da URL
+def create_ciclo(
+    canteiro_id: int, 
+    ciclo: CicloCreate, 
+    db: DBDep,
+    membro: Annotated[Usuario, Depends(get_current_user)] # Qualquer logado
+):
+    # Membro só planta no canteiro dele
+    canteiro_banco = db.query(Canteiro).filter(Canteiro.id == canteiro_id).first()
+    
+    if not canteiro_banco:
+        raise HTTPException(status_code=404, detail="Canteiro não encontrado.")
+        
+    if membro.privilegio == "MEMBRO_CANTEIRO" and canteiro_banco.usuario_id != membro.id:
+        raise HTTPException(
+            status_code=403, 
+            detail="Você só pode registrar plantios no seu próprio canteiro."
+        )
+
     db_ciclo = CicloProducao(**ciclo.model_dump(), canteiro_id=canteiro_id)
     db.add(db_ciclo)
     db.commit()
@@ -151,8 +501,18 @@ def create_ciclo(canteiro_id: int, ciclo: CicloCreate, db: DBDep):
     return db_ciclo
 
 @app.post("/usuarios")
-def create_usuario(usuario: UsuarioCreate, db: DBDep):
-    
+def create_usuario(
+    usuario: UsuarioCreate, 
+    db: DBDep,
+    usuario_logado: Annotated[Usuario, Depends(get_lider_user)] 
+):
+        
+    if usuario_logado.privilegio == "LIDER_HORTA":  
+        usuario.horta_id = usuario_logado.horta_id
+        if usuario.privilegio == "ADMIN_SUPREMO":
+            raise HTTPException(status_code=403, detail="Líderes não criam Administradores.")
+            
+    # Validações normais
     cpf_existente = db.query(Usuario).filter(Usuario.cpf == usuario.cpf).first()
     email_existente = db.query(Usuario).filter(Usuario.email == usuario.email).first()
     
@@ -163,14 +523,11 @@ def create_usuario(usuario: UsuarioCreate, db: DBDep):
         
     senha_criptografada = get_password_hash(usuario.cpf)
     
-    # Passo 3: Monta o usuário mesclando os dados do formulário com a senha nova
-    # Como precisamos adicionar a senha_hash manualmente, fazemos um mix:
     db_usuario = Usuario(
-        **usuario.model_dump(),       # Desempacota nome, email, cpf, etc.
-        senha_hash=senha_criptografada # Injeta a senha criptografada que o app não enviou
+        **usuario.model_dump(),       
+        senha_hash=senha_criptografada 
     )
     
-    # Passo 4: Salva no banco
     db.add(db_usuario)
     db.commit()
     db.refresh(db_usuario)

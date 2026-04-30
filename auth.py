@@ -134,6 +134,26 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: DBDep):
         
     return usuario
 
+##             DEPEDENCIAS DE ACESSO               ####
+
+def get_admin_user(current_user: Annotated[Usuario, Depends(get_current_user)]):
+    if current_user.privilegio != "ADMIN_SUPREMO":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, #servidor entendeu a solicitação, mas não autoriza
+            detail="Acesso negado. Ação restrita a Administradores"
+        )
+    return current_user
+    
+def get_lider_user(current_user: Annotated[Usuario, Depends(get_current_user)]):
+    if current_user.privilegio not in ["ADMIN_SUPREMO", "LIDER_HORTA"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso negado. Requer nível de Líder de Horta"
+        )
+    return current_user
+
+#Não tem get para membro pois o nível membro é o mais baixo, se passar pelo get_current_user ja é no mínimo membro
+
 
 ##               ROTA PROTEGIDA (TESTE)                      ##
 
@@ -141,3 +161,4 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: DBDep):
 def read_users_me(current_user: Annotated[Usuario, Depends(get_current_user)]):
     # Retorna o usuário decodificado pelo segurança
     return current_user
+
