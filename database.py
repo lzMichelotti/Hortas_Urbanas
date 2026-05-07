@@ -129,6 +129,8 @@ class Demanda(Base):
     horta_id = Column(Integer, ForeignKey('Hortas.id', ondelete='CASCADE'), nullable=False)
     tipo_demanda = Column(String(50), nullable=False)
     descricao = Column(Text, nullable=False)
+    quantidade = Column(Float, nullable=False)
+    unidade_medida = Column(String(20), nullable=False)
     status = Column(String(50))
     # Soft delete: demandas devem ser auditadas, não deletadas fisicamente
     ativo = Column(Boolean, default=True, nullable=False)

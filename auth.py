@@ -73,7 +73,7 @@ def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: DBDep
 ):
-    # 1. Busca pelo Email (mas o formulário OAuth2 chama de username)
+    # Busca pelo Email (mas o formulário OAuth2 chama de username)
     usuario_no_banco = db.query(Usuario).filter(Usuario.email == form_data.username).first()
     
     if not usuario_no_banco:
@@ -82,8 +82,15 @@ def login_for_access_token(
             detail="Email ou senha (CPF) incorretos",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    if not usuario_no_banco.ativo:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Conta de usuário inativa ou excluída.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
         
-    # 2. Confere a Senha (O CPF digitado contra a hash do banco)
+    #Confere a Senha (O CPF digitado contra a hash do banco)
     if not verify_password(form_data.password, usuario_no_banco.senha_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -91,7 +98,7 @@ def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
         
-    # 3. Sucesso! Monta os dados do crachá e gera o JWT
+    # Sucesso! Monta os dados do crachá e gera o JWT
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
     # "sub" é o padrão JWT para subject (o dono do token). Guardaremos o ID.
@@ -113,7 +120,7 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: DBDep):
     )
     
     try:
-        # 1. Tenta abrir o pacote e ler o que tem dentro
+        # Tenta abrir o pacote e ler o que tem dentro
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         id_usuario: str = payload.get("sub")
         
@@ -126,7 +133,7 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: DBDep):
         # Cai aqui se o token for falso, alterado ou estiver vencido
         raise credentials_exception
         
-    # 2. Com o ID em mãos, busca a pessoa no banco de verdade
+    # Com o ID em mãos, busca a pessoa no banco de verdade
     usuario = db.query(Usuario).filter(Usuario.id == int(token_data.id_usuario)).first()
     
     if usuario is None:

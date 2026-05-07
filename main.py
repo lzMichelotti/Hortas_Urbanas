@@ -1,8 +1,9 @@
 import jwt
+from enum import Enum
 from fastapi import Depends, FastAPI, HTTPException, status
 from typing import Annotated, Optional
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from datetime import date
 from auth import router as auth_router, get_password_hash
 
@@ -49,22 +50,28 @@ class CanteiroCreate(BaseModel):
     area_produtiva: float
     area_ociosa: float
 
+class StatusDemanda(str, Enum):
+    ABERTA = "ABERTA"
+    EM_ATENDIMENTO = "EM_ATENDIMENTO"
+    ATENDIDA = "ATENDIDA"
+    CANCELADA = "CANCELADA"
+
+class DemandaUpdateStatus(BaseModel):
+    status: StatusDemanda # Usa o Enum que você definiu para garantir a validade
+
 class DemandaCreate(BaseModel):
     tipo_demanda: str
     descricao: str
-    status: str
+    status: StatusDemanda
+    # gt=0: A quantidade deve ser estritamente maior que 0.
+    quantidade: float = Field(..., gt=0, description="Quantidade solicitada (não pode ser zero ou negativa)")
+    unidade_medida: str = Field(..., description="Ex: kg, unidades, litros")
 
 class CicloCreate(BaseModel):
     # O canteiro_id foi removido daqui pois virá da URL!
     produto_id: int
     data_plantio: date
     previsao_colheita: date
-    status: str
-
-class IntencaoCreate(BaseModel):
-    produto_id: int
-    justificativa_comunidade: Optional[str] = None
-    data_desejada_plantio: Optional[date] = None
     status: str
 
 class UsuarioCreate(BaseModel):
@@ -74,6 +81,31 @@ class UsuarioCreate(BaseModel):
     telefone: str
     privilegio: str
     horta_id: Optional[int] = None # Nem todo mundo (ex: Admin Supremo) tem uma horta fixa
+
+# Catálogo de Status
+class StatusIntencao(str, Enum):
+    PLANEJADO = "PLANEJADO"
+    AGUARDANDO_SEMENTES = "AGUARDANDO_SEMENTES"
+    EM_PLANTIO = "EM_PLANTIO"
+    CONCLUIDO = "CONCLUIDO"
+
+class IntencaoCreate(BaseModel):
+    produto_id: int
+    justificativa_comunidade: Optional[str] = None
+    data_desejada_plantio: Optional[date] = None
+    status: StatusIntencao # Enum para blindar o status (Aceita somente valores de StatusIntencao acima)
+
+    # Validar que intenções vão ser somente em data futura
+    @field_validator('data_desejada_plantio')
+    @classmethod
+    def check_data_futura(cls, valor_data):
+        if valor_data is not None and valor_data < date.today():
+            raise ValueError('A data de plantio não pode estar no passado.')
+        return valor_data
+
+
+# Uso de Enum para manter a consistência dos dados da rede.
+# Garante que todas as hortas usem os mesmos termos, essencial para estatísticas e logística em cenários críticos.
 
 ## ------------------------ GET ------------------------ ##
 
@@ -232,6 +264,7 @@ def update_demanda(
     db.commit()
     db.refresh(db_demanda)
     return db_demanda
+
 @app.put("/intencoes/{id}")
 def update_intencao(
     id: int,
@@ -299,6 +332,36 @@ def update_usuario(
     db.commit()
     db.refresh(db_usuario)
     return db_usuario
+
+## -------------------- PATCH ----------------------- ##
+
+@app.patch("/hortas/{horta_id}/demandas/{demanda_id}/status")
+def update_demanda_status(
+    horta_id: int, 
+    demanda_id: int, 
+    update_data: DemandaUpdateStatus, 
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)]
+):
+    verificar_horta(lider, horta_id)
+    # garante que a demanda pertença à horta informada na URL
+    db_demanda = db.query(Demanda).filter(
+        Demanda.id == demanda_id, 
+        Demanda.horta_id == horta_id
+    ).first()
+
+    if not db_demanda:
+        raise HTTPException(status_code=404, detail="Demanda não encontrada nesta horta.")
+
+    # Converte o modelo para dicionário pegando apenas o que foi enviado
+    update_dict = update_data.model_dump(exclude_unset=True)
+    
+    for key, value in update_dict.items():
+        setattr(db_demanda, key, value)
+
+    db.commit()
+    db.refresh(db_demanda)
+    return db_demanda
 
 ## -------------------- DELETE ---------------------- ##
 
@@ -410,7 +473,8 @@ def delete_usuario(
     if lider.privilegio == "LIDER_HORTA" and db_usuario.horta_id != lider.horta_id:
         raise HTTPException(403, "Sem permissão")
 
-    db.delete(db_usuario)
+    db_usuario.ativo = False
+    db.add(db_usuario)
     db.commit()
 
     return {"detail": "Usuário removido com sucesso"}
@@ -468,6 +532,13 @@ def create_intencao(
     lider: Annotated[Usuario, Depends(get_lider_user)] # Líder
 ):
     verificar_horta(lider, horta_id)
+
+    produto_existe = db.query(Produto).filter(Produto.id == intencao.produto_id).first()
+    if not produto_existe:
+        raise HTTPException(
+            status_code=404, 
+            detail="O produto selecionado não existe no catálogo oficial."
+        )
         
     db_intencao = IntencaoPlantio(**intencao.model_dump(), horta_id=horta_id)
     db.add(db_intencao)
