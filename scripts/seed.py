@@ -2,16 +2,15 @@ from sqlalchemy.exc import SQLAlchemyError
 
 def seed_produtos():
     try:
-        from database import SessionLocal, Produto
+        from app.database.session import SessionLocal
+        from app.database.models import Produto
     except Exception as exc:
         print(f"Não foi possível carregar a configuração do banco: {exc}")
         return
 
     db = SessionLocal()
     
-    # Lista processada a partir dos seus dados
     produtos_data = [
-        # --- HORTALIÇAS ---
         {"nome": "Abóbora", "categoria": "Hortaliças", "da_em_arvore": False, "necessita_replantio": True, "epoca_recomendada": "OUT./FEV.", "inicio_colheita": "90-120 DIAS"},
         {"nome": "Abobrinha", "categoria": "Hortaliças", "da_em_arvore": False, "necessita_replantio": True, "epoca_recomendada": "SET./MAIO", "inicio_colheita": "45-60 DIAS"},
         {"nome": "Agrião", "categoria": "Hortaliças", "da_em_arvore": False, "necessita_replantio": True, "epoca_recomendada": "FEV./OUT.", "inicio_colheita": "60-70 DIAS"},
@@ -30,8 +29,6 @@ def seed_produtos():
         {"nome": "Couve", "categoria": "Hortaliças", "da_em_arvore": False, "necessita_replantio": True, "epoca_recomendada": "ANO TODO", "inicio_colheita": "60-70 DIAS"},
         {"nome": "Espinafre", "categoria": "Hortaliças", "da_em_arvore": False, "necessita_replantio": True, "epoca_recomendada": "FEV./SET.", "inicio_colheita": "60-80 DIAS"},
         {"nome": "Tomate", "categoria": "Hortaliças", "da_em_arvore": False, "necessita_replantio": True, "epoca_recomendada": "SET./FEV.", "inicio_colheita": "100-120 DIAS"},
-
-        # --- FRUTAS ---
         {"nome": "Abacate", "categoria": "Frutas", "da_em_arvore": True, "necessita_replantio": False, "epoca_recomendada": "Set-Nov", "inicio_colheita": "Mar-Ago"},
         {"nome": "Abacaxi", "categoria": "Frutas", "da_em_arvore": False, "necessita_replantio": True, "epoca_recomendada": "Set-Dez", "inicio_colheita": "12-18 meses"},
         {"nome": "Banana", "categoria": "Frutas", "da_em_arvore": False, "necessita_replantio": False, "epoca_recomendada": "Set-Dez", "inicio_colheita": "ANO TODO"},
@@ -47,7 +44,6 @@ def seed_produtos():
 
     try:
         for p_data in produtos_data:
-            # Upsert simples: só adiciona se o nome não existir
             obj = db.query(Produto).filter(Produto.nome == p_data["nome"]).first()
             if not obj:
                 db.add(Produto(**p_data))
