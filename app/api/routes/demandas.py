@@ -49,7 +49,7 @@ def update_demanda(
     if lider.privilegio == "LIDER_HORTA" and db_demanda.horta_id != lider.horta_id:
         raise HTTPException(403, "Sem permissão")
 
-    for key, value in demanda.model_dump().items():
+    for key, value in demanda.model_dump(exclude_unset=True).items():
         setattr(db_demanda, key, value)
 
     db.commit()

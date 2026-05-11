@@ -13,10 +13,18 @@ DBDep = Annotated[Session, Depends(get_db)]
 
 @router.get("/canteiros/{canteiro_id}/ciclos")
 def read_ciclos_do_canteiro(
-    canteiro_id: int, 
+    canteiro_id: int,
     db: DBDep,
     usuario: Annotated[Usuario, Depends(get_current_user)]
 ):
+    canteiro = db.query(Canteiro).filter(Canteiro.id == canteiro_id).first()
+
+    if not canteiro:
+        raise HTTPException(status_code=404, detail="Canteiro não encontrado.")
+
+    if usuario.privilegio != "ADMIN_SUPREMO" and canteiro.horta_id != usuario.horta_id:
+        raise HTTPException(status_code=403, detail="Sem permissão para acessar ciclos desta horta.")
+
     return db.query(CicloProducao).filter(CicloProducao.canteiro_id == canteiro_id).all()
 
 @router.post("/canteiros/{canteiro_id}/ciclos")
@@ -60,7 +68,7 @@ def update_ciclo(
     if usuario.privilegio == "MEMBRO_CANTEIRO" and canteiro.usuario_id != usuario.id:
         raise HTTPException(403, "Sem permissão")
 
-    for key, value in ciclo.model_dump().items():
+    for key, value in ciclo.model_dump(exclude_unset=True).items():
         setattr(db_ciclo, key, value)
 
     db.commit()

@@ -16,6 +16,8 @@ def read_intencoes(
     db: DBDep,
     usuario: Annotated[Usuario, Depends(get_lider_user)]
 ):
+    if usuario.privilegio == "LIDER_HORTA":
+        return db.query(IntencaoPlantio).filter(IntencaoPlantio.horta_id == usuario.horta_id).all()
     return db.query(IntencaoPlantio).all()
 
 @router.post("/hortas/{horta_id}/intencoes")
@@ -55,7 +57,7 @@ def update_intencao(
     if lider.privilegio == "LIDER_HORTA" and db_intencao.horta_id != lider.horta_id:
         raise HTTPException(403, "Sem permissão")
 
-    for key, value in intencao.model_dump().items():
+    for key, value in intencao.model_dump(exclude_unset=True).items():
         setattr(db_intencao, key, value)
 
     db.commit()

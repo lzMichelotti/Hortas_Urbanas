@@ -1,5 +1,11 @@
-SECRET_KEY = "7094f1a8b96be055e09c851bf04ce80615938e4c1143306c0185e518d2b9e6fa"
-ALGORITHM = "HS256" 
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+import os
+from dotenv import load_dotenv
 
-DATABASE_URL = "postgresql://horta:horta1234@127.0.0.1:5435/horta_db"
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7))
+
+DATABASE_URL = os.getenv("DATABASE_URL")

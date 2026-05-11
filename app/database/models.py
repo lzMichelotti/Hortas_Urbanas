@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, Date, ForeignKey, Text, DateTime
 from sqlalchemy.orm import relationship
-from datetime import datetime
-from app.database.session import Base, engine
+from app.database.session import Base
 
 
 class Horta(Base):
@@ -34,7 +33,7 @@ class Usuario(Base):
     id = Column(Integer, primary_key=True, index=True)
     horta_id = Column(Integer, ForeignKey('Hortas.id', ondelete='SET NULL'), nullable=True)
     nome = Column(String(255), nullable=False)
-    email = Column(String(255), nullable=False) 
+    email = Column(String(255), unique=True, nullable=False)
     cpf = Column(String(14), unique=True, nullable=False)
     senha_hash = Column(String(255), nullable=False)
     telefone = Column(String(20), nullable=False) 
@@ -118,19 +117,3 @@ class Demanda(Base):
     horta = relationship("Horta", back_populates="demandas")
 
 
-Base.metadata.create_all(bind=engine)
-print("Tabelas criadas com sucesso no PostgreSQL")
-
-def soft_delete_usuario(db, usuario_id: int):
-    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
-    if usuario:
-        usuario.ativo = False
-        usuario.deletado_em = datetime.now()
-        db.commit()
-
-def soft_delete_demanda(db, demanda_id: int):
-    demanda = db.query(Demanda).filter(Demanda.id == demanda_id).first()
-    if demanda:
-        demanda.ativo = False
-        demanda.deletado_em = datetime.now()
-        db.commit()

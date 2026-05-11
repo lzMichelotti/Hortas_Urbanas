@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.database.models import Usuario
-from app.schemas.usuario import UsuarioCreate
+from app.schemas.usuario import UsuarioCreate, UsuarioRead
 from app.api.dependencies import get_current_user, get_lider_user
 from app.core.security import get_password_hash
 
@@ -13,7 +13,7 @@ router = APIRouter(tags=["Usuários"])
 
 DBDep = Annotated[Session, Depends(get_db)]
 
-@router.get("/usuarios")
+@router.get("/usuarios", response_model=list[UsuarioRead])
 def read_users(
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
@@ -26,21 +26,21 @@ def read_users(
         
     return db.query(Usuario).filter(Usuario.ativo == True).all()
 
-@router.get("/usuarios/me")
+@router.get("/usuarios/me", response_model=UsuarioRead)
 def read_users_me(current_user: Annotated[Usuario, Depends(get_current_user)]):
     return current_user
 
-@router.post("/usuarios")
+@router.post("/usuarios", response_model=UsuarioRead)
 def create_usuario(
     usuario: UsuarioCreate, 
     db: DBDep,
     usuario_logado: Annotated[Usuario, Depends(get_lider_user)] 
 ):
         
-    if usuario_logado.privilegio == "LIDER_HORTA":  
+    if usuario_logado.privilegio == "LIDER_HORTA":
         usuario.horta_id = usuario_logado.horta_id
-        if usuario.privilegio == "ADMIN_SUPREMO":
-            raise HTTPException(status_code=403, detail="Líderes não criam Administradores.")
+        if usuario.privilegio in ["ADMIN_SUPREMO", "LIDER_HORTA"]:
+            raise HTTPException(status_code=403, detail="Líderes só podem criar membros de canteiro.")
             
     cpf_existente = db.query(Usuario).filter(Usuario.cpf == usuario.cpf).first()
     email_existente = db.query(Usuario).filter(Usuario.email == usuario.email).first()
@@ -63,7 +63,7 @@ def create_usuario(
     
     return db_usuario
 
-@router.put("/usuarios/{id}")
+@router.put("/usuarios/{id}", response_model=UsuarioRead)
 def update_usuario(
     id: int,
     usuario_update: UsuarioCreate,
@@ -78,7 +78,17 @@ def update_usuario(
     if lider.privilegio == "LIDER_HORTA" and db_usuario.horta_id != lider.horta_id:
         raise HTTPException(403, "Sem permissão")
 
-    for key, value in usuario_update.model_dump().items():
+    dados = usuario_update.model_dump(exclude_unset=True)
+
+    if "cpf" in dados and dados["cpf"] != db_usuario.cpf:
+        if db.query(Usuario).filter(Usuario.cpf == dados["cpf"], Usuario.id != id).first():
+            raise HTTPException(status_code=400, detail="Este CPF já está cadastrado.")
+
+    if "email" in dados and dados["email"] != db_usuario.email:
+        if db.query(Usuario).filter(Usuario.email == dados["email"], Usuario.id != id).first():
+            raise HTTPException(status_code=400, detail="Este Email já está cadastrado.")
+
+    for key, value in dados.items():
         setattr(db_usuario, key, value)
 
     db.commit()
