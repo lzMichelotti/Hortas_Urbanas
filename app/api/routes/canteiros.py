@@ -16,10 +16,10 @@ def validar_usuario_horta(db: Session, usuario_id: int, horta_id: int):
     usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
 
     if not usuario:
-        raise HTTPException(404, "Usuário não encontrado")
+        raise HTTPException(404, f"Usuário {usuario_id} não encontrado")
 
     if usuario.horta_id != horta_id:
-        raise HTTPException(403, "Usuário não pertence à horta do canteiro")
+        raise HTTPException(403, f"Usuário {usuario_id} não pertence à horta {horta_id}")
 
 @router.get("/canteiros")
 def read_canteiros(
