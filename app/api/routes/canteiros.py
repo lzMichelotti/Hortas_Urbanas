@@ -63,7 +63,7 @@ def update_canteiro(
 
     canteiro_data = canteiro.model_dump(exclude_unset=True)
 
-    if canteiro_data.get("usuario_id") is not None:
+    if "usuario_id" in canteiro_data and canteiro_data["usuario_id"] is not None:
         validar_usuario_da_horta(db, canteiro_data["usuario_id"], db_canteiro.horta_id)
 
     for key, value in canteiro_data.items():
