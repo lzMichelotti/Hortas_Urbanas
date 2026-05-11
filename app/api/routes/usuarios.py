@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.database.models import Usuario
-from app.schemas.usuario import UsuarioCreate
+from app.schemas.usuario import UsuarioCreate, UsuarioUpdate
 from app.api.dependencies import get_current_user, get_lider_user
 from app.core.security import get_password_hash
 
@@ -66,7 +66,7 @@ def create_usuario(
 @router.put("/usuarios/{id}")
 def update_usuario(
     id: int,
-    usuario_update: UsuarioCreate,
+    usuario_update: UsuarioUpdate,
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
@@ -78,7 +78,24 @@ def update_usuario(
     if lider.privilegio == "LIDER_HORTA" and db_usuario.horta_id != lider.horta_id:
         raise HTTPException(403, "Sem permissão")
 
-    for key, value in usuario_update.model_dump().items():
+    update_data = usuario_update.model_dump(exclude_unset=True)
+
+    if lider.privilegio == "LIDER_HORTA" and (
+        "privilegio" in update_data or "horta_id" in update_data
+    ):
+        raise HTTPException(403, "Sem permissão para alterar privilégio ou horta")
+
+    if "cpf" in update_data and update_data["cpf"] != db_usuario.cpf:
+        cpf_existente = db.query(Usuario).filter(Usuario.cpf == update_data["cpf"]).first()
+        if cpf_existente:
+            raise HTTPException(status_code=400, detail="Este CPF já está cadastrado.")
+
+    if "email" in update_data and update_data["email"] != db_usuario.email:
+        email_existente = db.query(Usuario).filter(Usuario.email == update_data["email"]).first()
+        if email_existente:
+            raise HTTPException(status_code=400, detail="Este Email já está cadastrado.")
+
+    for key, value in update_data.items():
         setattr(db_usuario, key, value)
 
     db.commit()

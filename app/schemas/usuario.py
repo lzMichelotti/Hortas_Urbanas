@@ -8,3 +8,11 @@ class UsuarioCreate(BaseModel):
     telefone: str
     privilegio: str
     horta_id: Optional[int] = None
+
+class UsuarioUpdate(BaseModel):
+    nome: Optional[str] = None
+    email: Optional[str] = None
+    cpf: Optional[str] = None
+    telefone: Optional[str] = None
+    privilegio: Optional[str] = None
+    horta_id: Optional[int] = None
