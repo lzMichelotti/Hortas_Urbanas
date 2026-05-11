@@ -80,18 +80,19 @@ def update_usuario(
 
     update_data = usuario_update.model_dump(exclude_unset=True)
 
-    if lider.privilegio == "LIDER_HORTA" and (
-        "privilegio" in update_data or "horta_id" in update_data
-    ):
-        raise HTTPException(403, "Sem permissão para alterar privilégio ou horta")
-
     if "cpf" in update_data and update_data["cpf"] != db_usuario.cpf:
-        cpf_existente = db.query(Usuario).filter(Usuario.cpf == update_data["cpf"]).first()
+        cpf_existente = db.query(Usuario).filter(
+            Usuario.cpf == update_data["cpf"],
+            Usuario.id != db_usuario.id
+        ).first()
         if cpf_existente:
             raise HTTPException(status_code=400, detail="Este CPF já está cadastrado.")
 
     if "email" in update_data and update_data["email"] != db_usuario.email:
-        email_existente = db.query(Usuario).filter(Usuario.email == update_data["email"]).first()
+        email_existente = db.query(Usuario).filter(
+            Usuario.email == update_data["email"],
+            Usuario.id != db_usuario.id
+        ).first()
         if email_existente:
             raise HTTPException(status_code=400, detail="Este Email já está cadastrado.")
 

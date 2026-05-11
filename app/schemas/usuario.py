@@ -14,5 +14,3 @@ class UsuarioUpdate(BaseModel):
     email: Optional[str] = None
     cpf: Optional[str] = None
     telefone: Optional[str] = None
-    privilegio: Optional[str] = None
-    horta_id: Optional[int] = None

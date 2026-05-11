@@ -15,7 +15,10 @@ def validar_usuario_do_canteiro(db: Session, usuario_id: Optional[int], horta_id
     if usuario_id is None:
         return
 
-    usuario = db.query(Usuario).filter(Usuario.id == usuario_id, Usuario.ativo == True).first()
+    usuario = db.query(Usuario).filter(
+        Usuario.id == usuario_id,
+        Usuario.ativo.is_(True)
+    ).first()
 
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuário responsável não encontrado.")
