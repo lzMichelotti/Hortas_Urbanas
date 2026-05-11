@@ -15,7 +15,11 @@ class CanteiroUpdate(BaseModel):
     area_ociosa: Optional[float] = None
 
 
-class CanteiroRead(CanteiroCreate):
+class CanteiroRead(BaseModel):
     id: int
     horta_id: int
+    usuario_id: Optional[int] = None
+    identificacao: str
+    area_produtiva: Optional[float] = None
+    area_ociosa: Optional[float] = None
     model_config = ConfigDict(from_attributes=True)
