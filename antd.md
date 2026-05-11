@@ -1,5 +1,3 @@
-
-
 ###Sem CORS configurado em `main.py`
 Se houver um frontend (React, Vue, etc.) consumindo esta API em outro domínio ou porta, todas as requisições vão falhar com erro de CORS.
 
@@ -15,5 +13,4 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-```
 
