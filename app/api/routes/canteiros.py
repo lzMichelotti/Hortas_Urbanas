@@ -4,12 +4,20 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.database.models import Canteiro, Usuario
-from app.schemas.canteiro import CanteiroCreate
+from app.schemas.canteiro import CanteiroCreate, CanteiroUpdate
 from app.api.dependencies import get_lider_user, verificar_horta
 
 router = APIRouter(tags=["Canteiros"])
 
 DBDep = Annotated[Session, Depends(get_db)]
+
+
+def validar_usuario_da_horta(db: Session, usuario_id: int, horta_id: int):
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if not usuario:
+        raise HTTPException(404, "Usuário não encontrado")
+    if usuario.horta_id != horta_id:
+        raise HTTPException(403, "Usuário não pertence à horta do canteiro")
 
 @router.get("/canteiros")
 def read_canteiros(
@@ -29,6 +37,8 @@ def create_canteiro(
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
     verificar_horta(lider, horta_id)
+    if canteiro.usuario_id is not None:
+        validar_usuario_da_horta(db, canteiro.usuario_id, horta_id)
 
     db_canteiro = Canteiro(**canteiro.model_dump(), horta_id=horta_id)
     db.add(db_canteiro)
@@ -39,7 +49,7 @@ def create_canteiro(
 @router.put("/canteiros/{id}")
 def update_canteiro(
     id: int,
-    canteiro: CanteiroCreate,
+    canteiro: CanteiroUpdate,
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
@@ -51,7 +61,12 @@ def update_canteiro(
     if lider.privilegio == "LIDER_HORTA" and db_canteiro.horta_id != lider.horta_id:
         raise HTTPException(403, "Sem permissão")
 
-    for key, value in canteiro.model_dump().items():
+    canteiro_data = canteiro.model_dump(exclude_unset=True)
+
+    if canteiro_data.get("usuario_id") is not None:
+        validar_usuario_da_horta(db, canteiro_data["usuario_id"], db_canteiro.horta_id)
+
+    for key, value in canteiro_data.items():
         setattr(db_canteiro, key, value)
 
     db.commit()
