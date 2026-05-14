@@ -6,6 +6,7 @@ from app.database.session import get_db
 from app.database.models import Canteiro, CicloProducao, Usuario
 from app.schemas.ciclo import CicloCreate
 from app.api.dependencies import get_current_user
+from app.api.permissions import exigir_acesso_horta, exigir_dono_do_canteiro
 
 router = APIRouter(tags=["Ciclos"])
 
@@ -22,8 +23,7 @@ def read_ciclos_do_canteiro(
     if not canteiro:
         raise HTTPException(status_code=404, detail="Canteiro não encontrado.")
 
-    if usuario.privilegio != "ADMIN_SUPREMO" and canteiro.horta_id != usuario.horta_id:
-        raise HTTPException(status_code=403, detail="Sem permissão para acessar ciclos desta horta.")
+    exigir_acesso_horta(usuario, canteiro.horta_id)
 
     return db.query(CicloProducao).filter(CicloProducao.canteiro_id == canteiro_id).all()
 
@@ -39,11 +39,7 @@ def create_ciclo(
     if not canteiro_banco:
         raise HTTPException(status_code=404, detail="Canteiro não encontrado.")
         
-    if membro.privilegio == "MEMBRO_CANTEIRO" and canteiro_banco.usuario_id != membro.id:
-        raise HTTPException(
-            status_code=403, 
-            detail="Você só pode registrar plantios no seu próprio canteiro."
-        )
+    exigir_dono_do_canteiro(membro, canteiro_banco)
 
     db_ciclo = CicloProducao(**ciclo.model_dump(), canteiro_id=canteiro_id)
     db.add(db_ciclo)
@@ -65,8 +61,7 @@ def update_ciclo(
 
     canteiro = db.query(Canteiro).filter(Canteiro.id == db_ciclo.canteiro_id).first()
 
-    if usuario.privilegio == "MEMBRO_CANTEIRO" and canteiro.usuario_id != usuario.id:
-        raise HTTPException(403, "Sem permissão")
+    exigir_dono_do_canteiro(usuario, canteiro)
 
     for key, value in ciclo.model_dump(exclude_unset=True).items():
         setattr(db_ciclo, key, value)
@@ -88,8 +83,7 @@ def delete_ciclo(
 
     canteiro = db.query(Canteiro).filter(Canteiro.id == db_ciclo.canteiro_id).first()
 
-    if usuario.privilegio == "MEMBRO_CANTEIRO" and canteiro.usuario_id != usuario.id:
-        raise HTTPException(403, "Sem permissão")
+    exigir_dono_do_canteiro(usuario, canteiro)
 
     db.delete(db_ciclo)
     db.commit()

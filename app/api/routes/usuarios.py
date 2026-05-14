@@ -7,6 +7,7 @@ from app.database.session import get_db
 from app.database.models import Usuario
 from app.schemas.usuario import UsuarioCreate, UsuarioRead
 from app.api.dependencies import get_current_user, get_lider_user
+from app.api.permissions import exigir_lider_da_horta, exigir_lider_pode_criar_usuario
 from app.core.security import get_password_hash
 
 router = APIRouter(tags=["Usuários"])
@@ -39,8 +40,7 @@ def create_usuario(
         
     if usuario_logado.privilegio == "LIDER_HORTA":
         usuario.horta_id = usuario_logado.horta_id
-        if usuario.privilegio in ["ADMIN_SUPREMO", "LIDER_HORTA"]:
-            raise HTTPException(status_code=403, detail="Líderes só podem criar membros de canteiro.")
+        exigir_lider_pode_criar_usuario(usuario_logado, usuario.privilegio)
             
     cpf_existente = db.query(Usuario).filter(Usuario.cpf == usuario.cpf).first()
     email_existente = db.query(Usuario).filter(Usuario.email == usuario.email).first()
@@ -75,8 +75,7 @@ def update_usuario(
     if not db_usuario:
         raise HTTPException(404, "Usuário não encontrado")
 
-    if lider.privilegio == "LIDER_HORTA" and db_usuario.horta_id != lider.horta_id:
-        raise HTTPException(403, "Sem permissão")
+    exigir_lider_da_horta(lider, db_usuario.horta_id)
 
     dados = usuario_update.model_dump(exclude_unset=True)
 
@@ -106,8 +105,7 @@ def delete_usuario(
     if not db_usuario:
         raise HTTPException(404, "Usuário não encontrado")
 
-    if lider.privilegio == "LIDER_HORTA" and db_usuario.horta_id != lider.horta_id:
-        raise HTTPException(403, "Sem permissão")
+    exigir_lider_da_horta(lider, db_usuario.horta_id)
 
     db_usuario.ativo = False
     db_usuario.deletado_em = datetime.now()

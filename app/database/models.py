@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, Date, ForeignKey, Text, DateTime
+from sqlalchemy import Column, Integer, String, Float, Boolean, Date, ForeignKey, Text, DateTime, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from app.database.session import Base
 
@@ -58,6 +58,7 @@ class Canteiro(Base):
     horta = relationship("Horta", back_populates="canteiros")
     usuario = relationship("Usuario", back_populates="canteiros")
     ciclos = relationship("CicloProducao", back_populates="canteiro", cascade="all, delete", passive_deletes=True)
+    solicitacoes = relationship("SolicitacaoPlantio", back_populates="canteiro", cascade="all, delete", passive_deletes=True)
 
 class Produto(Base):
     __tablename__ = 'Produtos'
@@ -72,6 +73,7 @@ class Produto(Base):
 
     ciclos = relationship("CicloProducao", back_populates="produto")
     intencoes = relationship("IntencaoPlantio", back_populates="produto")
+    solicitacoes = relationship("SolicitacaoPlantio", back_populates="produto")
 
 class CicloProducao(Base):
     __tablename__ = 'Ciclos_Producao'
@@ -100,6 +102,20 @@ class IntencaoPlantio(Base):
 
     horta = relationship("Horta", back_populates="intencoes")
     produto = relationship("Produto", back_populates="intencoes")
+
+class SolicitacaoPlantio(Base):
+    __tablename__ = 'Solicitacoes_Plantio'
+
+    id = Column(Integer, primary_key=True, index=True)
+    canteiro_id = Column(Integer, ForeignKey('Canteiros.id', ondelete='CASCADE'), nullable=False)
+    produto_id = Column(Integer, ForeignKey('Produtos.id', ondelete='SET NULL'), nullable=True)
+    justificativa = Column(Text, nullable=True)
+    data_desejada_plantio = Column(Date, nullable=True)
+    status = Column(String(50), nullable=False, default="PENDENTE")
+
+    canteiro = relationship("Canteiro", back_populates="solicitacoes")
+    produto = relationship("Produto", back_populates="solicitacoes")
+
 
 class Demanda(Base):
     __tablename__ = 'Demandas'

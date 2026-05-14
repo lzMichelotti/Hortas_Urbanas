@@ -6,6 +6,7 @@ from app.database.session import get_db
 from app.database.models import Canteiro, Usuario
 from app.schemas.canteiro import CanteiroCreate, CanteiroRead
 from app.api.dependencies import get_lider_user, verificar_horta
+from app.api.permissions import exigir_lider_da_horta
 
 router = APIRouter(tags=["Canteiros"])
 
@@ -56,8 +57,7 @@ def update_canteiro(
     if not db_canteiro:
         raise HTTPException(404, "Canteiro não encontrado")
 
-    if lider.privilegio == "LIDER_HORTA" and db_canteiro.horta_id != lider.horta_id:
-        raise HTTPException(403, "Sem permissão")
+    exigir_lider_da_horta(lider, db_canteiro.horta_id)
 
     dados = canteiro.model_dump(exclude_unset=True)
 
@@ -87,8 +87,7 @@ def delete_canteiro(
     if not db_canteiro:
         raise HTTPException(404, "Canteiro não encontrado")
 
-    if lider.privilegio == "LIDER_HORTA" and db_canteiro.horta_id != lider.horta_id:
-        raise HTTPException(403, "Sem permissão")
+    exigir_lider_da_horta(lider, db_canteiro.horta_id)
 
     db.delete(db_canteiro)
     db.commit()

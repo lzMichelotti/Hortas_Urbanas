@@ -7,6 +7,7 @@ from app.database.session import get_db
 from app.database.models import Demanda, Usuario
 from app.schemas.demanda import DemandaCreate, DemandaUpdateStatus
 from app.api.dependencies import get_current_user, get_lider_user, verificar_horta
+from app.api.permissions import exigir_lider_da_horta
 
 router = APIRouter(tags=["Demandas"])
 
@@ -46,8 +47,7 @@ def update_demanda(
     if not db_demanda:
         raise HTTPException(404, "Demanda não encontrada")
 
-    if lider.privilegio == "LIDER_HORTA" and db_demanda.horta_id != lider.horta_id:
-        raise HTTPException(403, "Sem permissão")
+    exigir_lider_da_horta(lider, db_demanda.horta_id)
 
     for key, value in demanda.model_dump(exclude_unset=True).items():
         setattr(db_demanda, key, value)
@@ -93,8 +93,7 @@ def delete_demanda(
     if not db_demanda:
         raise HTTPException(404, "Demanda não encontrada")
 
-    if lider.privilegio == "LIDER_HORTA" and db_demanda.horta_id != lider.horta_id:
-        raise HTTPException(403, "Sem permissão")
+    exigir_lider_da_horta(lider, db_demanda.horta_id)
 
     db_demanda.ativo = False
     db_demanda.deletado_em = datetime.now()

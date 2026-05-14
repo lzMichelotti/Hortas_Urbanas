@@ -6,6 +6,7 @@ from app.database.session import get_db
 from app.database.models import IntencaoPlantio, Produto, Usuario
 from app.schemas.intencao import IntencaoCreate
 from app.api.dependencies import get_lider_user, verificar_horta
+from app.api.permissions import exigir_lider_da_horta
 
 router = APIRouter(tags=["Intenções"])
 
@@ -54,8 +55,7 @@ def update_intencao(
     if not db_intencao:
         raise HTTPException(404, "Intenção não encontrada")
 
-    if lider.privilegio == "LIDER_HORTA" and db_intencao.horta_id != lider.horta_id:
-        raise HTTPException(403, "Sem permissão")
+    exigir_lider_da_horta(lider, db_intencao.horta_id)
 
     for key, value in intencao.model_dump(exclude_unset=True).items():
         setattr(db_intencao, key, value)
@@ -75,8 +75,7 @@ def delete_intencao(
     if not db_intencao:
         raise HTTPException(404, "Intenção não encontrada")
 
-    if lider.privilegio == "LIDER_HORTA" and db_intencao.horta_id != lider.horta_id:
-        raise HTTPException(403, "Sem permissão")
+    exigir_lider_da_horta(lider, db_intencao.horta_id)
 
     db.delete(db_intencao)
     db.commit()

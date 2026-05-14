@@ -19,8 +19,11 @@ def read_produtos(
 
 @router.get("/produtos/{id}")
 def read_produto_por_id(
-    id: int, 
+    id: int,
     db: DBDep,
     usuario: Annotated[Usuario, Depends(get_current_user)]
 ):
-    return db.query(Produto).filter(Produto.id == id).first()
+    produto = db.query(Produto).filter(Produto.id == id).first()
+    if produto is None:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    return produto
