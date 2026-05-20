@@ -15,7 +15,7 @@ def read_produtos(
     db: DBDep, 
     usuario: Annotated[Usuario, Depends(get_current_user)]
 ):
-    return db.query(Produto).all()
+    return db.query(Produto).filter(Produto.ativo == True).all()
 
 @router.get("/produtos/{id}")
 def read_produto_por_id(
@@ -23,7 +23,7 @@ def read_produto_por_id(
     db: DBDep,
     usuario: Annotated[Usuario, Depends(get_current_user)]
 ):
-    produto = db.query(Produto).filter(Produto.id == id).first()
+    produto = db.query(Produto).filter(Produto.id == id, Produto.ativo == True).first()
     if produto is None:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
     return produto

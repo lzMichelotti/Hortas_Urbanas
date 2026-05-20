@@ -8,3 +8,5 @@ bcrypt
 python-jose[cryptography]
 python-dotenv
 validate-docbr
+GeoAlchemy2
+shapely

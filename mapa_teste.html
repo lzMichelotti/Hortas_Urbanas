@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mapa de Teste — Hortas Urbanas</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: sans-serif; }
+
+    #header {
+      background: #2d6a4f;
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #header h1 { font-size: 1rem; }
+    #status {
+      font-size: 0.8rem;
+      background: rgba(255,255,255,0.2);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    #mapa { height: calc(100vh - 44px); }
+
+    .popup-horta { min-width: 180px; }
+    .popup-horta h3 { color: #2d6a4f; margin-bottom: 6px; font-size: 0.95rem; }
+    .popup-horta p { font-size: 0.82rem; color: #444; margin: 2px 0; }
+    .popup-horta .tag {
+      display: inline-block;
+      background: #d8f3dc;
+      color: #1b4332;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <h1>🌱 Mapa de Hortas Urbanas — Teste</h1>
+  <span id="status">Carregando...</span>
+</div>
+
+<div id="mapa"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const API = "http://127.0.0.1:8000";
+
+  const mapa = L.map("mapa").setView([-15.7801, -47.9292], 5);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+    maxZoom: 19,
+  }).addTo(mapa);
+
+  const iconeHorta = L.divIcon({
+    html: `<div style="
+      font-size: 28px;
+      background: #2d6a4f;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      border: 2px solid white;
+    "><span style="transform: rotate(45deg)">🌱</span></div>`,
+    className: "",
+    iconSize: [42, 42],
+    iconAnchor: [21, 42],
+    popupAnchor: [0, -44],
+  });
+
+  async function carregarHortas() {
+    try {
+      const resp = await fetch(`${API}/mapa`);
+      if (!resp.ok) throw new Error(`Erro ${resp.status}`);
+      const geojson = await resp.json();
+
+      const total = geojson.features.length;
+      document.getElementById("status").textContent =
+        total === 0 ? "Nenhuma horta cadastrada" : `${total} horta(s) encontrada(s)`;
+
+      if (total === 0) return;
+
+      const layer = L.geoJSON(geojson, {
+        pointToLayer: (feature, latlng) => L.marker(latlng, { icon: iconeHorta }),
+        onEachFeature: (feature, layer) => {
+          const p = feature.properties;
+          const endereco = [p.rua, p.numero, p.bairro, p.cidade, p.uf]
+            .filter(Boolean)
+            .join(", ");
+          layer.bindPopup(`
+            <div class="popup-horta">
+              <h3>${p.nome}</h3>
+              ${endereco ? `<p>📍 ${endereco}</p>` : ""}
+              ${p.area_total ? `<p>📐 Área: ${p.area_total} m²</p>` : ""}
+              ${p.publico_atendido ? `<p>👥 ${p.publico_atendido}</p>` : ""}
+              <span class="tag">Horta #${p.id}</span>
+            </div>
+          `);
+        },
+      }).addTo(mapa);
+
+      mapa.fitBounds(layer.getBounds(), { padding: [40, 40] });
+
+    } catch (err) {
+      document.getElementById("status").textContent = "Erro ao conectar na API";
+      console.error(err);
+    }
+  }
+
+  carregarHortas();
+</script>
+</body>
+</html>

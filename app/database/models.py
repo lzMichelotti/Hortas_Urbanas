@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, Date, ForeignKey, Text, DateTime, Enum as SAEnum
 from sqlalchemy.orm import relationship
+from geoalchemy2 import Geometry
 from app.database.session import Base
 
 
@@ -16,8 +17,7 @@ class Horta(Base):
     cidade = Column(String(100))
     uf = Column(String(2))
     
-    latitude = Column(Float)
-    longitude = Column(Float)
+    localizacao = Column(Geometry("POINT", srid=4326), nullable=True)
     
     area_total = Column(Float)
     publico_atendido = Column(Text)
@@ -62,7 +62,7 @@ class Canteiro(Base):
 
 class Produto(Base):
     __tablename__ = 'Produtos'
-    
+
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String(255), nullable=False)
     categoria = Column(String(50))
@@ -70,6 +70,8 @@ class Produto(Base):
     necessita_replantio = Column(Boolean)
     epoca_recomendada = Column(String(100))
     inicio_colheita = Column(String(100))
+    ativo = Column(Boolean, default=True, nullable=False)
+    deletado_em = Column(DateTime, nullable=True)
 
     ciclos = relationship("CicloProducao", back_populates="produto")
     intencoes = relationship("IntencaoPlantio", back_populates="produto")
