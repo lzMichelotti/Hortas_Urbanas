@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.database.models import Canteiro, CicloProducao, Usuario
-from app.schemas.ciclo import CicloCreate
+from app.schemas.ciclo import CicloCreate, CicloRead
 from app.api.dependencies import get_current_user
 from app.api.permissions import exigir_acesso_horta, exigir_dono_do_canteiro
 
@@ -12,7 +12,7 @@ router = APIRouter(tags=["Ciclos"])
 
 DBDep = Annotated[Session, Depends(get_db)]
 
-@router.get("/canteiros/{canteiro_id}/ciclos")
+@router.get("/canteiros/{canteiro_id}/ciclos", response_model=list[CicloRead])
 def read_ciclos_do_canteiro(
     canteiro_id: int,
     db: DBDep,
@@ -27,7 +27,7 @@ def read_ciclos_do_canteiro(
 
     return db.query(CicloProducao).filter(CicloProducao.canteiro_id == canteiro_id).all()
 
-@router.post("/canteiros/{canteiro_id}/ciclos")
+@router.post("/canteiros/{canteiro_id}/ciclos", response_model=CicloRead)
 def create_ciclo(
     canteiro_id: int, 
     ciclo: CicloCreate, 
@@ -47,7 +47,7 @@ def create_ciclo(
     db.refresh(db_ciclo)
     return db_ciclo
 
-@router.put("/ciclos/{id}")
+@router.put("/ciclos/{id}", response_model=CicloRead)
 def update_ciclo(
     id: int,
     ciclo: CicloCreate,
@@ -60,6 +60,9 @@ def update_ciclo(
         raise HTTPException(404, "Ciclo não encontrado")
 
     canteiro = db.query(Canteiro).filter(Canteiro.id == db_ciclo.canteiro_id).first()
+
+    if not canteiro:
+        raise HTTPException(404, "Canteiro não encontrado")
 
     exigir_dono_do_canteiro(usuario, canteiro)
 
@@ -82,6 +85,9 @@ def delete_ciclo(
         raise HTTPException(404, "Ciclo não encontrado")
 
     canteiro = db.query(Canteiro).filter(Canteiro.id == db_ciclo.canteiro_id).first()
+
+    if not canteiro:
+        raise HTTPException(404, "Canteiro não encontrado")
 
     exigir_dono_do_canteiro(usuario, canteiro)
 

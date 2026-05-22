@@ -80,6 +80,9 @@ def update_solicitacao_status(
 
     canteiro = db.query(Canteiro).filter(Canteiro.id == db_solicitacao.canteiro_id).first()
 
+    if not canteiro:
+        raise HTTPException(404, "Canteiro não encontrado")
+
     exigir_lider_da_horta(lider, canteiro.horta_id)
 
     db_solicitacao.status = update_data.status
@@ -101,8 +104,11 @@ def delete_solicitacao(
 
     canteiro = db.query(Canteiro).filter(Canteiro.id == db_solicitacao.canteiro_id).first()
 
+    if not canteiro:
+        raise HTTPException(404, "Canteiro não encontrado")
+
+    exigir_acesso_horta(usuario, canteiro.horta_id)
     exigir_dono_do_canteiro(usuario, canteiro)
-    exigir_lider_da_horta(usuario, canteiro.horta_id)
 
     db.delete(db_solicitacao)
     db.commit()

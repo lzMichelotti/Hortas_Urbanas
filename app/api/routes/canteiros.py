@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.database.models import Canteiro, Usuario
 from app.schemas.canteiro import CanteiroCreate, CanteiroRead
-from app.api.dependencies import get_lider_user, verificar_horta
+from app.api.dependencies import get_lider_user
 from app.api.permissions import exigir_lider_da_horta
 
 router = APIRouter(tags=["Canteiros"])
@@ -29,7 +29,7 @@ def create_canteiro(
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
-    verificar_horta(lider, horta_id)
+    exigir_lider_da_horta(lider, horta_id)
 
     if canteiro.usuario_id is not None:
         usuario = db.query(Usuario).filter(

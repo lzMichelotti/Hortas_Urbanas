@@ -8,12 +8,19 @@ from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.database.models import Usuario
 from app.schemas.auth import Token, RefreshRequest
-from app.core.config import ACCESS_TOKEN_EXPIRE_MINUTES
-from app.core.security import create_access_token, create_refresh_token, decode_refresh_token, verify_password
+from app.core.config import settings
+from app.core.security import (
+    create_access_token, create_refresh_token,
+    decode_refresh_token, verify_password, get_password_hash,
+)
 
 router = APIRouter(tags=["Autenticação"])
 
 DBDep = Annotated[Session, Depends(get_db)]
+
+# Hash fictício usado para manter tempo de resposta constante quando o usuário não existe
+_DUMMY_HASH = get_password_hash("__dummy__")
+
 
 @router.post("/token", response_model=Token)
 def login_for_access_token(
@@ -22,10 +29,14 @@ def login_for_access_token(
 ):
     usuario = db.query(Usuario).filter(Usuario.email == form_data.username).first()
 
-    if not usuario:
+    # Sempre executa bcrypt para evitar timing attack (enumeração de usuários por tempo)
+    hash_para_verificar = usuario.senha_hash if usuario else _DUMMY_HASH
+    senha_valida = verify_password(form_data.password, hash_para_verificar)
+
+    if not usuario or not senha_valida:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email ou senha (CPF) incorretos",
+            detail="Email ou senha incorretos",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -36,16 +47,9 @@ def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if not verify_password(form_data.password, usuario.senha_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email ou senha (CPF) incorretos",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
     access_token = create_access_token(
         data={"sub": str(usuario.id)},
-        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     refresh_token = create_refresh_token(usuario.id)
 
@@ -72,7 +76,7 @@ def refresh_access_token(body: RefreshRequest, db: DBDep):
 
     access_token = create_access_token(
         data={"sub": str(usuario.id)},
-        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     new_refresh_token = create_refresh_token(usuario.id)
 

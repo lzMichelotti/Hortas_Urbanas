@@ -1,4 +1,4 @@
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 from datetime import date
 from typing import Optional
 from enum import Enum
@@ -22,3 +22,15 @@ class CicloCreate(BaseModel):
         if self.previsao_colheita <= self.data_plantio:
             raise ValueError('previsao_colheita deve ser posterior a data_plantio.')
         return self
+
+
+class CicloRead(BaseModel):
+    id: int
+    canteiro_id: int
+    produto_id: Optional[int] = None
+    data_plantio: date
+    previsao_colheita: date
+    data_colheita_real: Optional[date] = None
+    status: StatusCiclo
+
+    model_config = ConfigDict(from_attributes=True)

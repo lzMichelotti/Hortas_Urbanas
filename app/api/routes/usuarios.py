@@ -1,11 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.database.models import Usuario
-from app.schemas.usuario import UsuarioCreate, UsuarioRead
+from app.schemas.usuario import UsuarioCreate, UsuarioRead, UsuarioUpdate
 from app.api.dependencies import get_current_user, get_lider_user
 from app.api.permissions import exigir_lider_da_horta, exigir_lider_pode_criar_usuario
 from app.core.security import get_password_hash
@@ -66,7 +66,7 @@ def create_usuario(
 @router.put("/usuarios/{id}", response_model=UsuarioRead)
 def update_usuario(
     id: int,
-    usuario_update: UsuarioCreate,
+    usuario_update: UsuarioUpdate,
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
@@ -108,7 +108,7 @@ def delete_usuario(
     exigir_lider_da_horta(lider, db_usuario.horta_id)
 
     db_usuario.ativo = False
-    db_usuario.deletado_em = datetime.now()
+    db_usuario.deletado_em = datetime.now(timezone.utc)
     db.commit()
 
     return {"detail": "Usuário removido com sucesso"}

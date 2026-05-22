@@ -10,3 +10,6 @@ python-dotenv
 validate-docbr
 GeoAlchemy2
 shapely
+##BIBLIOTECA PARA LER ARQUIVOS RELACIONADO AO FRONTEND DO MAPA 
+geopandas
+alembic

@@ -4,15 +4,15 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.database.models import IntencaoPlantio, Produto, Usuario
-from app.schemas.intencao import IntencaoCreate
-from app.api.dependencies import get_lider_user, verificar_horta
+from app.schemas.intencao import IntencaoCreate, IntencaoRead
+from app.api.dependencies import get_lider_user
 from app.api.permissions import exigir_lider_da_horta
 
 router = APIRouter(tags=["Intenções"])
 
 DBDep = Annotated[Session, Depends(get_db)]
 
-@router.get("/intencoes")
+@router.get("/intencoes", response_model=list[IntencaoRead])
 def read_intencoes(
     db: DBDep,
     usuario: Annotated[Usuario, Depends(get_lider_user)]
@@ -21,14 +21,14 @@ def read_intencoes(
         return db.query(IntencaoPlantio).filter(IntencaoPlantio.horta_id == usuario.horta_id).all()
     return db.query(IntencaoPlantio).all()
 
-@router.post("/hortas/{horta_id}/intencoes")
+@router.post("/hortas/{horta_id}/intencoes", response_model=IntencaoRead)
 def create_intencao(
-    horta_id: int, 
-    intencao: IntencaoCreate, 
+    horta_id: int,
+    intencao: IntencaoCreate,
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
-    verificar_horta(lider, horta_id)
+    exigir_lider_da_horta(lider, horta_id)
 
     produto_existe = db.query(Produto).filter(Produto.id == intencao.produto_id).first()
     if not produto_existe:
@@ -43,7 +43,7 @@ def create_intencao(
     db.refresh(db_intencao)
     return db_intencao
 
-@router.put("/intencoes/{id}")
+@router.put("/intencoes/{id}", response_model=IntencaoRead)
 def update_intencao(
     id: int,
     intencao: IntencaoCreate,

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from datetime import date
 from enum import Enum
 from typing import Optional
@@ -21,3 +21,14 @@ class IntencaoCreate(BaseModel):
         if valor_data is not None and valor_data < date.today():
             raise ValueError('A data de plantio não pode estar no passado.')
         return valor_data
+
+
+class IntencaoRead(BaseModel):
+    id: int
+    horta_id: int
+    produto_id: Optional[int] = None
+    justificativa_comunidade: Optional[str] = None
+    data_desejada_plantio: Optional[date] = None
+    status: StatusIntencao
+
+    model_config = ConfigDict(from_attributes=True)
