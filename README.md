@@ -3,7 +3,7 @@
 API (FastAPI + PostgreSQL/PostGIS) e app de cadastro (Godot 4) para gestão de hortas urbanas.
 
 Este guia é o passo a passo para **clonar e rodar o projeto na sua máquina, do zero**.
-Funciona em **Windows, Linux e macOS** — onde o comando muda entre sistemas, mostramos as
+Funciona em **Windows e Linux** — onde o comando muda entre sistemas, mostramos as
 duas versões. O esquema é criado pelo Alembic e um **seed** insere dados fictícios
 (um admin + catálogo de produtos), então dá para logar e testar em poucos minutos.
 
