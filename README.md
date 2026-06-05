@@ -49,7 +49,7 @@ Abra o terminal na pasta onde quer o projeto e siga os passos **em ordem**.
 ### 1.1 Clonar o repositório
 
 ```bash
-git clone <https://github.com/lzMichelotti/Hortas_Urbanas.git>
+git clone https://github.com/lzMichelotti/Hortas_Urbanas.git
 cd Hortas_Urbanas
 ```
 
