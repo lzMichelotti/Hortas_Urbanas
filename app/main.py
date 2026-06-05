@@ -10,7 +10,7 @@ from app.api.routes import (
     demandas, intencoes, usuarios, solicitacoes, zonas_risco,
 )
 from app.core.config import settings
-from app.core.logger import logger  # inicializa basicConfig e expõe o logger raiz
+from app.core.logger import logger  
 from app.database.session import engine
 
 app = FastAPI(

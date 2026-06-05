@@ -48,14 +48,6 @@ class HortaUpdate(BaseModel):
     praticas_cultivo: Optional[List[PraticaCultivo]] = None
 
 
-# NOTE: HortaPublica (usada em GET /hortas) e PropriedadesHorta (usada em GET /mapa)
-# carregam dados sobrepostos:
-#   - HortaPublica: latitude/longitude planos + cep, formato "tabular".
-#   - PropriedadesHorta: sem lat/lng planos (vão em geometry) e sem cep — formato
-#     GeoJSON RFC 7946.
-# Decisão pendente: quando o cliente estabilizar e ficar claro qual das duas
-# rotas é efetivamente consumida, provavelmente uma pode ser deprecada e a outra
-# vira fonte única. Mantém ambas por enquanto para não bloquear o frontend.
 class HortaPublica(BaseModel):
     id: int
     nome: str

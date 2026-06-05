@@ -86,13 +86,19 @@ def update_usuario(
 
     dados = usuario_update.model_dump(exclude_unset=True)
 
+    if lider.privilegio == "LIDER_HORTA":
+        if "privilegio" in dados:
+            exigir_lider_pode_criar_usuario(lider, dados["privilegio"])
+        if "horta_id" in dados and dados["horta_id"] != lider.horta_id:
+            raise HTTPException(403, "Líderes não podem mover usuários para outra horta.")
+
     if "cpf" in dados and dados["cpf"] != db_usuario.cpf:
         if db.query(Usuario).filter(Usuario.cpf == dados["cpf"], Usuario.id != id).first():
-            raise HTTPException(status_code=400, detail="Este CPF já está cadastrado.")
+            raise HTTPException(status_code=409, detail="Este CPF já está cadastrado.")
 
     if "email" in dados and dados["email"] != db_usuario.email:
         if db.query(Usuario).filter(Usuario.email == dados["email"], Usuario.id != id).first():
-            raise HTTPException(status_code=400, detail="Este Email já está cadastrado.")
+            raise HTTPException(status_code=409, detail="Este Email já está cadastrado.")
 
     for key, value in dados.items():
         setattr(db_usuario, key, value)

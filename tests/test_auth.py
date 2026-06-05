@@ -49,6 +49,11 @@ class TestLogin:
         assert r_senha.status_code == r_email.status_code == 401
         assert r_senha.json()["detail"] == r_email.json()["detail"]
 
+    def test_login_senha_muito_longa_retorna_401(self, client, admin_user):
+        """Senha > 72 bytes não pode derrubar o login (bcrypt 5.x): deve ser 401, não 500."""
+        r = client.post("/token", data={"username": "admin@horta-urbana.com", "password": "x" * 200})
+        assert r.status_code == 401
+
     def test_rota_protegida_sem_token_retorna_401(self, client):
         r = client.get("/usuarios/me")
         assert r.status_code == 401

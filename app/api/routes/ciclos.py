@@ -47,6 +47,7 @@ def create_ciclo(
     if not canteiro_banco:
         raise HTTPException(status_code=404, detail="Canteiro não encontrado.")
 
+    exigir_acesso_horta(membro, canteiro_banco.horta_id)
     exigir_dono_do_canteiro(membro, canteiro_banco)
 
     db_ciclo = CicloProducao(**ciclo.model_dump(), canteiro_id=canteiro_id)
@@ -71,6 +72,7 @@ def update_ciclo(
     if not canteiro:
         raise HTTPException(404, "Canteiro não encontrado")
 
+    exigir_acesso_horta(usuario, canteiro.horta_id)
     exigir_dono_do_canteiro(usuario, canteiro)
 
     for key, value in ciclo.model_dump(exclude_unset=True).items():
@@ -95,6 +97,7 @@ def delete_ciclo(
     if not canteiro:
         raise HTTPException(404, "Canteiro não encontrado")
 
+    exigir_acesso_horta(usuario, canteiro.horta_id)
     exigir_dono_do_canteiro(usuario, canteiro)
 
     db_ciclo.ativo = False
