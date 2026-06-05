@@ -1,13 +1,8 @@
 from pydantic import BaseModel, ConfigDict, field_validator
 from datetime import date
-from enum import Enum
 from typing import Optional
 
-class StatusIntencao(str, Enum):
-    PLANEJADO = "PLANEJADO"
-    AGUARDANDO_SEMENTES = "AGUARDANDO_SEMENTES"
-    EM_PLANTIO = "EM_PLANTIO"
-    CONCLUIDO = "CONCLUIDO"
+from app.database.enums import StatusIntencao
 
 class IntencaoCreate(BaseModel):
     produto_id: int
@@ -21,6 +16,20 @@ class IntencaoCreate(BaseModel):
         if valor_data is not None and valor_data < date.today():
             raise ValueError('A data de plantio não pode estar no passado.')
         return valor_data
+
+
+class IntencaoUpdate(BaseModel):
+    produto_id: Optional[int] = None
+    justificativa_comunidade: Optional[str] = None
+    data_desejada_plantio: Optional[date] = None
+    status: Optional[StatusIntencao] = None
+
+    @field_validator('data_desejada_plantio')
+    @classmethod
+    def check_data_futura(cls, v):
+        if v is not None and v < date.today():
+            raise ValueError('A data de plantio não pode estar no passado.')
+        return v
 
 
 class IntencaoRead(BaseModel):

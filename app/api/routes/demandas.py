@@ -1,11 +1,11 @@
 from datetime import datetime, timezone
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.database.models import Demanda, Usuario
-from app.schemas.demanda import DemandaCreate, DemandaRead, DemandaUpdateStatus
+from app.schemas.demanda import DemandaCreate, DemandaUpdate, DemandaRead, DemandaUpdateStatus
 from app.api.dependencies import get_current_user, get_lider_user
 from app.api.permissions import exigir_lider_da_horta
 
@@ -23,25 +23,26 @@ def read_demandas(
         query = query.filter(Demanda.horta_id == usuario.horta_id)
     return query.all()
 
-@router.post("/hortas/{horta_id}/demandas", response_model=DemandaRead)
+@router.post("/hortas/{horta_id}/demandas", response_model=DemandaRead, status_code=201)
 def create_demanda(
     horta_id: int,
     demanda: DemandaCreate,
     db: DBDep,
-    lider: Annotated[Usuario, Depends(get_lider_user)]
+    response: Response,
+    lider: Annotated[Usuario, Depends(get_lider_user)],
 ):
     exigir_lider_da_horta(lider, horta_id)
 
     db_demanda = Demanda(**demanda.model_dump(), horta_id=horta_id)
     db.add(db_demanda)
     db.commit()
-    db.refresh(db_demanda)
+    response.headers["Location"] = f"/demandas/{db_demanda.id}"
     return db_demanda
 
-@router.put("/demandas/{id}", response_model=DemandaRead)
+@router.patch("/demandas/{id}", response_model=DemandaRead)
 def update_demanda(
     id: int,
-    demanda: DemandaCreate,
+    demanda: DemandaUpdate,
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
@@ -56,7 +57,6 @@ def update_demanda(
         setattr(db_demanda, key, value)
 
     db.commit()
-    db.refresh(db_demanda)
     return db_demanda
 
 @router.patch("/hortas/{horta_id}/demandas/{demanda_id}/status", response_model=DemandaRead)
@@ -81,10 +81,9 @@ def update_demanda_status(
         setattr(db_demanda, key, value)
 
     db.commit()
-    db.refresh(db_demanda)
     return db_demanda
 
-@router.delete("/demandas/{id}")
+@router.delete("/demandas/{id}", status_code=204)
 def delete_demanda(
     id: int,
     db: DBDep,
@@ -100,5 +99,3 @@ def delete_demanda(
     db_demanda.ativo = False
     db_demanda.deletado_em = datetime.now(timezone.utc)
     db.commit()
-
-    return {"detail": "Demanda removida com sucesso"}

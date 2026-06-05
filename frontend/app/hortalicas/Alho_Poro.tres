@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Hortalica" format=3 uid="uid://b3t7dnmwkgk4m"]
+
+[ext_resource type="Texture2D" uid="uid://dgqbmsnp7u11" path="res://assets/placeholders/verduras/food/asparagus.png" id="1_cae62"]
+[ext_resource type="Script" uid="uid://bku3p8s3u6snp" path="res://Engine/Hortalicas.gd" id="2_h5bkm"]
+
+[resource]
+script = ExtResource("2_h5bkm")
+nome = "Alho Poró"
+figura = ExtResource("1_cae62")
+epoca_recomendada_plantio = Array[int]([2, 5])
+tempo_de_colheita = Array[int]([90, 120])
+metadata/_custom_type_script = "uid://bku3p8s3u6snp"

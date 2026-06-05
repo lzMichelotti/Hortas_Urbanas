@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Hortalica" format=3 uid="uid://oxdylxpjshhu"]
+
+[ext_resource type="Texture2D" uid="uid://b43603cs6j4jf" path="res://assets/placeholders/verduras/food/spinach.png" id="1_yojig"]
+[ext_resource type="Script" uid="uid://bku3p8s3u6snp" path="res://Engine/Hortalicas.gd" id="2_3ycpy"]
+
+[resource]
+script = ExtResource("2_3ycpy")
+nome = "Espinafre"
+figura = ExtResource("1_yojig")
+epoca_recomendada_plantio = Array[int]([1, 8])
+tempo_de_colheita = Array[int]([60, 80])
+metadata/_custom_type_script = "uid://bku3p8s3u6snp"

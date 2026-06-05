@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Hortalica" format=3 uid="uid://dttws4cqp683e"]
+
+[ext_resource type="Texture2D" uid="uid://co77nqj2ccuvl" path="res://assets/placeholders/verduras/food/corn.png" id="1_1s7bk"]
+[ext_resource type="Script" uid="uid://bku3p8s3u6snp" path="res://Engine/Hortalicas.gd" id="2_ngaql"]
+
+[resource]
+script = ExtResource("2_ngaql")
+nome = "Milho Verde"
+figura = ExtResource("1_1s7bk")
+epoca_recomendada_plantio = Array[int]([7, 1])
+tempo_de_colheita = Array[int]([80, 110])
+metadata/_custom_type_script = "uid://bku3p8s3u6snp"

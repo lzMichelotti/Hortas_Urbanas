@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
@@ -7,6 +7,7 @@ from app.database.models import Canteiro, Produto, SolicitacaoPlantio, Usuario
 from app.schemas.solicitacao import SolicitacaoCreate, SolicitacaoRead, SolicitacaoUpdateStatus
 from app.api.dependencies import get_current_user, get_lider_user
 from app.api.permissions import exigir_acesso_horta, exigir_dono_do_canteiro, exigir_lider_da_horta
+from app.core.idempotency import IdempotencyKeyHeader, commit_idempotente
 
 router = APIRouter(tags=["Solicitações de Plantio"])
 
@@ -19,7 +20,12 @@ def read_solicitacoes(
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
     if lider.privilegio == "LIDER_HORTA":
-        return db.query(SolicitacaoPlantio).join(Canteiro).filter(Canteiro.horta_id == lider.horta_id).all()
+        return (
+            db.query(SolicitacaoPlantio)
+            .join(Canteiro)
+            .filter(Canteiro.horta_id == lider.horta_id, Canteiro.ativo == True)
+            .all()
+        )
     return db.query(SolicitacaoPlantio).all()
 
     
@@ -40,12 +46,14 @@ def read_solicitacoes_do_canteiro(
     return db.query(SolicitacaoPlantio).filter(SolicitacaoPlantio.canteiro_id == canteiro_id).all()
 
 
-@router.post("/canteiros/{canteiro_id}/solicitacoes", response_model=SolicitacaoRead)
+@router.post("/canteiros/{canteiro_id}/solicitacoes", response_model=SolicitacaoRead, status_code=201)
 def create_solicitacao(
     canteiro_id: int,
     solicitacao: SolicitacaoCreate,
     db: DBDep,
-    usuario: Annotated[Usuario, Depends(get_current_user)]
+    response: Response,
+    usuario: Annotated[Usuario, Depends(get_current_user)],
+    idempotency_key: IdempotencyKeyHeader = None,
 ):
     canteiro = db.query(Canteiro).filter(Canteiro.id == canteiro_id).first()
 
@@ -60,9 +68,8 @@ def create_solicitacao(
         raise HTTPException(status_code=404, detail="O produto selecionado não existe no catálogo oficial.")
 
     db_solicitacao = SolicitacaoPlantio(**solicitacao.model_dump(), canteiro_id=canteiro_id)
-    db.add(db_solicitacao)
-    db.commit()
-    db.refresh(db_solicitacao)
+    db_solicitacao = commit_idempotente(db, db_solicitacao, idempotency_key, canteiro_id=canteiro_id)
+    response.headers["Location"] = f"/solicitacoes/{db_solicitacao.id}"
     return db_solicitacao
 
 
@@ -87,11 +94,14 @@ def update_solicitacao_status(
 
     db_solicitacao.status = update_data.status
     db.commit()
-    db.refresh(db_solicitacao)
     return db_solicitacao
 
 
-@router.delete("/solicitacoes/{id}")
+# Hard delete intencional: solicitação é um "ticket" de vida curta (PENDENTE →
+# APROVADA/REJEITADA). Diferente de Horta/Canteiro/Ciclo (entidades de vida
+# longa, com soft delete para histórico), descartar fisicamente um ticket
+# rejeitado/cancelado não perde informação relevante.
+@router.delete("/solicitacoes/{id}", status_code=204)
 def delete_solicitacao(
     id: int,
     db: DBDep,
@@ -112,5 +122,3 @@ def delete_solicitacao(
 
     db.delete(db_solicitacao)
     db.commit()
-
-    return {"detail": "Solicitação removida com sucesso."}

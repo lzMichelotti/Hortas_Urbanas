@@ -7,6 +7,13 @@ class CanteiroCreate(BaseModel):
     area_produtiva: Optional[float] = None
     area_ociosa: Optional[float] = None
 
+class CanteiroUpdate(BaseModel):
+    usuario_id: Optional[int] = None
+    identificacao: Optional[str] = None
+    area_produtiva: Optional[float] = None
+    area_ociosa: Optional[float] = None
+
+
 class CanteiroRead(CanteiroCreate):
     id: int
     horta_id: int

@@ -1,0 +1,32 @@
+[gd_resource type="Theme" format=3 uid="uid://h03e4jx4d643"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x35wb"]
+border_width_left = 10
+border_width_top = 10
+border_width_right = 10
+border_width_bottom = 10
+border_color = Color(0.29803923, 0.8, 0.43529412, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1r6yq"]
+content_margin_left = 32.0
+content_margin_top = 32.0
+content_margin_right = 32.0
+content_margin_bottom = 32.0
+bg_color = Color(9.3854965e-07, 0.46388465, 0.24532047, 1)
+border_blend = true
+corner_radius_top_left = 64
+corner_radius_top_right = 64
+corner_radius_bottom_right = 64
+corner_radius_bottom_left = 64
+
+[resource]
+Button/font_sizes/font_size = 64
+GridContainer/constants/h_separation = 64
+GridContainer/constants/v_separation = 64
+HBoxContainer/constants/separation = 128
+HSeparator/styles/separator = SubResource("StyleBoxFlat_x35wb")
+Label/font_sizes/font_size = 64
+LineEdit/font_sizes/font_size = 48
+PanelContainer/styles/panel = SubResource("StyleBoxFlat_1r6yq")
+RichTextLabel/font_sizes/normal_font_size = 64
+VBoxContainer/constants/separation = 32

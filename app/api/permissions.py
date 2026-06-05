@@ -1,7 +1,8 @@
+"""Helpers de checagem de privilégio, centralizados para evitar repetir as
+verificações de permissão espalhadas pelos endpoints."""
 from fastapi import HTTPException
 from app.database.models import Canteiro, Usuario
 
-## ARQUIVO DESTINADO A EVITAR AS DIVERSAS VERIFICACOES DE PRIVILEGIO NO CODIGO
 
 # --- Horta ---
 
@@ -12,8 +13,7 @@ def exigir_acesso_horta(usuario: Usuario, horta_id: int):
 
 
 def exigir_lider_da_horta(lider: Usuario, horta_id: int):
-    """Para rotas que já exigem LIDER+. LIDER_HORTA fica restrito à sua horta; ADMIN_SUPREMO é isento.
-    Equivalente a verificar_horta em dependencies.py — use este e remova aquele."""
+    """Para rotas que já exigem LIDER+. LIDER_HORTA fica restrito à sua horta; ADMIN_SUPREMO é isento."""
     if lider.privilegio == "LIDER_HORTA" and lider.horta_id != horta_id:
         raise HTTPException(status_code=403, detail="Sem permissão para esta horta.")
 

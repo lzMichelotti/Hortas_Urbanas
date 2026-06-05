@@ -1,14 +1,17 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 
 from app.api.routes import (
     auth, hortas, produtos, canteiros, ciclos,
     demandas, intencoes, usuarios, solicitacoes, zonas_risco,
 )
 from app.core.config import settings
-
-_cors_origins = settings.CORS_ORIGINS.split(",") if hasattr(settings, "CORS_ORIGINS") else ["*"]
+from app.core.logger import logger  # inicializa basicConfig e expõe o logger raiz
+from app.database.session import engine
 
 app = FastAPI(
     title="Hortas Urbanas API",
@@ -16,14 +19,49 @@ app = FastAPI(
     description="Sistema de gestão de hortas urbanas comunitárias",
 )
 
-app.add_middleware(GZipMiddleware, minimum_size=500)
+app.add_middleware(GZipMiddleware, minimum_size=500) 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_origins,
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(IntegrityError)
+async def integrity_error_handler(request: Request, exc: IntegrityError):
+    logger.error("IntegrityError em %s %s — %s", request.method, request.url.path, exc.orig)
+    return JSONResponse(
+        status_code=409,
+        content={"detail": "Conflito de dados: registro duplicado ou violação de integridade."},
+    )
+
+
+@app.exception_handler(OperationalError)
+async def operational_error_handler(request: Request, exc: OperationalError):
+    logger.error("OperationalError em %s %s — %s", request.method, request.url.path, exc.orig)
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "Banco de dados temporariamente indisponível."},
+    )
+
+
+@app.exception_handler(SQLAlchemyError)
+async def sqlalchemy_error_handler(request: Request, exc: SQLAlchemyError):
+    logger.error("SQLAlchemyError em %s %s — %s", request.method, request.url.path, exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Erro interno de banco de dados."},
+    )
+
+
+
+@app.get("/health", tags=["Health"])
+def health():
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+    return {"status": "ok"}
+
 
 app.include_router(auth.router)
 app.include_router(hortas.router)

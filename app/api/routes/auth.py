@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from typing import Annotated
 import jwt
@@ -14,6 +15,7 @@ from app.core.security import (
     decode_refresh_token, verify_password, get_password_hash,
 )
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Autenticação"])
 
 DBDep = Annotated[Session, Depends(get_db)]
@@ -34,6 +36,7 @@ def login_for_access_token(
     senha_valida = verify_password(form_data.password, hash_para_verificar)
 
     if not usuario or not senha_valida:
+        logger.warning("Login falhou para email '%s' — credenciais inválidas", form_data.username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email ou senha incorretos",
@@ -41,12 +44,14 @@ def login_for_access_token(
         )
 
     if not usuario.ativo:
+        logger.warning("Login bloqueado para usuário id=%d — conta inativa", usuario.id)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Conta de usuário inativa ou excluída.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    logger.info("Login bem-sucedido: usuário id=%d (%s)", usuario.id, usuario.email)
     access_token = create_access_token(
         data={"sub": str(usuario.id)},
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -67,6 +72,7 @@ def refresh_access_token(body: RefreshRequest, db: DBDep):
     try:
         id_usuario = decode_refresh_token(body.refresh_token)
     except jwt.exceptions.PyJWTError:
+        logger.warning("Refresh token inválido ou expirado")
         raise credentials_exception
 
     usuario = db.query(Usuario).filter(Usuario.id == int(id_usuario)).first()

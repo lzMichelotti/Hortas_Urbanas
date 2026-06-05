@@ -1,0 +1,104 @@
+[gd_scene load_steps=4 format=3 uid="uid://df2vcldxyrowb"]
+
+[ext_resource type="Script" uid="uid://bdgpex2nx41vp" path="res://Engine/Calendario.gd" id="1_7b4f7"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7b4f7"]
+content_margin_left = 64.0
+content_margin_top = 64.0
+content_margin_right = 64.0
+content_margin_bottom = 64.0
+bg_color = Color(0, 0.12458333, 0.023013646, 1)
+border_width_left = 32
+border_width_top = 32
+border_width_right = 32
+border_width_bottom = 32
+border_color = Color(0.13935575, 0.3064689, 0.060127564, 1)
+corner_radius_top_left = 32
+corner_radius_top_right = 32
+corner_radius_bottom_right = 32
+corner_radius_bottom_left = 32
+
+[sub_resource type="Theme" id="Theme_7b4f7"]
+Button/font_sizes/font_size = 32
+GridContainer/constants/h_separation = 32
+GridContainer/constants/v_separation = 16
+Label/font_sizes/font_size = 48
+PanelContainer/styles/panel = SubResource("StyleBoxFlat_7b4f7")
+
+[node name="Calendario" type="PanelContainer" node_paths=PackedStringArray("container_dos_dias", "mes", "avancar_mes", "voltar_mes")]
+custom_minimum_size = Vector2(0, 796)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.5
+offset_top = -74.0
+offset_right = 400.5
+offset_bottom = 74.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_7b4f7")
+script = ExtResource("1_7b4f7")
+container_dos_dias = NodePath("VBoxContainer/Calendario")
+mes = NodePath("VBoxContainer/HBoxContainer/Mes")
+avancar_mes = NodePath("VBoxContainer/HBoxContainer/Posterior")
+voltar_mes = NodePath("VBoxContainer/HBoxContainer/MesAnterior")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="MesAnterior" type="Button" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "<"
+
+[node name="Mes" type="Label" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 56
+horizontal_alignment = 1
+
+[node name="Posterior" type="Button" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 8
+text = ">"
+
+[node name="Calendario" type="GridContainer" parent="VBoxContainer"]
+layout_mode = 2
+columns = 7
+
+[node name="Label" type="Label" parent="VBoxContainer/Calendario"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.99999994, 0.2515129, 0.11256138, 1)
+text = "Dom"
+
+[node name="Label2" type="Label" parent="VBoxContainer/Calendario"]
+layout_mode = 2
+text = "Seg"
+
+[node name="Label3" type="Label" parent="VBoxContainer/Calendario"]
+layout_mode = 2
+text = "Ter"
+
+[node name="Label4" type="Label" parent="VBoxContainer/Calendario"]
+layout_mode = 2
+text = "Qua"
+
+[node name="Label5" type="Label" parent="VBoxContainer/Calendario"]
+layout_mode = 2
+text = "Qui"
+
+[node name="Label6" type="Label" parent="VBoxContainer/Calendario"]
+layout_mode = 2
+text = "Sex"
+
+[node name="Label7" type="Label" parent="VBoxContainer/Calendario"]
+layout_mode = 2
+text = "Sab"

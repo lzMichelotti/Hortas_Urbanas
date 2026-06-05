@@ -1,15 +1,10 @@
 from typing import Optional
-from enum import Enum
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field, field_validator
 from validate_docbr import CPF as CpfValidator
 
+from app.database.enums import Privilegio
+
 _cpf = CpfValidator()
-
-
-class Privilegio(str, Enum):
-    ADMIN_SUPREMO = "ADMIN_SUPREMO"
-    LIDER_HORTA = "LIDER_HORTA"
-    MEMBRO_CANTEIRO = "MEMBRO_CANTEIRO"
 
 
 def _validar_cpf_str(v: str) -> str:
@@ -49,6 +44,29 @@ class UsuarioUpdate(BaseModel):
 
 
 class UsuarioRead(BaseModel):
+    """Visão pública — CPF mascarado. Usar em listagens e edições por terceiros.
+    CPF == credencial de login (decisão de produto); só pode ser exposto cheio
+    para o próprio dono (/usuarios/me) ou em rotas administrativas auditadas."""
+    id: int
+    nome: str
+    email: EmailStr
+    cpf: str = Field(exclude=True)
+    telefone: str
+    privilegio: Privilegio
+    horta_id: Optional[int] = None
+    ativo: bool
+
+    @computed_field
+    @property
+    def cpf_mascarado(self) -> str:
+        return f"***.***.***-{self.cpf[-2:]}" if len(self.cpf) >= 2 else "***"
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UsuarioReadCompleto(BaseModel):
+    """CPF cheio — só para o próprio dono em /usuarios/me e para o criador
+    em POST /usuarios (que acabou de digitar o valor)."""
     id: int
     nome: str
     email: EmailStr

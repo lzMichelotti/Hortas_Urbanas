@@ -5,11 +5,10 @@ psycopg2-binary
 python-multipart
 pydantic
 bcrypt
-python-jose[cryptography]
+pyjwt
 python-dotenv
 validate-docbr
 GeoAlchemy2
 shapely
-##BIBLIOTECA PARA LER ARQUIVOS RELACIONADO AO FRONTEND DO MAPA 
-geopandas
+orjson
 alembic

@@ -4,3 +4,18 @@ __pycache__/
 .DS_Store
 PERMISSOES.md
 .env
+
+# Migração React do frontend — trabalho temporário, NÃO subir por enquanto.
+# Só o protótipo Godot (frontend/app, frontend/cadastro) vai pro GitHub agora.
+frontend/web/
+
+# Notas de estudo pessoais
+ESTUDO_BANCO_DE_DADOS.md
+
+# Mapa visual — protótipo local, será aplicado mais tarde (mantido só localmente).
+mapa_teste.html
+
+# Importação de zonas de risco — tooling + dados geoespaciais, entram junto com o mapa.
+scripts/importar_zonas_risco.py
+requirements-scripts.txt
+shp/

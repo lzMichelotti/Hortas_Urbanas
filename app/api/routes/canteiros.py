@@ -1,11 +1,12 @@
+from datetime import datetime, timezone
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.database.models import Canteiro, Usuario
-from app.schemas.canteiro import CanteiroCreate, CanteiroRead
-from app.api.dependencies import get_lider_user
+from app.schemas.canteiro import CanteiroCreate, CanteiroUpdate, CanteiroRead
+from app.api.dependencies import get_current_user, get_lider_user
 from app.api.permissions import exigir_lider_da_horta
 
 router = APIRouter(tags=["Canteiros"])
@@ -15,19 +16,22 @@ DBDep = Annotated[Session, Depends(get_db)]
 @router.get("/canteiros", response_model=list[CanteiroRead])
 def read_canteiros(
     db: DBDep,
-    lider: Annotated[Usuario, Depends(get_lider_user)]
+    usuario: Annotated[Usuario, Depends(get_current_user)],
 ):
-    if lider.privilegio == "LIDER_HORTA":
-        return db.query(Canteiro).filter(Canteiro.horta_id == lider.horta_id).all()
+    query = db.query(Canteiro).filter(Canteiro.ativo == True)
+    if usuario.privilegio == "LIDER_HORTA":
+        query = query.filter(Canteiro.horta_id == usuario.horta_id)
+    elif usuario.privilegio == "MEMBRO_CANTEIRO":
+        query = query.filter(Canteiro.usuario_id == usuario.id)
+    return query.all()
 
-    return db.query(Canteiro).all()
-
-@router.post("/hortas/{horta_id}/canteiros", response_model=CanteiroRead)
+@router.post("/hortas/{horta_id}/canteiros", response_model=CanteiroRead, status_code=201)
 def create_canteiro(
     horta_id: int,
     canteiro: CanteiroCreate,
     db: DBDep,
-    lider: Annotated[Usuario, Depends(get_lider_user)]
+    response: Response,
+    lider: Annotated[Usuario, Depends(get_lider_user)],
 ):
     exigir_lider_da_horta(lider, horta_id)
 
@@ -42,17 +46,17 @@ def create_canteiro(
     db_canteiro = Canteiro(**canteiro.model_dump(), horta_id=horta_id)
     db.add(db_canteiro)
     db.commit()
-    db.refresh(db_canteiro)
+    response.headers["Location"] = f"/canteiros/{db_canteiro.id}"
     return db_canteiro
 
-@router.put("/canteiros/{id}", response_model=CanteiroRead)
+@router.patch("/canteiros/{id}", response_model=CanteiroRead)
 def update_canteiro(
     id: int,
-    canteiro: CanteiroCreate,
+    canteiro: CanteiroUpdate,
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
-    db_canteiro = db.query(Canteiro).filter(Canteiro.id == id).first()
+    db_canteiro = db.query(Canteiro).filter(Canteiro.id == id, Canteiro.ativo == True).first()
 
     if not db_canteiro:
         raise HTTPException(404, "Canteiro não encontrado")
@@ -73,23 +77,21 @@ def update_canteiro(
         setattr(db_canteiro, key, value)
 
     db.commit()
-    db.refresh(db_canteiro)
     return db_canteiro
 
-@router.delete("/canteiros/{id}")
+@router.delete("/canteiros/{id}", status_code=204)
 def delete_canteiro(
     id: int,
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
-    db_canteiro = db.query(Canteiro).filter(Canteiro.id == id).first()
+    db_canteiro = db.query(Canteiro).filter(Canteiro.id == id, Canteiro.ativo == True).first()
 
     if not db_canteiro:
         raise HTTPException(404, "Canteiro não encontrado")
 
     exigir_lider_da_horta(lider, db_canteiro.horta_id)
 
-    db.delete(db_canteiro)
+    db_canteiro.ativo = False
+    db_canteiro.deletado_em = datetime.now(timezone.utc)
     db.commit()
-
-    return {"detail": "Canteiro removido com sucesso"}

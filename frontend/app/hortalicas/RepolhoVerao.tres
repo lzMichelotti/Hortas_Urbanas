@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Hortalica" format=3 uid="uid://b63xlre0of7nu"]
+
+[ext_resource type="Texture2D" uid="uid://djfx27w8k6yft" path="res://assets/placeholders/verduras/food/cabbage.png" id="1_a8d25"]
+[ext_resource type="Script" uid="uid://bku3p8s3u6snp" path="res://Engine/Hortalicas.gd" id="2_xod18"]
+
+[resource]
+script = ExtResource("2_xod18")
+nome = "Repolho Verão"
+figura = ExtResource("1_a8d25")
+epoca_recomendada_plantio = Array[int]([10, 0])
+tempo_de_colheita = Array[int]([90, 110])
+metadata/_custom_type_script = "uid://bku3p8s3u6snp"

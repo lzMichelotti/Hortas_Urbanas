@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Hortalica" format=3 uid="uid://dk3abpmeds52c"]
+
+[ext_resource type="Texture2D" uid="uid://8c35s4oeeqv1" path="res://assets/placeholders/verduras/food/popcorn.png" id="1_66045"]
+[ext_resource type="Script" uid="uid://bku3p8s3u6snp" path="res://Engine/Hortalicas.gd" id="2_kas4x"]
+
+[resource]
+script = ExtResource("2_kas4x")
+nome = "Couve Flor Verão"
+figura = ExtResource("1_66045")
+epoca_recomendada_plantio = Array[int]([11, 0])
+tempo_de_colheita = Array[int]([90, 100])
+metadata/_custom_type_script = "uid://bku3p8s3u6snp"

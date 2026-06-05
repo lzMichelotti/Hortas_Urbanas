@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Hortalica" format=3 uid="uid://i28gciuudax4"]
+
+[ext_resource type="Texture2D" uid="uid://fkbfk0e8rtrf" path="res://assets/placeholders/verduras/food/pineapple.png" id="1_hm6oo"]
+[ext_resource type="Script" uid="uid://bku3p8s3u6snp" path="res://Engine/Hortalicas.gd" id="2_k64iv"]
+
+[resource]
+script = ExtResource("2_k64iv")
+nome = "Abacaxi"
+figura = ExtResource("1_hm6oo")
+epoca_recomendada_plantio = Array[int]([8, 11])
+tempo_de_colheita = Array[int]([365, 485])
+metadata/_custom_type_script = "uid://bku3p8s3u6snp"

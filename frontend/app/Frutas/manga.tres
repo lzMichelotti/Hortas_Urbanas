@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Hortalica" format=3 uid="uid://cod4yf00v0mj3"]
+
+[ext_resource type="Texture2D" uid="uid://cwk7ak2gbp0o0" path="res://assets/placeholders/verduras/food/mango.png" id="1_oumxi"]
+[ext_resource type="Script" uid="uid://bku3p8s3u6snp" path="res://Engine/Hortalicas.gd" id="2_88osk"]
+
+[resource]
+script = ExtResource("2_88osk")
+nome = "Manga"
+figura = ExtResource("1_oumxi")
+epoca_recomendada_plantio = Array[int]([8, 10])
+colheita_mes = Array[int]([11, 2])
+metadata/_custom_type_script = "uid://bku3p8s3u6snp"

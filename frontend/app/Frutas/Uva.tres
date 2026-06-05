@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Hortalica" format=3 uid="uid://cjwt4ai51fqcy"]
+
+[ext_resource type="Texture2D" uid="uid://brgwkkogc87to" path="res://assets/placeholders/verduras/food/grapes_purple.png" id="1_tx026"]
+[ext_resource type="Script" uid="uid://bku3p8s3u6snp" path="res://Engine/Hortalicas.gd" id="2_o54lc"]
+
+[resource]
+script = ExtResource("2_o54lc")
+nome = "Uva"
+figura = ExtResource("1_tx026")
+epoca_recomendada_plantio = Array[int]([6, 8])
+colheita_mes = Array[int]([0, 2])
+metadata/_custom_type_script = "uid://bku3p8s3u6snp"

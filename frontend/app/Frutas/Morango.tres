@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Hortalica" format=3 uid="uid://bpbvq3qf1p1iu"]
+
+[ext_resource type="Texture2D" uid="uid://bgfgyl14olyyk" path="res://assets/placeholders/verduras/food/strawberry.png" id="1_5kjma"]
+[ext_resource type="Script" uid="uid://bku3p8s3u6snp" path="res://Engine/Hortalicas.gd" id="2_inhs0"]
+
+[resource]
+script = ExtResource("2_inhs0")
+nome = "Morango"
+figura = ExtResource("1_5kjma")
+epoca_recomendada_plantio = Array[int]([2, 3])
+tempo_de_colheita = Array[int]([70, 80])
+metadata/_custom_type_script = "uid://bku3p8s3u6snp"

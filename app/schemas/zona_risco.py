@@ -1,19 +1,8 @@
 from typing import Optional, Literal
-from enum import Enum
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
-
-class TipoZona(str, Enum):
-    ALAGAMENTO = "alagamento"
-    EROSAO = "erosao"
-    DESLIZAMENTO = "deslizamento"
-    OUTRO = "outro"
-
-
-class NivelRisco(str, Enum):
-    ALTO = "alto"
-    MEDIO = "medio"
-    BAIXO = "baixo"
+from app.database.enums import TipoZona, NivelRisco
 
 
 class ZonaRiscoCreate(BaseModel):
@@ -24,15 +13,10 @@ class ZonaRiscoCreate(BaseModel):
     coordinates: list[list[float]]  # [[lng, lat], ...] — padrão de anel linear
 
 
-class ZonaRiscoPublica(BaseModel):
-    id: int
-    nome: str
-    tipo: TipoZona
-    nivel: NivelRisco
-    descricao: Optional[str] = None
-    coordinates: Optional[list[list[float]]] = None
-
-    model_config = ConfigDict(from_attributes=True)
+class ZonaRiscoStatusUpdate(BaseModel):
+    ativa: bool
+    data_ocorrencia: Optional[datetime] = None
+    data_fim: Optional[datetime] = None
 
 
 # --- GeoJSON (RFC 7946) ---
@@ -42,12 +26,29 @@ class PoligonoGeografico(BaseModel):
     coordinates: list[list[list[float]]]  # [anel_externo] → [[lng, lat], ...]
 
 
+class ZonaRiscoPublica(BaseModel):
+    id: int
+    nome: str
+    tipo: TipoZona
+    nivel: NivelRisco
+    descricao: Optional[str] = None
+    geometry: Optional[PoligonoGeografico] = None
+    ativa: bool = True
+    data_ocorrencia: Optional[datetime] = None
+    data_fim: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class PropriedadesZonaRisco(BaseModel):
     id: int
     nome: str
     tipo: TipoZona
     nivel: NivelRisco
     descricao: Optional[str] = None
+    ativa: bool = True
+    data_ocorrencia: Optional[datetime] = None
+    data_fim: Optional[datetime] = None
 
 
 class ZonaRiscoFeature(BaseModel):

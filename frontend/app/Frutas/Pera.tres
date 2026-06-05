@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Hortalica" format=3 uid="uid://j23bjak62ysf"]
+
+[ext_resource type="Texture2D" uid="uid://c33r5oq7h6ea1" path="res://assets/placeholders/verduras/food/pear.png" id="1_g6nnx"]
+[ext_resource type="Script" uid="uid://bku3p8s3u6snp" path="res://Engine/Hortalicas.gd" id="2_2qw5f"]
+
+[resource]
+script = ExtResource("2_2qw5f")
+nome = "Pera"
+figura = ExtResource("1_g6nnx")
+epoca_recomendada_plantio = Array[int]([5, 7])
+colheita_mes = Array[int]([0, 2])
+metadata/_custom_type_script = "uid://bku3p8s3u6snp"

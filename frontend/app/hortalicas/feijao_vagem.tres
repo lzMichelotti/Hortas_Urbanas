@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Hortalica" format=3 uid="uid://cumtryoigv0tq"]
+
+[ext_resource type="Texture2D" uid="uid://cin8bn0xuo7to" path="res://assets/placeholders/verduras/food/pea_pod.png" id="1_08n07"]
+[ext_resource type="Script" uid="uid://bku3p8s3u6snp" path="res://Engine/Hortalicas.gd" id="2_0jhoc"]
+
+[resource]
+script = ExtResource("2_0jhoc")
+nome = "Feijão-Vagem"
+figura = ExtResource("1_08n07")
+epoca_recomendada_plantio = Array[int]([8, 2])
+tempo_de_colheita = Array[int]([60, 70])
+metadata/_custom_type_script = "uid://bku3p8s3u6snp"

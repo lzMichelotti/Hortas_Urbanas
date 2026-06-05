@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.database.models import Usuario
-from app.schemas.usuario import UsuarioCreate, UsuarioRead, UsuarioUpdate
+from app.schemas.usuario import UsuarioCreate, UsuarioRead, UsuarioReadCompleto, UsuarioUpdate
 from app.api.dependencies import get_current_user, get_lider_user
 from app.api.permissions import exigir_lider_da_horta, exigir_lider_pode_criar_usuario
 from app.core.security import get_password_hash
@@ -27,43 +28,49 @@ def read_users(
         
     return db.query(Usuario).filter(Usuario.ativo == True).all()
 
-@router.get("/usuarios/me", response_model=UsuarioRead)
-def read_users_me(current_user: Annotated[Usuario, Depends(get_current_user)]):
+@router.get("/usuarios/me", response_model=UsuarioReadCompleto)
+def read_users_me(
+    response: Response,
+    current_user: Annotated[Usuario, Depends(get_current_user)],
+):
+    # /usuarios/me é chamada em quase toda tela. Privilegios mudam só por
+    # ação de admin; o resto exige update explícito. 60s de cache local
+    # poupa ~6-10 requests por sessão sem risco de mostrar dados defasados.
+    response.headers["Cache-Control"] = "private, max-age=60"
+    response.headers["Vary"] = "Accept-Encoding"
     return current_user
 
-@router.post("/usuarios", response_model=UsuarioRead)
+@router.post("/usuarios", response_model=UsuarioReadCompleto, status_code=201)
 def create_usuario(
-    usuario: UsuarioCreate, 
+    usuario: UsuarioCreate,
     db: DBDep,
-    usuario_logado: Annotated[Usuario, Depends(get_lider_user)] 
+    response: Response,
+    usuario_logado: Annotated[Usuario, Depends(get_lider_user)],
 ):
-        
     if usuario_logado.privilegio == "LIDER_HORTA":
         usuario.horta_id = usuario_logado.horta_id
         exigir_lider_pode_criar_usuario(usuario_logado, usuario.privilegio)
-            
-    cpf_existente = db.query(Usuario).filter(Usuario.cpf == usuario.cpf).first()
-    email_existente = db.query(Usuario).filter(Usuario.email == usuario.email).first()
-    
-    if cpf_existente:
-        raise HTTPException(status_code=400, detail="Este CPF já está cadastrado.")
-    if email_existente:
-        raise HTTPException(status_code=400, detail="Este Email já está cadastrado.")
-        
+
     senha_criptografada = get_password_hash(usuario.cpf)
-    
-    db_usuario = Usuario(
-        **usuario.model_dump(),       
-        senha_hash=senha_criptografada 
-    )
-    
+    db_usuario = Usuario(**usuario.model_dump(), senha_hash=senha_criptografada)
     db.add(db_usuario)
-    db.commit()
-    db.refresh(db_usuario)
-    
+
+    try:
+        db.commit()
+    except IntegrityError as e:
+        db.rollback()
+        # diag.constraint_name é o nome reportado pelo Postgres (ex: "Usuarios_cpf_key")
+        constraint = (getattr(getattr(e.orig, "diag", None), "constraint_name", "") or "").lower()
+        if "cpf" in constraint:
+            raise HTTPException(409, "Este CPF já está cadastrado.")
+        if "email" in constraint:
+            raise HTTPException(409, "Este Email já está cadastrado.")
+        raise  # Outras violações caem no handler global em app/main.py
+
+    response.headers["Location"] = f"/usuarios/{db_usuario.id}"
     return db_usuario
 
-@router.put("/usuarios/{id}", response_model=UsuarioRead)
+@router.patch("/usuarios/{id}", response_model=UsuarioRead)
 def update_usuario(
     id: int,
     usuario_update: UsuarioUpdate,
@@ -91,10 +98,9 @@ def update_usuario(
         setattr(db_usuario, key, value)
 
     db.commit()
-    db.refresh(db_usuario)
     return db_usuario
 
-@router.delete("/usuarios/{id}")
+@router.delete("/usuarios/{id}", status_code=204)
 def delete_usuario(
     id: int,
     db: DBDep,
@@ -110,5 +116,3 @@ def delete_usuario(
     db_usuario.ativo = False
     db_usuario.deletado_em = datetime.now(timezone.utc)
     db.commit()
-
-    return {"detail": "Usuário removido com sucesso"}

@@ -1,13 +1,8 @@
 from pydantic import BaseModel, ConfigDict, field_validator
 from datetime import date
-from enum import Enum
 from typing import Optional
 
-
-class StatusSolicitacao(str, Enum):
-    PENDENTE = "PENDENTE"
-    APROVADA = "APROVADA"
-    RECUSADA = "RECUSADA"
+from app.database.enums import StatusSolicitacao
 
 
 class SolicitacaoCreate(BaseModel):

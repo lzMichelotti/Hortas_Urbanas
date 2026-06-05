@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Hortalica" format=3 uid="uid://058tr8bv5k6p"]
+
+[ext_resource type="Texture2D" uid="uid://bskk4g7mjkmrq" path="res://assets/placeholders/verduras/food/samosa.png" id="1_vnyxt"]
+[ext_resource type="Script" uid="uid://bku3p8s3u6snp" path="res://Engine/Hortalicas.gd" id="2_pnyby"]
+
+[resource]
+script = ExtResource("2_pnyby")
+nome = "Caqui"
+figura = ExtResource("1_vnyxt")
+epoca_recomendada_plantio = Array[int]([5, 7])
+colheita_mes = Array[int]([2, 4])
+metadata/_custom_type_script = "uid://bku3p8s3u6snp"

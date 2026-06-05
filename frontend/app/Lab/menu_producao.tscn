@@ -1,0 +1,141 @@
+[gd_scene load_steps=10 format=3 uid="uid://03mchrj6lrha"]
+
+[ext_resource type="Script" uid="uid://uxikiqfqudke" path="res://Engine/MenuProducao.gd" id="1_883xc"]
+[ext_resource type="Theme" uid="uid://h03e4jx4d643" path="res://assets/temas/Menu.tres" id="1_twlyb"]
+[ext_resource type="Texture2D" uid="uid://booym3mkcuk0t" path="res://assets/placeholders/Plantar.png" id="3_883xc"]
+[ext_resource type="Texture2D" uid="uid://dr4s6bawg8mbi" path="res://assets/placeholders/Colher.png" id="4_q857k"]
+[ext_resource type="Texture2D" uid="uid://b560ydrss4s8x" path="res://assets/placeholders/icones_0003.png" id="5_181i8"]
+[ext_resource type="PackedScene" uid="uid://df2vcldxyrowb" path="res://Lab/calendario.tscn" id="5_and0n"]
+[ext_resource type="Texture2D" uid="uid://yhfgg8smxli5" path="res://assets/placeholders/Voltar.png" id="5_twlyb"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_abgws"]
+content_margin_left = 32.0
+content_margin_top = 32.0
+content_margin_right = 32.0
+content_margin_bottom = 32.0
+bg_color = Color(0.629907, 0.24942842, 0.06990748, 1)
+border_blend = true
+corner_radius_top_left = 64
+corner_radius_top_right = 64
+corner_radius_bottom_right = 64
+corner_radius_bottom_left = 64
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uamdo"]
+bg_color = Color(0.49996507, 0.61335313, 0.2953235, 1)
+border_blend = true
+corner_radius_top_left = 64
+corner_radius_top_right = 64
+corner_radius_bottom_right = 64
+corner_radius_bottom_left = 64
+
+[node name="MenuProducao" type="Control" node_paths=PackedStringArray("registrar_plantio", "registrar_colheita", "voltar", "calendario")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_twlyb")
+script = ExtResource("1_883xc")
+registrar_plantio = NodePath("VBoxContainer/Opcoes/GridDeOpcoes/RegistrarPlantio")
+registrar_colheita = NodePath("VBoxContainer/Opcoes/GridDeOpcoes/RegistrarColheita")
+voltar = NodePath("VBoxContainer/Opcoes/GridDeOpcoes/Voltar")
+calendario = NodePath("VBoxContainer/Calendario")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -512.0
+offset_top = -1044.0
+offset_right = 512.0
+offset_bottom = 1044.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Cabecalho" type="PanelContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_abgws")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/Cabecalho"]
+layout_mode = 2
+
+[node name="NomeDaHorta" type="Label" parent="VBoxContainer/Cabecalho/VBoxContainer"]
+layout_mode = 2
+text = "Horta dos Hortêncios"
+horizontal_alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/Cabecalho/VBoxContainer"]
+layout_mode = 2
+text = "Produção"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+custom_minimum_size = Vector2(720, 4)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Opcoes" type="PanelContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="GridDeOpcoes" type="GridContainer" parent="VBoxContainer/Opcoes"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+columns = 3
+
+[node name="RegistrarPlantio" type="TextureButton" parent="VBoxContainer/Opcoes/GridDeOpcoes"]
+custom_minimum_size = Vector2(256, 256)
+layout_mode = 2
+texture_normal = ExtResource("3_883xc")
+stretch_mode = 0
+
+[node name="RegistrarColheita" type="TextureButton" parent="VBoxContainer/Opcoes/GridDeOpcoes"]
+custom_minimum_size = Vector2(256, 256)
+layout_mode = 2
+texture_normal = ExtResource("4_q857k")
+stretch_mode = 0
+
+[node name="SaidaDeProducao" type="TextureButton" parent="VBoxContainer/Opcoes/GridDeOpcoes"]
+custom_minimum_size = Vector2(256, 256)
+layout_mode = 2
+texture_normal = ExtResource("5_181i8")
+stretch_mode = 0
+
+[node name="Control" type="Control" parent="VBoxContainer/Opcoes/GridDeOpcoes"]
+layout_mode = 2
+
+[node name="Voltar" type="TextureButton" parent="VBoxContainer/Opcoes/GridDeOpcoes"]
+custom_minimum_size = Vector2(256, 256)
+layout_mode = 2
+texture_normal = ExtResource("5_twlyb")
+stretch_mode = 0
+
+[node name="HSeparator2" type="HSeparator" parent="VBoxContainer"]
+custom_minimum_size = Vector2(720, 4)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Calendario" parent="VBoxContainer" instance=ExtResource("5_and0n")]
+layout_mode = 2
+
+[node name="HSeparator3" type="HSeparator" parent="VBoxContainer"]
+custom_minimum_size = Vector2(720, 4)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="PanelContainer" type="PanelContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_uamdo")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="VBoxContainer/PanelContainer"]
+layout_mode = 2
+bbcode_enabled = true
+text = "[center]Hoje tem/não tem colheita prevista[/center]"
+fit_content = true

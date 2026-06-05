@@ -1,10 +1,10 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.database.models import IntencaoPlantio, Produto, Usuario
-from app.schemas.intencao import IntencaoCreate, IntencaoRead
+from app.schemas.intencao import IntencaoCreate, IntencaoUpdate, IntencaoRead
 from app.api.dependencies import get_lider_user
 from app.api.permissions import exigir_lider_da_horta
 
@@ -21,32 +21,33 @@ def read_intencoes(
         return db.query(IntencaoPlantio).filter(IntencaoPlantio.horta_id == usuario.horta_id).all()
     return db.query(IntencaoPlantio).all()
 
-@router.post("/hortas/{horta_id}/intencoes", response_model=IntencaoRead)
+@router.post("/hortas/{horta_id}/intencoes", response_model=IntencaoRead, status_code=201)
 def create_intencao(
     horta_id: int,
     intencao: IntencaoCreate,
     db: DBDep,
-    lider: Annotated[Usuario, Depends(get_lider_user)]
+    response: Response,
+    lider: Annotated[Usuario, Depends(get_lider_user)],
 ):
     exigir_lider_da_horta(lider, horta_id)
 
     produto_existe = db.query(Produto).filter(Produto.id == intencao.produto_id).first()
     if not produto_existe:
         raise HTTPException(
-            status_code=404, 
+            status_code=404,
             detail="O produto selecionado não existe no catálogo oficial."
         )
-        
+
     db_intencao = IntencaoPlantio(**intencao.model_dump(), horta_id=horta_id)
     db.add(db_intencao)
     db.commit()
-    db.refresh(db_intencao)
+    response.headers["Location"] = f"/intencoes/{db_intencao.id}"
     return db_intencao
 
-@router.put("/intencoes/{id}", response_model=IntencaoRead)
+@router.patch("/intencoes/{id}", response_model=IntencaoRead)
 def update_intencao(
     id: int,
-    intencao: IntencaoCreate,
+    intencao: IntencaoUpdate,
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
@@ -61,10 +62,12 @@ def update_intencao(
         setattr(db_intencao, key, value)
 
     db.commit()
-    db.refresh(db_intencao)
     return db_intencao
 
-@router.delete("/intencoes/{id}")
+# Hard delete intencional: intenção é um "ticket" de planejamento de plantio.
+# Diferente das entidades de vida longa (Horta/Canteiro/Ciclo), descartar
+# fisicamente uma intenção abandonada não perde informação relevante.
+@router.delete("/intencoes/{id}", status_code=204)
 def delete_intencao(
     id: int,
     db: DBDep,
@@ -79,5 +82,3 @@ def delete_intencao(
 
     db.delete(db_intencao)
     db.commit()
-
-    return {"detail": "Intenção removida com sucesso"}

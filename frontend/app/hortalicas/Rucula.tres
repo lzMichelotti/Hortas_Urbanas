@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Hortalica" format=3 uid="uid://vcop82rf6jhb"]
+
+[ext_resource type="Texture2D" uid="uid://cg5stb3vwl3ru" path="res://assets/placeholders/verduras/food/celery.png" id="1_fadap"]
+[ext_resource type="Script" uid="uid://bku3p8s3u6snp" path="res://Engine/Hortalicas.gd" id="1_icaiq"]
+
+[resource]
+script = ExtResource("1_icaiq")
+nome = "Rúcula"
+figura = ExtResource("1_fadap")
+epoca_recomendada_plantio = Array[int]([2, 7])
+tempo_de_colheita = Array[int]([30, 40])
+metadata/_custom_type_script = "uid://bku3p8s3u6snp"
