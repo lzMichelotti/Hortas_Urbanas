@@ -23,7 +23,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    # Sem `ports:` → o banco fica acessível apenas na rede interna (host `db`:5432).
+    ports:
+      - "127.0.0.1:5433:5432"
 
   api:
     build: .
