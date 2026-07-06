@@ -3,7 +3,13 @@ import { Dialog } from "radix-ui"
 import { X } from "lucide-react"
 import { Guia } from "@/components/guia"
 
-const OPCOES = [
+export interface OpcaoMenu {
+  label: string
+  img: string
+  to: string
+}
+
+const OPCOES_MEMBRO: OpcaoMenu[] = [
   { label: "Plantar", img: "/plantar.png", to: "/painel/plantar" },
   { label: "Colher", img: "/colher.png", to: "/painel/colher" },
   { label: "Calendário", img: "/calendario.png", to: "/painel/calendario" },
@@ -12,7 +18,15 @@ const OPCOES = [
 
 const PREGO = "absolute size-1.5 rounded-full bg-[#3f2810]"
 
-export function QuadroMenu({ aberta, aoMudar }: { aberta: boolean; aoMudar: (v: boolean) => void }) {
+export function QuadroMenu({
+  aberta,
+  aoMudar,
+  opcoes = OPCOES_MEMBRO,
+}: {
+  aberta: boolean
+  aoMudar: (v: boolean) => void
+  opcoes?: OpcaoMenu[]
+}) {
   return (
     <Dialog.Root open={aberta} onOpenChange={aoMudar}>
       <Dialog.Portal>
@@ -40,7 +54,7 @@ export function QuadroMenu({ aberta, aoMudar }: { aberta: boolean; aoMudar: (v: 
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {OPCOES.map((o) => (
+            {opcoes.map((o) => (
               <Dialog.Close asChild key={o.to}>
                 <Link
                   to={o.to}

@@ -9,7 +9,7 @@ export type Asset =
   | { tipo: "maquete"; maquete: import("@/features/home/cena/maquetes").MaqueteId }
   | { tipo: "sprite"; src: string }
 
-export type BadgeFonte = "prontas" | "pedidos"
+export type BadgeFonte = "prontas" | "pedidos" | "solicitacoes"
 
 export interface ObjetoCena {
   id: string

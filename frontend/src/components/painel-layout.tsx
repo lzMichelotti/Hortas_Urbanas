@@ -13,12 +13,13 @@ import { Button } from "@/components/ui/button"
 export function PainelLayout() {
   const me = useMe()
   const logout = useLogout()
-  const ehMembro = me.data?.privilegio === "MEMBRO_CANTEIRO"
+  // Papéis com home de cenário compartilham o cabeçalho de céu e a nav sempre visível.
+  const ehCena = me.data?.privilegio === "MEMBRO_CANTEIRO" || me.data?.privilegio === "LIDER_HORTA"
   useLembretesColheita()
 
   return (
     <div className="flex min-h-svh flex-col bg-hu-bg text-hu-text">
-      {ehMembro ? (
+      {ehCena ? (
         <header className="relative flex items-center justify-center bg-[#8fd0ef] px-4 py-2.5 dark:bg-[#171f3a]">
           <button
             type="button"
@@ -54,7 +55,7 @@ export function PainelLayout() {
       )}
       <main
         className={`relative flex-1 overflow-auto p-4 ${
-          me.data?.privilegio === "MEMBRO_CANTEIRO"
+          ehCena
             ? "pb-[calc(4.75rem+env(safe-area-inset-bottom))]"
             : "pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-4"
         }`}

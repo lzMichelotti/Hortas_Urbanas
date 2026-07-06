@@ -48,9 +48,10 @@ function Segmento({
 export function ConfiguracoesPage() {
   const [tema, setTemaState] = useState<Tema>(getTema)
   const me = useMe()
-  const canteiro = useMeuCanteiro()
-  const atualizar = useAtualizarAvatar()
   const ehMembro = me.data?.privilegio === "MEMBRO_CANTEIRO"
+  const ehLider = me.data?.privilegio === "LIDER_HORTA"
+  const canteiro = useMeuCanteiro(ehMembro)
+  const atualizar = useAtualizarAvatar()
   const escolhido = me.data?.avatar ?? AVATAR_PADRAO
 
   return (
@@ -111,13 +112,24 @@ export function ConfiguracoesPage() {
         </p>
       </section>
 
-      <section className="space-y-4 rounded-2xl border-4 border-hu-bright bg-hu-panel p-5">
-        <h2 className="font-pixel text-xs text-hu-muted">Como usar</h2>
-        <FalaDaGuia humor="feliz">Toque na sua horta: na terra para plantar, na planta pronta para colher.</FalaDaGuia>
-        <FalaDaGuia>O carrinho de mão são os seus pedidos de plantas ao líder.</FalaDaGuia>
-        <FalaDaGuia>Toque em mim, a jardineira, para abrir o menu com tudo.</FalaDaGuia>
-        <FalaDaGuia>Para sair, use o botão no canto de cima da tela.</FalaDaGuia>
-      </section>
+      {(ehMembro || ehLider) && (
+        <section className="space-y-4 rounded-2xl border-4 border-hu-bright bg-hu-panel p-5">
+          <h2 className="font-pixel text-xs text-hu-muted">Como usar</h2>
+          {ehLider ? (
+            <>
+              <FalaDaGuia humor="feliz">Toque na sua horta para ver os canteiros e quem cuida de cada um.</FalaDaGuia>
+              <FalaDaGuia>O balão de aviso mostra os pedidos de plantas dos membros.</FalaDaGuia>
+            </>
+          ) : (
+            <>
+              <FalaDaGuia humor="feliz">Toque na sua horta: na terra para plantar, na planta pronta para colher.</FalaDaGuia>
+              <FalaDaGuia>O carrinho de mão são os seus pedidos de plantas ao líder.</FalaDaGuia>
+            </>
+          )}
+          <FalaDaGuia>Toque em mim, a jardineira, para abrir o menu com tudo.</FalaDaGuia>
+          <FalaDaGuia>Para sair, use o botão no canto de cima da tela.</FalaDaGuia>
+        </section>
+      )}
     </div>
   )
 }

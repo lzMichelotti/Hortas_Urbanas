@@ -1,11 +1,9 @@
 import { NavLink } from "react-router"
 import {
-  ClipboardCheck,
   Home as HomeIcon,
   Inbox,
   Leaf,
   type LucideIcon,
-  Megaphone,
   MessagesSquare,
   Settings,
   Sprout,
@@ -24,6 +22,10 @@ interface ItemNav {
 
 const INICIO: ItemNav = { label: "Início", icon: HomeIcon, to: "/painel", end: true }
 const COMUNIDADE: ItemNav = { label: "Comunidade", icon: MessagesSquare, to: "/forum" }
+const CONFIG: ItemNav = { label: "Config", icon: Settings, to: "/painel/config" }
+
+// Membro e líder têm home de cenário: a nav fica enxuta e as ações moram na cena/menu.
+const NAV_CENA: ItemNav[] = [INICIO, COMUNIDADE, CONFIG]
 
 const NAV: Record<Privilegio, ItemNav[]> = {
   ADMIN_SUPREMO: [
@@ -34,19 +36,8 @@ const NAV: Record<Privilegio, ItemNav[]> = {
     { label: "Demandas", icon: Inbox, to: "/painel/admin-demandas" },
     COMUNIDADE,
   ],
-  LIDER_HORTA: [
-    INICIO,
-    { label: "Horta", icon: HomeIcon, to: "/painel/horta" },
-    { label: "Solicitações", icon: ClipboardCheck, to: "/painel/solicitacoes" },
-    { label: "Demandas", icon: Megaphone, to: "/painel/demandas" },
-    { label: "Membros", icon: Users, to: "/painel/membros" },
-    COMUNIDADE,
-  ],
-  MEMBRO_CANTEIRO: [
-    INICIO,
-    COMUNIDADE,
-    { label: "Config", icon: Settings, to: "/painel/config" },
-  ],
+  LIDER_HORTA: NAV_CENA,
+  MEMBRO_CANTEIRO: NAV_CENA,
 }
 
 export function PlaquetaNav({ Icone, label, ativo }: { Icone: LucideIcon; label: string; ativo: boolean }) {
@@ -72,7 +63,7 @@ export function NavInferior() {
   const itens = privilegio ? NAV[privilegio] : []
   if (itens.length === 0) return null
 
-  if (privilegio === "MEMBRO_CANTEIRO") {
+  if (privilegio === "MEMBRO_CANTEIRO" || privilegio === "LIDER_HORTA") {
     return (
       <nav
         aria-label="Navegação principal"

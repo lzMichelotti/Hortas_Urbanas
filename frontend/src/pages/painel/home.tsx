@@ -1,22 +1,14 @@
 import { Link } from "react-router"
 import {
   AlertTriangle,
-  CalendarDays,
-  ClipboardCheck,
-  Home as HomeIcon,
   Inbox,
   Leaf,
   type LucideIcon,
   Map,
-  Megaphone,
-  MessageSquare,
-  ShoppingBasket,
   Sprout,
   Users,
 } from "lucide-react"
 import { useMe } from "@/features/auth/use-me"
-import { useCanteiros } from "@/features/canteiros/use-canteiros"
-import { useSolicitacoesLider } from "@/features/solicitacoes/use-solicitacoes-lider"
 import { useDemandas } from "@/features/demandas/use-demandas"
 import type { components } from "@/lib/api/schema"
 import { Carregando } from "@/components/feedback"
@@ -30,27 +22,14 @@ interface ItemHome {
   img?: string
 }
 
-const ITENS: Record<Privilegio, ItemHome[]> = {
+// Papéis com home de cenário (membro, líder) não passam por aqui — ver HOME_DO_PAPEL.
+const ITENS: Partial<Record<Privilegio, ItemHome[]>> = {
   ADMIN_SUPREMO: [
     { label: "Cadastrar horta", icon: Sprout, to: "/painel/cadastrar" },
     { label: "Hortas", icon: Leaf, to: "/painel/hortas" },
     { label: "Usuários", icon: Users, to: "/painel/usuarios" },
     { label: "Demandas", icon: Inbox, to: "/painel/admin-demandas", img: "/demandas.png" },
     { label: "Zonas de risco", icon: AlertTriangle, to: "/painel/riscos" },
-    { label: "Mapa", icon: Map, to: "/mapa", img: "/mapa.png" },
-  ],
-  LIDER_HORTA: [
-    { label: "Minha horta", icon: HomeIcon, to: "/painel/horta", img: "/minha-horta.png" },
-    { label: "Solicitações", icon: ClipboardCheck, to: "/painel/solicitacoes", img: "/solicitacoes.png" },
-    { label: "Demandas", icon: Megaphone, to: "/painel/demandas", img: "/demandas.png" },
-    { label: "Membros", icon: Users, to: "/painel/membros", img: "/membros.png" },
-    { label: "Mapa", icon: Map, to: "/mapa", img: "/mapa.png" },
-  ],
-  MEMBRO_CANTEIRO: [
-    { label: "Plantar", icon: Sprout, to: "/painel/plantar", img: "/plantar.png" },
-    { label: "Colher", icon: ShoppingBasket, to: "/painel/colher", img: "/colher.png" },
-    { label: "Calendário", icon: CalendarDays, to: "/painel/calendario", img: "/calendario.png" },
-    { label: "Pedidos", icon: MessageSquare, to: "/painel/comunidade", img: "/meus-pedidos.png" },
     { label: "Mapa", icon: Map, to: "/mapa", img: "/mapa.png" },
   ],
 }
@@ -89,54 +68,6 @@ function ResumoAdmin() {
   )
 }
 
-function ResumoLider() {
-  const solicitacoes = useSolicitacoesLider()
-  const canteiros = useCanteiros()
-  const demandas = useDemandas()
-
-  if (solicitacoes.isPending || canteiros.isPending || demandas.isPending) return <ResumoSkeleton />
-
-  const pendentes = (solicitacoes.data ?? []).filter((s) => s.status === "PENDENTE").length
-  const totalCanteiros = (canteiros.data ?? []).length
-  const demandasAbertas = (demandas.data ?? []).filter(
-    (d) => d.canteiro_id == null && (d.status === "ABERTA" || d.status === "EM_ATENDIMENTO"),
-  ).length
-  const materiaisPendentes = (demandas.data ?? []).filter(
-    (d) => d.canteiro_id != null && d.status === "ABERTA",
-  ).length
-  const aguardando = pendentes + materiaisPendentes
-
-  return (
-    <div
-      className={`mb-6 rounded-2xl border-4 bg-hu-panel p-5 text-hu-text ${
-        aguardando > 0 ? "border-amber-400" : "border-hu-bright"
-      }`}
-    >
-      <p className="mb-3 font-pixel text-xs text-hu-muted">Sua horta agora</p>
-      <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-        {pendentes > 0 ? (
-          <span className="font-bold text-amber-400">
-            📋 {pendentes} pedido{pendentes > 1 ? "s" : ""} de planta aguardando!
-          </span>
-        ) : (
-          <span className="text-hu-muted">📋 Nenhum pedido de planta</span>
-        )}
-        {materiaisPendentes > 0 && (
-          <span className="font-bold text-amber-400">
-            🔧 {materiaisPendentes} pedido{materiaisPendentes > 1 ? "s" : ""} de material!
-          </span>
-        )}
-        <span>🌿 {totalCanteiros} canteiro{totalCanteiros !== 1 ? "s" : ""}</span>
-        {demandasAbertas > 0 && (
-          <span className="text-hu-muted">
-            📦 {demandasAbertas} demanda{demandasAbertas > 1 ? "s" : ""} em aberto
-          </span>
-        )}
-      </div>
-    </div>
-  )
-}
-
 export function PainelHome() {
   const me = useMe()
   if (me.isPending) return <Carregando />
@@ -144,12 +75,11 @@ export function PainelHome() {
   const HomeDoPapel = me.data ? HOME_DO_PAPEL[me.data.privilegio] : undefined
   if (HomeDoPapel) return <HomeDoPapel />
 
-  const itens = me.data ? ITENS[me.data.privilegio] : []
+  const itens = (me.data ? ITENS[me.data.privilegio] : undefined) ?? []
 
   return (
     <div className="mx-auto max-w-3xl">
       {me.data?.privilegio === "ADMIN_SUPREMO" && <ResumoAdmin />}
-      {me.data?.privilegio === "LIDER_HORTA" && <ResumoLider />}
       <h1 className="font-pixel text-sm text-hu-bright">O que vamos fazer?</h1>
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
         {itens.map((it) => {
