@@ -43,6 +43,10 @@ class UsuarioUpdate(BaseModel):
         return v
 
 
+class AvatarUpdate(BaseModel):
+    avatar: str = Field(min_length=1, max_length=30)
+
+
 class UsuarioRead(BaseModel):
     """Visão pública — CPF mascarado. Usar em listagens e edições por terceiros.
     CPF == credencial de login (decisão de produto); só pode ser exposto cheio
@@ -53,6 +57,7 @@ class UsuarioRead(BaseModel):
     cpf: str = Field(exclude=True)
     telefone: str
     privilegio: Privilegio
+    avatar: str
     horta_id: Optional[int] = None
     ativo: bool
 
@@ -73,6 +78,7 @@ class UsuarioReadCompleto(BaseModel):
     cpf: str
     telefone: str
     privilegio: Privilegio
+    avatar: str
     horta_id: Optional[int] = None
     ativo: bool
 

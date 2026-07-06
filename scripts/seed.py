@@ -24,7 +24,7 @@ ADMIN = {
     "nome": "Adm",
     "email": "admin@hortasurbanas.com",
     "cpf": "92263020063",
-    "telefone": "55992123223",
+    "telefone": "55981083084",
     "privilegio": "ADMIN_SUPREMO",
 }
 

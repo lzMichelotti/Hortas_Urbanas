@@ -1,7 +1,12 @@
 """Testes de integração das rotas de hortas e PostGIS — requer TEST_DATABASE_URL."""
 import pytest
+from validate_docbr import CPF
 
 from app.database.models import ZonaRisco
+
+pytestmark = pytest.mark.integration
+
+_cpf = CPF()
 
 # Ponto de referência: Centro de São Paulo
 _SP_LAT = -23.5505
@@ -268,3 +273,72 @@ class TestAlertasAtivos:
         etag = r1.headers["ETag"]
         r2 = client.get("/alertas/ativos", headers={"If-None-Match": etag})
         assert r2.status_code == 304
+
+
+def _situacao_por_nome(client) -> dict:
+    feats = client.get("/mapa/completo").json()["features"]
+    return {f["properties"]["nome"]: f["properties"]["situacao"] for f in feats}
+
+
+class TestMapaCompleto:
+    """ST_Covers + ST_DWithin classificando a situação de risco de cada horta."""
+
+    def test_horta_dentro_da_zona_fica_dentro(self, client, admin_headers, horta_sp, zona_ativa_cobre_sp):
+        assert _situacao_por_nome(client)["Horta SP"] == "dentro"
+
+    def test_horta_proxima_da_zona_fica_em_alerta(self, client, admin_headers, zona_ativa_cobre_sp):
+        # ~510m a leste da borda (-46.615 vs -46.62) → dentro do raio de alerta (1km)
+        client.post(
+            "/hortas",
+            json={"nome": "Horta Vizinha", "area_total": 10.0, "latitude": -23.55, "longitude": -46.615},
+            headers=admin_headers,
+        )
+        assert _situacao_por_nome(client)["Horta Vizinha"] == "alerta"
+
+    def test_horta_distante_fica_segura(self, client, admin_headers, zona_ativa_cobre_sp):
+        # ~12km a leste de qualquer zona → além do raio de monitoramento (4km)
+        client.post(
+            "/hortas",
+            json={"nome": "Horta Longe", "area_total": 10.0, "latitude": -23.55, "longitude": -46.50},
+            headers=admin_headers,
+        )
+        assert _situacao_por_nome(client)["Horta Longe"] == "segura"
+
+
+class TestRegistroHortaComLider:
+    def _payload(self, cpf, email, nome_horta):
+        return {
+            "horta": {"nome": nome_horta, "area_total": 50.0},
+            "lider": {"nome": "Líder", "email": email, "cpf": cpf, "telefone": "11999999999"},
+        }
+
+    def test_registro_cria_horta_e_lider(self, client, admin_headers):
+        cpf = _cpf.generate()
+        r = client.post(
+            "/hortas/registro",
+            json=self._payload(cpf, "lider1@horta-urbana.com", "Horta Registro"),
+            headers=admin_headers,
+        )
+        assert r.status_code == 201
+        body = r.json()
+        assert body["horta"]["nome"] == "Horta Registro"
+        assert body["lider"]["privilegio"] == "LIDER_HORTA"
+        assert body["lider"]["cpf"] == cpf
+
+    def test_registro_cpf_duplicado_retorna_409_sem_criar_horta(self, client, admin_headers):
+        cpf = _cpf.generate()
+        client.post(
+            "/hortas/registro",
+            json=self._payload(cpf, "lider2@horta-urbana.com", "Horta OK"),
+            headers=admin_headers,
+        )
+        nomes_antes = {h["nome"] for h in client.get("/hortas").json()}
+
+        r = client.post(
+            "/hortas/registro",
+            json=self._payload(cpf, "lider3@horta-urbana.com", "Horta Orfa"),
+            headers=admin_headers,
+        )
+        assert r.status_code == 409
+        # rollback atômico: a horta da 2ª tentativa não pode ter ficado órfã
+        assert {h["nome"] for h in client.get("/hortas").json()} == nomes_antes

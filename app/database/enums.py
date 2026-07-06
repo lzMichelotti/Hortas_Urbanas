@@ -97,6 +97,14 @@ class StatusDemanda(str, Enum):
     CANCELADA       = "CANCELADA"
 
 
+# --- Fórum ---
+
+class TipoPost(str, Enum):
+    AJUDA  = "AJUDA"
+    TROCAS = "TROCAS"
+    AVISOS = "AVISOS"
+
+
 # --- Helper para CHECK constraints ---
 
 def enum_check(coluna: str, enum_class: type[Enum], *, name: str) -> CheckConstraint:

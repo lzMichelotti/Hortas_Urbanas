@@ -1,0 +1,19 @@
+api.hortasurbanassm.com.br {
+	reverse_proxy api:8000
+}
+
+app.hortasurbanassm.com.br {
+	root * /srv/app
+	encode gzip
+
+	# Cache (doc de deploy do vite-plugin-pwa): assets têm hash no nome, podem
+	# ser cacheados para sempre; index.html/sw.js mantêm o nome e precisam ser
+	# revalidados a cada visita, senão o auto-update do PWA atrasa.
+	@hashed path /assets/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+	@nohash not path /assets/*
+	header @nohash Cache-Control "no-cache"
+
+	try_files {path} /index.html
+	file_server
+}

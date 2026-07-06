@@ -5,9 +5,9 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 
-from app.api.routes import (
+from app.routers import (
     auth, hortas, produtos, canteiros, ciclos,
-    demandas, intencoes, usuarios, solicitacoes, zonas_risco,
+    demandas, intencoes, usuarios, solicitacoes, zonas_risco, clima, forum,
 )
 from app.core.config import settings
 from app.core.logger import logger  
@@ -58,6 +58,11 @@ async def sqlalchemy_error_handler(request: Request, exc: SQLAlchemyError):
 
 @app.get("/health", tags=["Health"])
 def health():
+    return {"status": "ok"}
+
+
+@app.get("/health/db", tags=["Health"])
+def health_db():
     with engine.connect() as conn:
         conn.execute(text("SELECT 1"))
     return {"status": "ok"}
@@ -73,3 +78,5 @@ app.include_router(intencoes.router)
 app.include_router(solicitacoes.router)
 app.include_router(usuarios.router)
 app.include_router(zonas_risco.router)
+app.include_router(clima.router)
+app.include_router(forum.router)

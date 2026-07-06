@@ -1,8 +1,13 @@
 """Testes de integração das rotas de usuários — requer TEST_DATABASE_URL."""
 import pytest
+from validate_docbr import CPF
 
 from app.core.security import get_password_hash
 from app.database.models import Horta, Usuario
+
+pytestmark = pytest.mark.integration
+
+_cpf = CPF()
 
 
 @pytest.fixture
@@ -89,3 +94,63 @@ class TestEscalonamentoDePrivilegio:
         )
         assert r.status_code == 200
         assert r.json()["nome"] == "Nome Novo"
+
+
+class TestCriacaoUsuario:
+    def _payload(self, cpf, email, privilegio="MEMBRO_CANTEIRO"):
+        return {
+            "nome": "Novo",
+            "email": email,
+            "cpf": cpf,
+            "telefone": "11999999999",
+            "privilegio": privilegio,
+        }
+
+    def test_cpf_invalido_retorna_422(self, client, admin_headers):
+        r = client.post("/usuarios", json=self._payload("123", "x@horta-urbana.com"), headers=admin_headers)
+        assert r.status_code == 422
+
+    def test_cpf_duplicado_retorna_409(self, client, admin_headers):
+        cpf = _cpf.generate()
+        r1 = client.post("/usuarios", json=self._payload(cpf, "primeiro@horta-urbana.com"), headers=admin_headers)
+        assert r1.status_code == 201
+        # mesmo CPF, e-mail diferente → conflito na constraint unique de cpf
+        r2 = client.post("/usuarios", json=self._payload(cpf, "segundo@horta-urbana.com"), headers=admin_headers)
+        assert r2.status_code == 409
+
+    def test_email_duplicado_retorna_409(self, client, admin_headers):
+        r1 = client.post("/usuarios", json=self._payload(_cpf.generate(), "repetido@horta-urbana.com"), headers=admin_headers)
+        assert r1.status_code == 201
+        r2 = client.post("/usuarios", json=self._payload(_cpf.generate(), "repetido@horta-urbana.com"), headers=admin_headers)
+        assert r2.status_code == 409
+
+
+class TestAvatarMe:
+    def _headers(self, client, db, horta, email):
+        cpf = _cpf.generate()
+        _membro(db, horta, email, cpf)
+        r = client.post("/token", data={"username": email, "password": cpf})
+        assert r.status_code == 200, r.json()
+        return {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+    def test_avatar_padrao_jardineira(self, client, db, horta):
+        h = self._headers(client, db, horta, "av1@horta-urbana.com")
+        r = client.get("/usuarios/me", headers=h)
+        assert r.status_code == 200
+        assert r.json()["avatar"] == "jardineira"
+
+    def test_membro_troca_o_proprio_avatar(self, client, db, horta):
+        h = self._headers(client, db, horta, "av2@horta-urbana.com")
+        r = client.patch("/usuarios/me", json={"avatar": "idoso"}, headers=h)
+        assert r.status_code == 200
+        assert r.json()["avatar"] == "idoso"
+        assert client.get("/usuarios/me", headers=h).json()["avatar"] == "idoso"
+
+    def test_avatar_muito_longo_422(self, client, db, horta):
+        h = self._headers(client, db, horta, "av3@horta-urbana.com")
+        r = client.patch("/usuarios/me", json={"avatar": "x" * 31}, headers=h)
+        assert r.status_code == 422
+
+    def test_avatar_exige_autenticacao(self, client):
+        r = client.patch("/usuarios/me", json={"avatar": "idoso"})
+        assert r.status_code == 401

@@ -4,6 +4,7 @@ sqlalchemy
 psycopg2-binary
 python-multipart
 pydantic
+pydantic-settings
 bcrypt
 pyjwt
 python-dotenv
@@ -12,3 +13,4 @@ GeoAlchemy2
 shapely
 orjson
 alembic
+boto3

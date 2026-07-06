@@ -1,0 +1,28 @@
+# Mantém o contexto de build pequeno e impede que segredos/lixo entrem na imagem.
+.git/
+.gitignore
+venv/
+__pycache__/
+*.pyc
+
+# NUNCA copiar segredos para a imagem (vêm via env_file no runtime).
+.env
+.env.example
+
+# Nada disso é necessário em produção.
+frontend/
+shp/
+tests/
+.pytest_cache/
+.coverage
+.coveragerc
+pytest.ini
+mapa_teste.html
+test_r2.py
+*.md
+
+# Arquivos de infra não são COPYados para dentro da imagem.
+Dockerfile
+.dockerignore
+Caddyfile
+docker-compose*.yaml

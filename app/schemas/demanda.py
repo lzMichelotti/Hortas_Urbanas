@@ -10,6 +10,13 @@ class DemandaCreate(BaseModel):
     quantidade: float = Field(..., gt=0, description="Quantidade solicitada (não pode ser zero ou negativa)")
     unidade_medida: str = Field(..., description="Ex: kg, unidades, litros")
 
+
+class DemandaMembroCreate(BaseModel):
+    tipo_demanda: str
+    descricao: str
+    quantidade: float = Field(..., gt=0, description="Quantidade solicitada (não pode ser zero ou negativa)")
+    unidade_medida: str = Field(..., description="Ex: kg, unidades, litros")
+
 class DemandaUpdate(BaseModel):
     tipo_demanda: Optional[str] = None
     descricao: Optional[str] = None
@@ -25,6 +32,7 @@ class DemandaUpdateStatus(BaseModel):
 class DemandaRead(BaseModel):
     id: int
     horta_id: int
+    canteiro_id: Optional[int] = None
     tipo_demanda: str
     descricao: str
     quantidade: float

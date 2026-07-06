@@ -1,0 +1,124 @@
+from typing import Annotated
+from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy.orm import Session
+
+from app.database.session import get_db
+from app.database.models import Canteiro, Produto, SolicitacaoPlantio, Usuario
+from app.schemas.solicitacao import SolicitacaoCreate, SolicitacaoRead, SolicitacaoUpdateStatus
+from app.dependencies import get_current_user, get_lider_user
+from app.permissions import exigir_acesso_horta, exigir_dono_do_canteiro, exigir_lider_da_horta
+from app.core.idempotency import IdempotencyKeyHeader, commit_idempotente
+
+router = APIRouter(tags=["Solicitações de Plantio"])
+
+DBDep = Annotated[Session, Depends(get_db)]
+
+
+@router.get("/solicitacoes", response_model=list[SolicitacaoRead])
+def read_solicitacoes(
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)]
+):
+    if lider.privilegio == "LIDER_HORTA":
+        return (
+            db.query(SolicitacaoPlantio)
+            .join(Canteiro)
+            .filter(Canteiro.horta_id == lider.horta_id, Canteiro.ativo == True)
+            .all()
+        )
+    return db.query(SolicitacaoPlantio).all()
+
+    
+
+@router.get("/canteiros/{canteiro_id}/solicitacoes", response_model=list[SolicitacaoRead])
+def read_solicitacoes_do_canteiro(
+    canteiro_id: int,
+    db: DBDep,
+    usuario: Annotated[Usuario, Depends(get_current_user)]
+):
+    canteiro = db.query(Canteiro).filter(Canteiro.id == canteiro_id).first()
+
+    if not canteiro:
+        raise HTTPException(status_code=404, detail="Canteiro não encontrado.")
+
+    exigir_acesso_horta(usuario, canteiro.horta_id)
+
+    return db.query(SolicitacaoPlantio).filter(SolicitacaoPlantio.canteiro_id == canteiro_id).all()
+
+
+@router.post("/canteiros/{canteiro_id}/solicitacoes", response_model=SolicitacaoRead, status_code=201)
+def create_solicitacao(
+    canteiro_id: int,
+    solicitacao: SolicitacaoCreate,
+    db: DBDep,
+    response: Response,
+    usuario: Annotated[Usuario, Depends(get_current_user)],
+    idempotency_key: IdempotencyKeyHeader = None,
+):
+    canteiro = db.query(Canteiro).filter(Canteiro.id == canteiro_id).first()
+
+    if not canteiro:
+        raise HTTPException(status_code=404, detail="Canteiro não encontrado.")
+
+    exigir_acesso_horta(usuario, canteiro.horta_id)
+    exigir_dono_do_canteiro(usuario, canteiro)
+
+    produto = db.query(Produto).filter(Produto.id == solicitacao.produto_id).first()
+    if not produto:
+        raise HTTPException(status_code=404, detail="O produto selecionado não existe no catálogo oficial.")
+
+    db_solicitacao = SolicitacaoPlantio(**solicitacao.model_dump(), canteiro_id=canteiro_id)
+    db_solicitacao = commit_idempotente(db, db_solicitacao, idempotency_key, canteiro_id=canteiro_id)
+    response.headers["Location"] = f"/solicitacoes/{db_solicitacao.id}"
+    return db_solicitacao
+
+
+@router.patch("/solicitacoes/{id}/status", response_model=SolicitacaoRead)
+def update_solicitacao_status(
+    id: int,
+    update_data: SolicitacaoUpdateStatus,
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)]
+):
+    db_solicitacao = db.query(SolicitacaoPlantio).filter(SolicitacaoPlantio.id == id).first()
+
+    if not db_solicitacao:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
+
+    canteiro = db.query(Canteiro).filter(Canteiro.id == db_solicitacao.canteiro_id).first()
+
+    if not canteiro:
+        raise HTTPException(404, "Canteiro não encontrado")
+
+    exigir_lider_da_horta(lider, canteiro.horta_id)
+
+    db_solicitacao.status = update_data.status
+    db.commit()
+    return db_solicitacao
+
+
+# Hard delete intencional: solicitação é um "ticket" de vida curta (PENDENTE →
+# APROVADA/REJEITADA). Diferente de Horta/Canteiro/Ciclo (entidades de vida
+# longa, com soft delete para histórico), descartar fisicamente um ticket
+# rejeitado/cancelado não perde informação relevante.
+@router.delete("/solicitacoes/{id}", status_code=204)
+def delete_solicitacao(
+    id: int,
+    db: DBDep,
+    usuario: Annotated[Usuario, Depends(get_current_user)]
+):
+    db_solicitacao = db.query(SolicitacaoPlantio).filter(SolicitacaoPlantio.id == id).first()
+
+    if not db_solicitacao:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
+
+    canteiro = db.query(Canteiro).filter(Canteiro.id == db_solicitacao.canteiro_id).first()
+
+    if not canteiro:
+        raise HTTPException(404, "Canteiro não encontrado")
+
+    exigir_acesso_horta(usuario, canteiro.horta_id)
+    exigir_dono_do_canteiro(usuario, canteiro)
+
+    db.delete(db_solicitacao)
+    db.commit()

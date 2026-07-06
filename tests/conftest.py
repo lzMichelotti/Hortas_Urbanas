@@ -1,6 +1,7 @@
 import os
 
 import pytest
+from dotenv import load_dotenv
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -11,7 +12,8 @@ from app.database.models import Usuario
 from app.database.session import Base, get_db
 from app.main import app
 
-_TEST_DB_URL = os.environ.get("TEST_DATABASE_URL")
+load_dotenv()
+_TEST_DB_URL = os.environ.get("DATABASE_TEST_URL")
 
 
 @pytest.fixture(scope="session")

@@ -1,8 +1,12 @@
 """Testes de integração do fluxo de autenticação — requer TEST_DATABASE_URL."""
+from datetime import timedelta
+
 import pytest
 
-from app.core.security import get_password_hash
+from app.core.security import create_access_token, get_password_hash
 from app.database.models import Usuario
+
+pytestmark = pytest.mark.integration
 
 
 @pytest.fixture
@@ -62,6 +66,24 @@ class TestLogin:
         r = client.get("/usuarios/me", headers=admin_headers)
         assert r.status_code == 200
         assert r.json()["email"] == "admin@horta-urbana.com"
+
+    def test_token_expirado_retorna_401(self, client, admin_user):
+        # expires_delta negativo → token já nasce expirado (jwt.decode rejeita pelo exp)
+        expirado = create_access_token({"sub": str(admin_user.id)}, expires_delta=timedelta(seconds=-1))
+        r = client.get("/usuarios/me", headers={"Authorization": f"Bearer {expirado}"})
+        assert r.status_code == 401
+
+    def test_token_assinatura_adulterada_retorna_401(self, client, admin_user):
+        valido = create_access_token({"sub": str(admin_user.id)})
+        adulterado = valido[:-3] + ("aaa" if valido[-3:] != "aaa" else "bbb")  # quebra a assinatura
+        r = client.get("/usuarios/me", headers={"Authorization": f"Bearer {adulterado}"})
+        assert r.status_code == 401
+
+    def test_token_sem_claim_sub_retorna_401(self, client, admin_user):
+        # dependencies.get_current_user exige require=["exp","sub"]; sem 'sub' → InvalidToken
+        sem_sub = create_access_token({})
+        r = client.get("/usuarios/me", headers={"Authorization": f"Bearer {sem_sub}"})
+        assert r.status_code == 401
 
 
 class TestRefreshToken:

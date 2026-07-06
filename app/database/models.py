@@ -1,6 +1,6 @@
 from sqlalchemy import (
     Column, Integer, String, Float, Boolean, Date, ForeignKey, Text, DateTime,
-    CheckConstraint, UniqueConstraint, func,
+    CheckConstraint, UniqueConstraint, Index, func, text,
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
@@ -9,7 +9,7 @@ from app.database.session import Base
 from app.database.enums import (
     FonteAgua, TipoSolo, NivelVulnerabilidade, TipoZona, NivelRisco,
     Privilegio, StatusCiclo, StatusIntencao, StatusSolicitacao, StatusDemanda,
-    enum_check,
+    TipoPost, enum_check,
 )
 
 
@@ -87,6 +87,7 @@ class Usuario(Base):
     senha_hash = Column(String(255), nullable=False)
     telefone = Column(String(20), nullable=False)
     privilegio = Column(String(50), nullable=False)
+    avatar = Column(String(30), nullable=False, server_default=text("'jardineira'"))
     ativo = Column(Boolean, default=True, nullable=False)      # baixa cardinalidade — sem índice B-tree
     deletado_em = Column(DateTime(timezone=True), nullable=True)
 
@@ -112,6 +113,7 @@ class Canteiro(Base):
     usuario = relationship("Usuario", back_populates="canteiros")
     ciclos = relationship("CicloProducao", back_populates="canteiro", passive_deletes=True)
     solicitacoes = relationship("SolicitacaoPlantio", back_populates="canteiro", passive_deletes=True)
+    demandas = relationship("Demanda", back_populates="canteiro", passive_deletes=True)
 
 
 class Produto(Base):
@@ -144,8 +146,6 @@ class CicloProducao(Base):
             "quantidade > 0",
             name="ck_ciclos_producao_quantidade_positiva",
         ),
-        # Idempotency-Key escopada por canteiro: a mesma UUID em canteiros
-        # diferentes não colide (evita leak entre usuários).
         UniqueConstraint(
             "canteiro_id", "idempotency_key",
             name="uq_ciclos_producao_idempotency",
@@ -191,6 +191,10 @@ class SolicitacaoPlantio(Base):
     __tablename__ = 'Solicitacoes_Plantio'
     __table_args__ = (
         enum_check("status", StatusSolicitacao, name="ck_solicitacoes_plantio_status"),
+        CheckConstraint(
+            "quantidade > 0",
+            name="ck_solicitacoes_plantio_quantidade_positiva",
+        ),
         UniqueConstraint(
             "canteiro_id", "idempotency_key",
             name="uq_solicitacoes_plantio_idempotency",
@@ -200,6 +204,7 @@ class SolicitacaoPlantio(Base):
     id = Column(Integer, primary_key=True)
     canteiro_id = Column(Integer, ForeignKey('Canteiros.id', ondelete='CASCADE'), nullable=False, index=True)
     produto_id = Column(Integer, ForeignKey('Produtos.id', ondelete='SET NULL'), nullable=True)
+    quantidade = Column(Integer, nullable=False, server_default=text("1"))
     justificativa = Column(Text, nullable=True)
     data_desejada_plantio = Column(Date, nullable=True)
     status = Column(String(50), nullable=False, default="PENDENTE")
@@ -221,6 +226,7 @@ class Demanda(Base):
 
     id = Column(Integer, primary_key=True)
     horta_id = Column(Integer, ForeignKey('Hortas.id', ondelete='CASCADE'), nullable=False, index=True)
+    canteiro_id = Column(Integer, ForeignKey('Canteiros.id', ondelete='CASCADE'), nullable=True, index=True)
     tipo_demanda = Column(String(50), nullable=False)
     descricao = Column(Text, nullable=False)
     quantidade = Column(Float, nullable=False)
@@ -230,3 +236,79 @@ class Demanda(Base):
     deletado_em = Column(DateTime(timezone=True), nullable=True)
 
     horta = relationship("Horta", back_populates="demandas")
+    canteiro = relationship("Canteiro", back_populates="demandas")
+
+
+class Post(Base):
+    __tablename__ = 'Posts'
+    __table_args__ = (
+        enum_check("tipo", TipoPost, name="ck_posts_tipo"),
+        Index("ix_Posts_tipo_id", "tipo", "id"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    autor_id = Column(Integer, ForeignKey('Usuarios.id', ondelete='SET NULL'), nullable=True, index=True)
+    tipo = Column(String(20), nullable=False, server_default="AJUDA")
+    conteudo = Column(Text, nullable=False)
+    criado_em = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    autor = relationship("Usuario")
+    respostas = relationship(
+        "Resposta", back_populates="post",
+        cascade="all, delete", passive_deletes=True, order_by="Resposta.id",
+    )
+    imagens = relationship(
+        "PostImagem", back_populates="post",
+        cascade="all, delete", passive_deletes=True, order_by="PostImagem.id",
+    )
+
+
+class PostImagem(Base):
+    __tablename__ = 'Post_Imagens'
+
+    id = Column(Integer, primary_key=True)
+    post_id = Column(Integer, ForeignKey('Posts.id', ondelete='CASCADE'), nullable=False, index=True)
+    object_key = Column(String(500), nullable=False, unique=True)
+    content_type = Column(String(40), nullable=False)
+    criado_em = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    post = relationship("Post", back_populates="imagens")
+
+
+class Resposta(Base):
+    __tablename__ = 'Respostas'
+
+    id = Column(Integer, primary_key=True)
+    post_id = Column(Integer, ForeignKey('Posts.id', ondelete='CASCADE'), nullable=False, index=True)
+    autor_id = Column(Integer, ForeignKey('Usuarios.id', ondelete='SET NULL'), nullable=True, index=True)
+    conteudo = Column(Text, nullable=False)
+    criado_em = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    post = relationship("Post", back_populates="respostas")
+    autor = relationship("Usuario")
+
+
+class Curtida(Base):
+    __tablename__ = 'Curtidas'
+    __table_args__ = (
+        UniqueConstraint("post_id", "usuario_id", name="uq_curtidas_post_usuario"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    post_id = Column(Integer, ForeignKey('Posts.id', ondelete='CASCADE'), nullable=False)
+    usuario_id = Column(Integer, ForeignKey('Usuarios.id', ondelete='CASCADE'), nullable=False)
+    criado_em = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class Denuncia(Base):
+    __tablename__ = 'Denuncias'
+    __table_args__ = (
+        CheckConstraint("num_nonnulls(post_id, resposta_id) = 1", name="ck_denuncias_alvo_unico"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    post_id = Column(Integer, ForeignKey('Posts.id', ondelete='CASCADE'), nullable=True, index=True)
+    resposta_id = Column(Integer, ForeignKey('Respostas.id', ondelete='CASCADE'), nullable=True, index=True)
+    denunciante_id = Column(Integer, ForeignKey('Usuarios.id', ondelete='SET NULL'), nullable=True)
+    motivo = Column(String(280), nullable=True)
+    criado_em = Column(DateTime(timezone=True), nullable=False, server_default=func.now())

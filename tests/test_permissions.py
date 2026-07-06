@@ -4,13 +4,16 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi import HTTPException
 
-from app.api.permissions import (
+from app.permissions import (
     exigir_acesso_horta,
     exigir_dono_do_canteiro,
+    exigir_dono_ou_moderador,
     exigir_lider_da_horta,
     exigir_lider_pode_criar_usuario,
     horta_id_visivel,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def _usuario(privilegio: str, horta_id: int | None = 1, id: int = 1):
@@ -108,4 +111,25 @@ class TestExigirLiderPodeCriarUsuario:
     def test_lider_nao_pode_criar_admin(self):
         with pytest.raises(HTTPException) as exc:
             exigir_lider_pode_criar_usuario(_usuario("LIDER_HORTA"), "ADMIN_SUPREMO")
+        assert exc.value.status_code == 403
+
+
+class TestExigirDonoOuModerador:
+    def test_admin_modera_qualquer(self):
+        exigir_dono_ou_moderador(_usuario("ADMIN_SUPREMO", id=1), autor_id=999)
+
+    def test_lider_modera_qualquer(self):
+        exigir_dono_ou_moderador(_usuario("LIDER_HORTA", id=2), autor_id=999)
+
+    def test_membro_dono_pode(self):
+        exigir_dono_ou_moderador(_usuario("MEMBRO_CANTEIRO", id=5), autor_id=5)
+
+    def test_membro_nao_dono_levanta_403(self):
+        with pytest.raises(HTTPException) as exc:
+            exigir_dono_ou_moderador(_usuario("MEMBRO_CANTEIRO", id=5), autor_id=999)
+        assert exc.value.status_code == 403
+
+    def test_membro_autor_removido_levanta_403(self):
+        with pytest.raises(HTTPException) as exc:
+            exigir_dono_ou_moderador(_usuario("MEMBRO_CANTEIRO", id=5), autor_id=None)
         assert exc.value.status_code == 403

@@ -1,0 +1,67 @@
+# Produção — sobe db + api + caddy numa rede interna do compose.
+#   docker compose -f docker-compose.prod.yaml up -d --build
+#
+# O docker-compose.yaml (dev) continua só com o banco e a porta 5435 exposta p/ local.
+# Aqui o banco NÃO é exposto e só o Caddy publica portas (80/443) para a internet.
+
+services:
+  db:
+    image: postgis/postgis:15-3.5-alpine
+    container_name: horta_postgres
+    restart: always
+    # Segredos via .env (interpolação automática do compose). :? aborta o `up` se
+    # a senha não estiver definida — evita subir Postgres com senha vazia.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-horta}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: ${POSTGRES_DB:-horta_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # $$ escapa o $ para o compose: a variável é lida do ambiente do container.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Sem `ports:` → o banco fica acessível apenas na rede interna (host `db`:5432).
+
+  api:
+    build: .
+    container_name: horta_api
+    restart: always
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy   # só sobe a API quando o banco passa no healthcheck
+    expose:
+      - "8000"   # visível só na rede interna; sem `ports:` não vai p/ internet
+    # Sem `ports:` → só o Caddy alcança a API (host `api`:8000).
+
+  caddy:
+    # Imagem própria: Caddy + build do frontend (ver frontend/Dockerfile).
+    # A URL da API é fixada no build — o Vite embute o valor no JS gerado.
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: https://api.hortasurbanassm.com.br
+    container_name: horta_caddy
+    restart: always
+    depends_on:
+      - api
+    # IMPORTANTE: o firewall da VPS (Hostinger / ufw) PRECISA liberar 80 e 443.
+    # A 80 é usada no desafio ACME (HTTP-01) e no redirect HTTP->HTTPS; a 443 no
+    # tráfego TLS (e no fallback TLS-ALPN-01). Sem essas portas abertas no host,
+    # o Caddy não consegue emitir o certificado Let's Encrypt e o HTTPS não sobe.
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3 (QUIC), habilitado por padrão pelo Caddy
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data       # certificados TLS — PRECISA persistir (rate limit do Let's Encrypt)
+      - caddy_config:/config
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
