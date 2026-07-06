@@ -2,8 +2,10 @@
 .git/
 .gitignore
 venv/
-__pycache__/
-*.pyc
+# ** é obrigatório: sem ele o padrão só casa na raiz do contexto (doc do Docker),
+# e os __pycache__/ de app/ e scripts/ entrariam na imagem.
+**/__pycache__/
+**/*.pyc
 
 # NUNCA copiar segredos para a imagem (vêm via env_file no runtime).
 .env
