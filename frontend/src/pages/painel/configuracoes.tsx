@@ -1,6 +1,8 @@
 import { useState } from "react"
+import { LogOut } from "lucide-react"
 import { FalaDaGuia } from "@/components/guia"
 import { useMe } from "@/features/auth/use-me"
+import { useLogout } from "@/features/auth/use-logout"
 import { ROTULO_PAPEL } from "@/features/auth/papeis"
 import { useMeuCanteiro } from "@/features/canteiro/use-meu-canteiro"
 import { AVATARES, AVATAR_PADRAO, srcAvatar } from "@/features/perfil/avatares"
@@ -48,6 +50,7 @@ function Segmento({
 export function ConfiguracoesPage() {
   const [tema, setTemaState] = useState<Tema>(getTema)
   const me = useMe()
+  const logout = useLogout()
   const ehMembro = me.data?.privilegio === "MEMBRO_CANTEIRO"
   const ehLider = me.data?.privilegio === "LIDER_HORTA"
   const canteiro = useMeuCanteiro(ehMembro)
@@ -130,6 +133,20 @@ export function ConfiguracoesPage() {
           <FalaDaGuia>Para sair, use o botão no canto de cima da tela.</FalaDaGuia>
         </section>
       )}
+
+      <section className="rounded-2xl border-4 border-hu-bright bg-hu-panel p-5">
+        <button
+          type="button"
+          onClick={logout}
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-red-400/50 text-base font-bold text-red-600 hover:bg-red-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+        >
+          <LogOut className="size-5" aria-hidden />
+          Sair da conta
+        </button>
+        <p className="mt-3 text-center text-sm text-hu-muted">
+          Você volta para a tela de entrada e pode entrar com outra conta.
+        </p>
+      </section>
     </div>
   )
 }

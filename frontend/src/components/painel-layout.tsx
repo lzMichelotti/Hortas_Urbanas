@@ -24,10 +24,10 @@ export function PainelLayout() {
           <button
             type="button"
             onClick={logout}
-            aria-label="Sair"
-            className="absolute right-2 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-lg text-hu-text/70 transition-colors hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hu-bright"
+            className="absolute right-2 top-1/2 flex min-h-11 -translate-y-1/2 items-center gap-1.5 rounded-xl border-2 border-black/20 bg-white/40 px-3 text-sm font-bold text-hu-text transition-colors hover:bg-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hu-bright dark:border-white/20 dark:bg-white/10 dark:hover:bg-white/20"
           >
             <LogOut className="size-5" aria-hidden />
+            Sair
           </button>
         </header>
       ) : (
