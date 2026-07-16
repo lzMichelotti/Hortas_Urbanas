@@ -23,7 +23,7 @@ function Segmento({
   return (
     <div>
       <p className="mb-2 text-sm font-medium text-hu-text">{rotulo}</p>
-      <div className="flex gap-2" role="group" aria-label={rotulo}>
+      <div className="flex gap-1.5" role="group" aria-label={rotulo}>
         {opcoes.map((o) => {
           const ativo = o.v === valor
           return (
@@ -32,7 +32,7 @@ function Segmento({
               type="button"
               aria-pressed={ativo}
               onClick={() => aoEscolher(o.v)}
-              className={`min-h-11 flex-1 rounded-xl border-2 px-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hu-bright ${
+              className={`min-h-11 flex-1 whitespace-nowrap rounded-xl border-2 px-2 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hu-bright ${
                 ativo
                   ? "border-hu-bright bg-hu-bright text-hu-bg"
                   : "border-hu-soft bg-transparent text-hu-text hover:bg-black/5"

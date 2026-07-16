@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { Navigate, Route, Routes } from "react-router"
 import { ErrorBoundary, RouteBoundary } from "@/components/error-boundary"
 import { Conexao } from "@/components/conexao"
+import { SessaoExpirada } from "@/components/sessao-expirada"
 import { ProtectedRoute } from "@/components/protected-route"
 import { RoleRoute } from "@/components/role-route"
 import { LoginPage } from "@/pages/login"
@@ -41,6 +42,7 @@ function App() {
   return (
     <ErrorBoundary>
       <Conexao />
+      <SessaoExpirada />
       <Suspense fallback={<Carregando />}>
         <Routes>
           <Route path="/" element={<LoginPage />} />

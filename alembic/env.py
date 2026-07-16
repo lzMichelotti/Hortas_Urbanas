@@ -47,6 +47,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        process_revision_directives=alembic_helpers.writer,
         render_item=alembic_helpers.render_item,
         include_object=include_object,
     )
@@ -66,6 +67,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
+            process_revision_directives=alembic_helpers.writer,
             render_item=alembic_helpers.render_item,
             include_object=include_object,
         )

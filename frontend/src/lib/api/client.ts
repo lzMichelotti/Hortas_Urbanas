@@ -5,6 +5,7 @@ import {
   getRefreshToken,
   setTokens,
   clearTokens,
+  avisarSessaoExpirada,
 } from "@/lib/auth/session"
 
 export const API_BASE_URL =
@@ -62,6 +63,7 @@ const authMiddleware: Middleware = {
     const renovou = await refreshing
     if (!renovou) {
       clearTokens()
+      if (request.headers.has("Authorization")) avisarSessaoExpirada()
       return response
     }
     const retry = retryClone.get(request) ?? request

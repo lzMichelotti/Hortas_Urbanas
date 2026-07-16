@@ -18,7 +18,7 @@ import { FalaDaGuia } from "@/components/guia"
 import { type Estagio } from "@/components/plantinha"
 import { ArtePlanta, SpriteProduto } from "@/features/produtos/sprite-produto"
 import { CelebracaoOverlay } from "@/components/celebracao"
-import { TERRA } from "@/features/canteiro/horta-interativa"
+import { TERRA } from "@/features/canteiro/terra"
 
 const DIAS_PADRAO_COLHEITA = 90
 const CRESCIMENTO: Estagio[] = ["broto", "crescendo", "pronta"]

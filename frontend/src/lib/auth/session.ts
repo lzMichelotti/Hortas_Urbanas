@@ -22,3 +22,9 @@ export function clearTokens(): void {
 export function isAuthenticated(): boolean {
   return getAccessToken().length > 0
 }
+
+export const EVENTO_SESSAO_EXPIRADA = "hu:sessao-expirada"
+
+export function avisarSessaoExpirada(): void {
+  window.dispatchEvent(new Event(EVENTO_SESSAO_EXPIRADA))
+}

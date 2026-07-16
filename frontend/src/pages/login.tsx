@@ -1,5 +1,5 @@
 import { type FormEvent, useRef, useState } from "react"
-import { Link, Navigate, useNavigate } from "react-router"
+import { Link, Navigate, useLocation, useNavigate } from "react-router"
 import { X } from "lucide-react"
 import { useLogin } from "@/features/auth/use-login"
 import { isAuthenticated } from "@/lib/auth/session"
@@ -20,11 +20,15 @@ function mensagemLogin(error: unknown): string {
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const login = useLogin()
   const [email, setEmail] = useState("")
   const [cpf, setCpf] = useState("")
   const emailRef = useRef<HTMLInputElement>(null)
   const cpfRef = useRef<HTMLInputElement>(null)
+  const sessaoExpirou = Boolean(
+    (location.state as { sessaoExpirada?: boolean } | null)?.sessaoExpirada,
+  )
 
   if (isAuthenticated()) {
     return <Navigate to="/painel" replace />
@@ -118,6 +122,9 @@ export function LoginPage() {
             </div>
           </div>
 
+          {sessaoExpirou && !login.isError && (
+            <Aviso variante="info">Sua sessão terminou. Entre de novo para continuar.</Aviso>
+          )}
           {login.isError && <Aviso variante="erro">{mensagemLogin(login.error)}</Aviso>}
 
           <Button

@@ -19,6 +19,7 @@ def fake_r2(monkeypatch):
     monkeypatch.setattr(storage, "gerar_presign_put", lambda key, ct: f"https://upload.test/{key}")
     monkeypatch.setattr(storage, "head_objeto", lambda key: objetos.get(key))
     monkeypatch.setattr(storage, "apagar_objeto", lambda key: objetos.pop(key, None))
+    monkeypatch.setattr(storage, "apagar_objeto_best_effort", lambda key: objetos.pop(key, None))
 
     def upload(key, content_type="image/jpeg", tamanho=100_000):
         objetos[key] = {"tamanho": tamanho, "content_type": content_type}
@@ -131,8 +132,10 @@ class TestCriacao:
     def test_postar_exige_login(self, client):
         assert client.post("/forum/posts", json={"conteudo": "x"}).status_code == 401
 
-    def test_conteudo_vazio_422(self, client, ana_headers):
-        assert client.post("/forum/posts", headers=ana_headers, json={"conteudo": "   "}).status_code == 422
+    def test_conteudo_so_espacos_vira_vazio(self, client, ana_headers):
+        r = client.post("/forum/posts", headers=ana_headers, json={"conteudo": "   "})
+        assert r.status_code == 201
+        assert r.json()["conteudo"] == ""
 
     def test_responder_e_contar(self, client, ana_headers, bruno_headers):
         post = _criar_post(client, ana_headers)

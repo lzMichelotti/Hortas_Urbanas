@@ -119,6 +119,10 @@ def create_zona(
     coords = data.pop("coordinates")
     data["area"] = _wkt_poligono(coords)
 
+    valido = db.query(func.ST_IsValid(func.ST_GeomFromEWKT(data["area"]))).scalar()
+    if not valido:
+        raise HTTPException(422, "O desenho da zona cruza sobre si mesmo. Ajuste os pontos e tente novamente.")
+
     db_zona = ZonaRisco(**data)
     db.add(db_zona)
     db.commit()

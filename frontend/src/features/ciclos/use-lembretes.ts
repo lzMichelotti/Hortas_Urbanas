@@ -9,7 +9,7 @@ import { sincronizarLembretes } from "./lembretes"
 export function useLembretesColheita() {
   const me = useMe()
   const ehMembro = me.data?.privilegio === "MEMBRO_CANTEIRO"
-  const canteiro = useMeuCanteiro()
+  const canteiro = useMeuCanteiro(ehMembro)
   const ciclos = useCiclos(ehMembro ? canteiro.data?.id : undefined)
   const nomeProduto = useNomeProduto()
 

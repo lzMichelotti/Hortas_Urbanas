@@ -25,6 +25,7 @@ import { CloudSun, Search } from "lucide-react"
 import { criarIconeHorta, criarIconePonto, SIMBOLO_SITUACAO } from "@/features/mapa/icone-horta"
 import { obterLocalizacao } from "@/features/mapa/gps"
 import { ClimaWidget, ConteudoClima } from "@/features/mapa/clima-widget"
+import { isAuthenticated } from "@/lib/auth/session"
 import {
   CENTRO_SANTA_MARIA,
   COR_NIVEL,
@@ -107,6 +108,7 @@ function CliqueNoMapa({ onPick }: { onPick: (lat: number, lng: number) => void }
 }
 
 export function MapaPage() {
+  const logado = isAuthenticated()
   const completo = useMapaCompleto()
   const riscos = useMapaRiscos()
   const alertas = useAlertasAtivos()
@@ -419,7 +421,7 @@ export function MapaPage() {
             </span>
           )}
           <Button asChild className="h-9 rounded-lg bg-hu-bright font-bold text-hu-bg hover:bg-hu-bright/90">
-            <Link to="/">Entrar</Link>
+            <Link to={logado ? "/painel" : "/"}>{logado ? "Painel" : "Entrar"}</Link>
           </Button>
         </div>
       </header>

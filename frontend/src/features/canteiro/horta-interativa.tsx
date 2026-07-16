@@ -7,17 +7,12 @@ import { estagioDe, progresso } from "@/features/ciclos/crescimento"
 import { useNomeProduto } from "@/features/produtos/use-nome-produto"
 import { Aviso, Carregando } from "@/components/feedback"
 import { ArtePlanta } from "@/features/produtos/sprite-produto"
+import { TERRA } from "@/features/canteiro/terra"
 
 type Ciclo = NonNullable<ReturnType<typeof useCiclos>["data"]>[number]
 
 const ATIVOS = ["PLANTADO", "EM_CRESCIMENTO", "PRONTO_PARA_COLHEITA"]
 const MIN_BLOCOS = 6
-
-export const TERRA = {
-  backgroundColor: "#8a5a2b",
-  backgroundImage: "url(/terra-arada-64.png)",
-  backgroundSize: "64px 64px",
-}
 
 const celulaClasse =
   "flex aspect-square flex-col items-center justify-end gap-1 transition-transform hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hu-bright/60"

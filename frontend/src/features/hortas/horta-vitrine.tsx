@@ -2,7 +2,7 @@ import { Link } from "react-router"
 import { useCanteiros } from "@/features/canteiros/use-canteiros"
 import { useCiclosDaHorta } from "@/features/ciclos/use-ciclos"
 import { useUsuarios } from "@/features/usuarios/use-usuarios"
-import { TERRA } from "@/features/canteiro/horta-interativa"
+import { TERRA } from "@/features/canteiro/terra"
 import { Aviso, Carregando } from "@/components/feedback"
 
 const CRESCENDO = ["PLANTADO", "EM_CRESCIMENTO"]

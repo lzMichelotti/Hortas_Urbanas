@@ -11,13 +11,7 @@ aplicarPreferencias()
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={persistOptions}
-      onSuccess={() => {
-        void queryClient.resumePausedMutations()
-      }}
-    >
+    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
       <BrowserRouter>
         <App />
       </BrowserRouter>

@@ -7,6 +7,11 @@ export function useMe() {
   return useQuery({
     queryKey: ["me"],
     enabled: isAuthenticated(),
-    queryFn: ({ signal }) => unwrap(api.GET("/usuarios/me", { signal, cache: "no-store" })),
+    queryFn: async ({ signal }) => {
+      const { cpf: _cpf, ...me } = await unwrap(
+        api.GET("/usuarios/me", { signal, cache: "no-store" }),
+      )
+      return me
+    },
   })
 }

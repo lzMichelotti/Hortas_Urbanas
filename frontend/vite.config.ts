@@ -59,7 +59,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return
-          if (id.includes("/react-router/") || id.includes("/react-router-dom/")) return "router"
+          if (id.includes("/react-router/")) return "router"
           if (id.includes("/@tanstack/")) return "query"
           if (
             id.includes("/react-dom/") ||

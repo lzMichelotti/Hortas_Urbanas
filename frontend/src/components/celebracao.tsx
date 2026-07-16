@@ -1,4 +1,5 @@
 import { useEffect } from "react"
+import { Dialog } from "radix-ui"
 import { ArtePlanta } from "@/features/produtos/sprite-produto"
 import { Guia } from "@/components/guia"
 import { RegistrarConquista } from "@/features/forum/registrar-conquista"
@@ -76,31 +77,33 @@ export function CelebracaoOverlay({
     return () => clearTimeout(t)
   }, [podeRegistrar, onDismiss])
 
-  if (!podeRegistrar) {
-    return (
-      <button
-        type="button"
-        onClick={onDismiss}
-        aria-label="Fechar celebração, toque para continuar"
-        className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-4 bg-hu-text/92 px-4 sm:gap-6"
-      >
-        <NucleoFestejo nome={nome} variante={variante} titulo={titulo} />
-        <p className="text-sm text-white/70">Toque para continuar</p>
-      </button>
-    )
-  }
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={titulo}
-      className="fixed inset-0 z-[60] overflow-y-auto bg-hu-text/92"
-    >
-      <div className="flex min-h-full flex-col items-center justify-center gap-4 px-4 py-6 sm:gap-6">
-        <NucleoFestejo nome={nome} variante={variante} titulo={titulo} />
-        <RegistrarConquista variante={variante} nome={nome} onConcluir={onDismiss} />
-      </div>
-    </div>
+    <Dialog.Root open onOpenChange={(aberta) => !aberta && onDismiss()}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[60] bg-hu-text/92" />
+        {podeRegistrar ? (
+          <Dialog.Content
+            aria-describedby={undefined}
+            className="fixed inset-0 z-[60] overflow-y-auto outline-none"
+          >
+            <Dialog.Title className="sr-only">{titulo}</Dialog.Title>
+            <div className="flex min-h-full flex-col items-center justify-center gap-4 px-4 py-6 sm:gap-6">
+              <NucleoFestejo nome={nome} variante={variante} titulo={titulo} />
+              <RegistrarConquista variante={variante} nome={nome} onConcluir={onDismiss} />
+            </div>
+          </Dialog.Content>
+        ) : (
+          <Dialog.Content
+            aria-describedby={undefined}
+            onClick={onDismiss}
+            className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-4 px-4 outline-none sm:gap-6"
+          >
+            <Dialog.Title className="sr-only">{titulo}</Dialog.Title>
+            <NucleoFestejo nome={nome} variante={variante} titulo={titulo} />
+            <p className="text-sm text-white/70">Toque para continuar</p>
+          </Dialog.Content>
+        )}
+      </Dialog.Portal>
+    </Dialog.Root>
   )
 }

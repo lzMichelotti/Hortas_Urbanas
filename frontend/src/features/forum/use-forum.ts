@@ -60,6 +60,7 @@ async function putComRetry(url: string, foto: File, tentativas = 3) {
         method: "PUT",
         headers: { "Content-Type": foto.type || CONTENT_TYPE },
         body: foto,
+        signal: AbortSignal.timeout(60_000),
       })
       if (!resp.ok) throw new Error(`Falha ao enviar a foto (${resp.status}).`)
       return
