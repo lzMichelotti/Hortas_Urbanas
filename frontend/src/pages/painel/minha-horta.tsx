@@ -190,6 +190,13 @@ export function MinhaHortaPage() {
                 🧺 {prontas} planta{prontas > 1 ? "s" : ""} pronta{prontas > 1 ? "s" : ""} pra colher!
               </p>
             )}
+            <Link
+              to="/painel/produtividade"
+              className="mt-4 flex min-h-11 items-center justify-between gap-2 rounded-xl border-2 border-hu-soft px-4 text-sm font-medium hover:bg-black/5"
+            >
+              Ver produtividade por canteiro
+              <ArrowRight className="size-4 shrink-0 text-hu-bright" aria-hidden />
+            </Link>
           </>
         )}
       </section>

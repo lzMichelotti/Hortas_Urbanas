@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/health/db": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Health Db */
+        get: operations["health_db_health_db_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/token": {
         parameters: {
             query?: never;
@@ -206,6 +223,27 @@ export interface paths {
         };
         /** Read Canteiros */
         get: operations["read_canteiros_canteiros_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hortas/{horta_id}/produtividade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Produtividade
+         * @description Um GROUP BY por canteiro — evita o N+1 de buscar ciclos canteiro a canteiro.
+         *     LEFT JOIN garante que canteiro sem ciclos aparece zerado.
+         */
+        get: operations["read_produtividade_hortas__horta_id__produtividade_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1387,7 +1425,10 @@ export interface components {
         };
         /** PostCreate */
         PostCreate: {
-            /** Conteudo */
+            /**
+             * Conteudo
+             * @default
+             */
             conteudo: string;
             /** @default AJUDA */
             tipo: components["schemas"]["TipoPost"];
@@ -1494,6 +1535,27 @@ export interface components {
          * @enum {string}
          */
         Privilegio: "ADMIN_SUPREMO" | "LIDER_HORTA" | "MEMBRO_CANTEIRO";
+        /** ProdutividadeCanteiro */
+        ProdutividadeCanteiro: {
+            /** Canteiro Id */
+            canteiro_id: number;
+            /** Identificacao */
+            identificacao: string;
+            /** Responsavel */
+            responsavel?: string | null;
+            /** Plantadas */
+            plantadas: number;
+            /** Crescendo */
+            crescendo: number;
+            /** Prontas */
+            prontas: number;
+            /** Colheitas */
+            colheitas: number;
+            /** Colhido Total */
+            colhido_total: number;
+            /** Perdas */
+            perdas: number;
+        };
         /** ProdutoRead */
         ProdutoRead: {
             /** Id */
@@ -1918,6 +1980,26 @@ export interface operations {
             };
         };
     };
+    health_db_health_db_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     login_for_access_token_token_post: {
         parameters: {
             query?: never;
@@ -2317,6 +2399,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CanteiroRead"][];
+                };
+            };
+        };
+    };
+    read_produtividade_hortas__horta_id__produtividade_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                horta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProdutividadeCanteiro"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

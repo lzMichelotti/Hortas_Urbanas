@@ -1,11 +1,14 @@
 from datetime import datetime, timezone
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy import func, and_
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.database.models import Canteiro, Usuario
-from app.schemas.canteiro import CanteiroCreate, CanteiroUpdate, CanteiroRead
+from app.database.models import Canteiro, CicloProducao, Usuario
+from app.schemas.canteiro import (
+    CanteiroCreate, CanteiroUpdate, CanteiroRead, ProdutividadeCanteiro,
+)
 from app.dependencies import get_current_user, get_lider_user
 from app.permissions import exigir_lider_da_horta
 
@@ -24,6 +27,48 @@ def read_canteiros(
     elif usuario.privilegio == "MEMBRO_CANTEIRO":
         query = query.filter(Canteiro.usuario_id == usuario.id)
     return query.all()
+
+@router.get("/hortas/{horta_id}/produtividade", response_model=list[ProdutividadeCanteiro])
+def read_produtividade(
+    horta_id: int,
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)],
+):
+    """Um GROUP BY por canteiro — evita o N+1 de buscar ciclos canteiro a canteiro.
+    LEFT JOIN garante que canteiro sem ciclos aparece zerado."""
+    exigir_lider_da_horta(lider, horta_id)
+
+    # count(*) FILTER (WHERE status = ...) — conta por status numa varredura só.
+    def contar(status: str):
+        return func.count().filter(CicloProducao.status == status)
+
+    rows = (
+        db.query(
+            Canteiro.id.label("canteiro_id"),
+            Canteiro.identificacao,
+            Usuario.nome.label("responsavel"),
+            contar("PLANTADO").label("plantadas"),
+            contar("EM_CRESCIMENTO").label("crescendo"),
+            contar("PRONTO_PARA_COLHEITA").label("prontas"),
+            contar("COLHIDO").label("colheitas"),
+            func.coalesce(
+                func.sum(CicloProducao.quantidade).filter(CicloProducao.status == "COLHIDO"),
+                0,
+            ).label("colhido_total"),
+            contar("PERDIDO").label("perdas"),
+        )
+        .outerjoin(
+            CicloProducao,
+            and_(CicloProducao.canteiro_id == Canteiro.id, CicloProducao.ativo == True),
+        )
+        .outerjoin(Usuario, Usuario.id == Canteiro.usuario_id)
+        .filter(Canteiro.horta_id == horta_id, Canteiro.ativo == True)
+        .group_by(Canteiro.id, Usuario.nome)
+        .order_by(Canteiro.identificacao)
+        .all()
+    )
+
+    return [ProdutividadeCanteiro(**row._mapping) for row in rows]
 
 @router.post("/hortas/{horta_id}/canteiros", response_model=CanteiroRead, status_code=201)
 def create_canteiro(
