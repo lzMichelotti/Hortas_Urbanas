@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 
@@ -39,5 +40,7 @@ class DemandaRead(BaseModel):
     unidade_medida: str
     status: StatusDemanda
     ativo: bool
+    criado_em: datetime
+    finalizado_em: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

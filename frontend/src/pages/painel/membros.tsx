@@ -4,15 +4,24 @@ import { useMe } from "@/features/auth/use-me"
 import { useCanteiros, useCriarCanteiro, useAtualizarCanteiro, useDeletarCanteiro } from "@/features/canteiros/use-canteiros"
 import { useUsuarios, useCriarMembro, useRemoverMembro } from "@/features/usuarios/use-usuarios"
 import { formatCPF, formatTelefone, digitos, validarCPF, validarTelefone } from "@/lib/br"
+import { srcAvatar } from "@/features/perfil/avatares"
+import { TERRA } from "@/features/canteiro/terra"
 import { Voltar } from "@/components/voltar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { components } from "@/lib/api/schema"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Aviso, Carregando, EstadoVazio } from "@/components/feedback"
 import { ConfirmacaoInline } from "@/components/confirmar"
+import { DivisorCerca } from "@/components/divisor-cerca"
 
 type UsuarioReadCompleto = components["schemas"]["UsuarioReadCompleto"]
+
+const BOTAO_PIXEL =
+  "rounded-xl border-2 border-[#5b3a1a] bg-hu-bright font-bold text-hu-bg shadow-[0_3px_0_#5b3a1a] transition-transform hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[0_1px_0_#5b3a1a] disabled:pointer-events-none disabled:opacity-50"
+const BOTAO_NEUTRO = "rounded-xl border-2 border-hu-soft bg-transparent text-hu-text hover:bg-black/5"
+const LIXEIRA =
+  "flex size-11 shrink-0 items-center justify-center rounded-lg text-hu-muted hover:bg-red-500/15 hover:text-red-600 active:bg-red-500/15 active:text-red-600 disabled:opacity-50"
 
 export function MembrosPage() {
   const me = useMe()
@@ -56,9 +65,9 @@ export function MembrosPage() {
   const canteiroDoMembro = (userId: number) =>
     (canteiros.data ?? []).find((c) => c.usuario_id === userId)
 
-  const nomeUsuario = (id: number | null | undefined) => {
+  const usuarioPorId = (id: number | null | undefined) => {
     if (id == null) return null
-    return usuarios.data?.find((u) => u.id === id)?.nome ?? `Usuário #${id}`
+    return usuarios.data?.find((u) => u.id === id) ?? null
   }
 
   function resetFormMembro() {
@@ -130,16 +139,16 @@ export function MembrosPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl pb-4">
       <Voltar />
 
       {/* ── MEMBROS ── */}
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className="mt-4">
         <h1 className="font-pixel text-sm text-hu-bright">Membros</h1>
         {!mostraFormMembro && !membroCriado && (
           <Button
             onClick={() => setMostraFormMembro(true)}
-            className="flex items-center gap-2 rounded-xl bg-hu-bright font-bold text-hu-bg hover:bg-hu-bright/90"
+            className={`mt-3 flex min-h-11 w-full items-center justify-center gap-2 ${BOTAO_PIXEL}`}
           >
             <Plus className="size-4" aria-hidden />
             Novo membro
@@ -251,7 +260,7 @@ export function MembrosPage() {
             <Button
               type="submit"
               disabled={criarMembro.isPending}
-              className="h-11 flex-1 rounded-xl bg-hu-bright font-bold text-hu-bg hover:bg-hu-bright/90"
+              className={`h-11 flex-1 ${BOTAO_PIXEL}`}
             >
               {criarMembro.isPending ? "Cadastrando…" : "Cadastrar membro"}
             </Button>
@@ -260,7 +269,7 @@ export function MembrosPage() {
               type="button"
               variant="outline"
               onClick={resetFormMembro}
-              className="h-11 rounded-xl border-hu-soft bg-transparent text-hu-text hover:bg-black/5"
+              className={`h-11 ${BOTAO_NEUTRO}`}
             >
               Cancelar
             </Button>
@@ -269,9 +278,9 @@ export function MembrosPage() {
       )}
 
       {membros.length === 0 && !mostraFormMembro && !membroCriado && (
-        <p className="mt-4 rounded-2xl border-4 border-hu-soft bg-hu-panel p-6 text-center text-sm text-hu-muted">
+        <EstadoVazio ilustracao="/personagem-idoso.webp">
           Nenhum membro ainda. Clique em "Novo membro" para cadastrar.
-        </p>
+        </EstadoVazio>
       )}
 
       {membros.length > 0 && (
@@ -283,20 +292,27 @@ export function MembrosPage() {
             return (
               <li
                 key={m.id}
-                className="rounded-2xl border-4 border-hu-bright bg-hu-panel px-4 py-3 text-hu-text"
+                className="rounded-2xl border-2 border-hu-soft bg-hu-panel px-4 py-3 text-hu-text"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-bold">{m.nome}</p>
-                    <p className="mt-0.5 text-sm text-hu-muted">{m.email}</p>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={srcAvatar(m.avatar)}
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="size-9 shrink-0 rounded-full object-cover [image-rendering:pixelated] sm:size-10"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-bold">{m.nome}</p>
+                    <p className="mt-0.5 truncate text-sm text-hu-muted">{m.email}</p>
                     {canteiro ? (
                       <p className="mt-0.5 flex items-center gap-1 text-xs text-hu-text">
-                        <UserCheck className="size-3 text-hu-bright" aria-hidden />
-                        {canteiro.identificacao}
+                        <UserCheck className="size-3 shrink-0 text-hu-bright" aria-hidden />
+                        <span className="truncate">{canteiro.identificacao}</span>
                       </p>
                     ) : (
                       <p className="mt-0.5 flex items-center gap-1 text-xs text-hu-muted">
-                        <UserX className="size-3" aria-hidden />
+                        <UserX className="size-3 shrink-0" aria-hidden />
                         Sem canteiro
                       </p>
                     )}
@@ -305,7 +321,7 @@ export function MembrosPage() {
                     onClick={() => setConfirmarMembroId(confirmarEste ? null : m.id)}
                     disabled={removerMembro.isPending}
                     aria-expanded={confirmarEste}
-                    className="shrink-0 rounded-lg flex size-11 items-center justify-center border border-red-400/40 text-red-600 hover:bg-red-500/15 disabled:opacity-50"
+                    className={LIXEIRA}
                     aria-label={`Remover ${m.nome}`}
                   >
                     <Trash2 className="size-3.5" aria-hidden />
@@ -333,13 +349,15 @@ export function MembrosPage() {
         </Aviso>
       )}
 
+      <DivisorCerca className="mt-6" />
+
       {/* ── CANTEIROS ── */}
-      <div className="mt-8 flex items-center justify-between gap-3">
+      <div className="mt-4">
         <h2 className="font-pixel text-sm text-hu-bright">Canteiros</h2>
         {!mostraFormCanteiro && (
           <Button
             onClick={() => setMostraFormCanteiro(true)}
-            className="flex items-center gap-2 rounded-xl bg-hu-bright font-bold text-hu-bg hover:bg-hu-bright/90"
+            className={`mt-3 flex min-h-11 w-full items-center justify-center gap-2 ${BOTAO_PIXEL}`}
           >
             <Plus className="size-4" aria-hidden />
             Novo canteiro
@@ -409,7 +427,7 @@ export function MembrosPage() {
             <Button
               type="submit"
               disabled={!identificacao.trim() || criarCanteiro.isPending}
-              className="h-11 flex-1 rounded-xl bg-hu-bright font-bold text-hu-bg hover:bg-hu-bright/90"
+              className={`h-11 flex-1 ${BOTAO_PIXEL}`}
             >
               {criarCanteiro.isPending ? "Criando…" : "Criar canteiro"}
             </Button>
@@ -417,7 +435,7 @@ export function MembrosPage() {
               type="button"
               variant="outline"
               onClick={resetFormCanteiro}
-              className="h-11 rounded-xl border-hu-soft bg-transparent text-hu-text hover:bg-black/5"
+              className={`h-11 ${BOTAO_NEUTRO}`}
             >
               Cancelar
             </Button>
@@ -426,96 +444,109 @@ export function MembrosPage() {
       )}
 
       {(canteiros.data ?? []).length === 0 && !mostraFormCanteiro && (
-        <p className="mt-4 rounded-2xl border-4 border-hu-soft bg-hu-panel p-6 text-center text-sm text-hu-muted">
+        <EstadoVazio ilustracao="/personagem-idoso.webp">
           Nenhum canteiro ainda. Clique em "Novo canteiro" para começar.
-        </p>
+        </EstadoVazio>
       )}
 
       <ul className="mt-4 flex flex-col gap-3">
         {(canteiros.data ?? []).map((c) => {
-          const membro = nomeUsuario(c.usuario_id)
+          const responsavel = usuarioPorId(c.usuario_id)
+          const nomeResponsavel = c.usuario_id != null ? (responsavel?.nome ?? `Usuário #${c.usuario_id}`) : null
           const deletandoEste = deletarCanteiro.isPending && deletarCanteiro.variables === c.id
           const esteAtribuindo = atribuindoId === c.id
           const confirmarCanteiroEste = confirmarCanteiroId === c.id
 
           return (
-            <li key={c.id} className="rounded-2xl border-4 border-hu-bright bg-hu-panel p-4 text-hu-text">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-bold">{c.identificacao}</p>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-sm text-hu-muted">
-                    {membro ? (
-                      <>
-                        <UserCheck className="size-3.5 text-hu-bright" aria-hidden />
-                        {membro}
-                      </>
-                    ) : (
-                      <>
-                        <UserX className="size-3.5 text-hu-muted" aria-hidden />
-                        <span className="text-hu-muted">Sem responsável</span>
-                      </>
-                    )}
-                    {c.area_produtiva ? ` · ${c.area_produtiva} m²` : ""}
+            <li key={c.id} className="overflow-hidden rounded-2xl border-2 border-hu-soft bg-hu-panel text-hu-text">
+              <div
+                className="flex items-center justify-between gap-2 px-4 py-3 [image-rendering:pixelated]"
+                style={TERRA}
+              >
+                <h3 className="min-w-0 truncate font-bold leading-none text-white [text-shadow:0_1px_2px_rgba(0,0,0,.7)]">
+                  {c.identificacao}
+                </h3>
+                {c.area_produtiva != null && (
+                  <span className="shrink-0 rounded-full border border-hu-soft bg-hu-panel px-2.5 py-1 text-xs font-bold text-hu-text">
+                    {c.area_produtiva.toLocaleString("pt-BR")} m²
+                  </span>
+                )}
+              </div>
+
+              <div className="p-4">
+                {nomeResponsavel ? (
+                  <p className="flex min-w-0 items-center gap-2 text-sm">
+                    <img
+                      src={srcAvatar(responsavel?.avatar)}
+                      alt=""
+                      width={20}
+                      height={20}
+                      className="size-5 shrink-0 rounded-full object-cover [image-rendering:pixelated]"
+                    />
+                    <span className="truncate">{nomeResponsavel}</span>
                   </p>
-                </div>
-                <div className="flex shrink-0 gap-2">
+                ) : (
+                  <p className="text-sm italic text-hu-muted">Sem responsável</p>
+                )}
+
+                <div className="mt-3 flex items-center gap-2">
                   <button
                     onClick={() => {
                       setAtribuindoId(esteAtribuindo ? null : c.id)
                       setNovoMembroId(c.usuario_id ?? "")
                     }}
-                    className="min-h-11 rounded-lg border border-hu-soft/40 px-3 text-sm text-hu-muted hover:bg-black/5"
+                    className="min-h-11 flex-1 rounded-lg border border-hu-soft/40 px-3 text-sm text-hu-muted hover:bg-black/5"
                   >
-                    {esteAtribuindo ? "Fechar" : "Responsável"}
+                    {esteAtribuindo ? "Fechar" : nomeResponsavel ? "Trocar responsável" : "Definir responsável"}
                   </button>
                   <button
                     onClick={() => setConfirmarCanteiroId(confirmarCanteiroEste ? null : c.id)}
                     disabled={deletarCanteiro.isPending}
                     aria-expanded={confirmarCanteiroEste}
-                    className="rounded-lg flex size-11 items-center justify-center border border-red-400/40 text-red-600 hover:bg-red-500/15 disabled:opacity-50"
+                    className={LIXEIRA}
                     aria-label={`Excluir ${c.identificacao}`}
                   >
                     <Trash2 className="size-3.5" aria-hidden />
                   </button>
                 </div>
+
+                {confirmarCanteiroEste && (
+                  <ConfirmacaoInline
+                    pergunta={<>Excluir o canteiro <strong>{c.identificacao}</strong> e o que está ligado a ele? Não dá pra desfazer.</>}
+                    confirmando={deletandoEste}
+                    aoConfirmar={() => deletarCanteiro.mutate(c.id, { onSuccess: () => setConfirmarCanteiroId(null) })}
+                    aoCancelar={() => setConfirmarCanteiroId(null)}
+                  />
+                )}
+
+                {esteAtribuindo && (
+                  <form
+                    onSubmit={(e) => onSubmitAtribuir(e, c.id)}
+                    className="mt-3 flex items-center gap-2 border-t border-hu-soft/30 pt-3"
+                  >
+                    <select
+                      value={novoMembroId}
+                      onChange={(e) =>
+                        setNovoMembroId(e.target.value === "" ? "" : Number(e.target.value))
+                      }
+                      className="h-10 flex-1 rounded-lg border-2 border-hu-soft bg-hu-bg px-3 text-sm text-hu-text"
+                    >
+                      <option value="">Sem responsável</option>
+                      {membros.map((u) => (
+                        <option key={u.id} value={u.id}>{u.nome}</option>
+                      ))}
+                    </select>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={atualizarCanteiro.isPending}
+                      className="rounded-lg bg-hu-bright font-bold text-hu-bg hover:bg-hu-bright/90"
+                    >
+                      {atualizarCanteiro.isPending && atribuindoId === c.id ? "Salvando…" : "Salvar"}
+                    </Button>
+                  </form>
+                )}
               </div>
-
-              {confirmarCanteiroEste && (
-                <ConfirmacaoInline
-                  pergunta={<>Excluir o canteiro <strong>{c.identificacao}</strong> e o que está ligado a ele? Não dá pra desfazer.</>}
-                  confirmando={deletandoEste}
-                  aoConfirmar={() => deletarCanteiro.mutate(c.id, { onSuccess: () => setConfirmarCanteiroId(null) })}
-                  aoCancelar={() => setConfirmarCanteiroId(null)}
-                />
-              )}
-
-              {esteAtribuindo && (
-                <form
-                  onSubmit={(e) => onSubmitAtribuir(e, c.id)}
-                  className="mt-3 flex items-center gap-2 border-t border-hu-soft/30 pt-3"
-                >
-                  <select
-                    value={novoMembroId}
-                    onChange={(e) =>
-                      setNovoMembroId(e.target.value === "" ? "" : Number(e.target.value))
-                    }
-                    className="h-10 flex-1 rounded-lg border-2 border-hu-soft bg-hu-bg px-3 text-sm text-hu-text"
-                  >
-                    <option value="">Sem responsável</option>
-                    {membros.map((u) => (
-                      <option key={u.id} value={u.id}>{u.nome}</option>
-                    ))}
-                  </select>
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={atualizarCanteiro.isPending}
-                    className="rounded-lg bg-hu-bright font-bold text-hu-bg hover:bg-hu-bright/90"
-                  >
-                    {atualizarCanteiro.isPending && atribuindoId === c.id ? "Salvando…" : "Salvar"}
-                  </Button>
-                </form>
-              )}
             </li>
           )
         })}

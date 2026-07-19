@@ -16,3 +16,7 @@ export function tempoRelativo(iso: string): string {
 export function dataCompleta(iso: string): string {
   return new Date(iso).toLocaleString("pt-BR")
 }
+
+export function dataCurta(iso: string): string {
+  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })
+}

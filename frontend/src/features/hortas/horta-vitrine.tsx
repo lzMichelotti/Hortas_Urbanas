@@ -1,22 +1,21 @@
 import { Link } from "react-router"
-import { useCanteiros } from "@/features/canteiros/use-canteiros"
-import { useCiclosDaHorta } from "@/features/ciclos/use-ciclos"
-import { useUsuarios } from "@/features/usuarios/use-usuarios"
+import { useMe } from "@/features/auth/use-me"
+import { useProdutividade } from "@/features/canteiros/use-produtividade"
+import { BANDEIRA_INFO, bandeiraDoCanteiro } from "@/features/canteiros/bandeira"
+import { BandeiraPixel } from "@/features/canteiros/bandeira-pixel"
 import { TERRA } from "@/features/canteiro/terra"
 import { Aviso, Carregando } from "@/components/feedback"
 
-const CRESCENDO = ["PLANTADO", "EM_CRESCIMENTO"]
-
 export function HortaVitrine() {
-  const canteiros = useCanteiros()
-  const usuarios = useUsuarios()
-  const lista = canteiros.data ?? []
-  const producao = useCiclosDaHorta(lista.map((c) => c.id))
+  const me = useMe()
+  const hortaId = me.data?.horta_id ?? null
+  const produtividade = useProdutividade(hortaId)
+  const lista = produtividade.data ?? []
 
-  if (canteiros.isPending || producao.isPending) return <Carregando />
-  if (canteiros.isError) {
+  if (me.isPending || produtividade.isPending) return <Carregando />
+  if (produtividade.isError) {
     return (
-      <Aviso variante="erro" aoTentarNovamente={() => canteiros.refetch()}>
+      <Aviso variante="erro" aoTentarNovamente={() => produtividade.refetch()}>
         Não foi possível carregar sua horta. Veja sua internet e tente de novo.
       </Aviso>
     )
@@ -36,15 +35,7 @@ export function HortaVitrine() {
     )
   }
 
-  const nomeDe = new Map((usuarios.data ?? []).map((u) => [u.id, u.nome.split(" ")[0]]))
-  const porCanteiro = new Map<number, { prontas: number; crescendo: number }>()
-  for (const c of producao.ciclos) {
-    const atual = porCanteiro.get(c.canteiro_id) ?? { prontas: 0, crescendo: 0 }
-    if (c.status === "PRONTO_PARA_COLHEITA") atual.prontas++
-    else if (CRESCENDO.includes(c.status ?? "")) atual.crescendo++
-    porCanteiro.set(c.canteiro_id, atual)
-  }
-  const totalProntas = [...porCanteiro.values()].reduce((soma, p) => soma + p.prontas, 0)
+  const totalProntas = lista.reduce((soma, c) => soma + c.prontas, 0)
 
   return (
     <div className="relative mx-auto w-full max-w-md">
@@ -55,23 +46,28 @@ export function HortaVitrine() {
       >
         <div className="grid grid-cols-2 gap-2">
           {lista.map((c) => {
-            const p = porCanteiro.get(c.id) ?? { prontas: 0, crescendo: 0 }
-            const responsavel = c.usuario_id != null ? (nomeDe.get(c.usuario_id) ?? "") : "vazio"
+            const band = bandeiraDoCanteiro(c)
+            const info = BANDEIRA_INFO[band]
+            const responsavel = c.responsavel ? c.responsavel.split(" ")[0] : "vazio"
             return (
-              <div key={c.id} className="flex flex-col items-center gap-0.5 rounded-lg bg-black/30 px-2 py-2">
-                <span className="w-full truncate text-center text-sm font-bold text-white">{c.identificacao}</span>
-                <span className={`text-[11px] ${c.usuario_id == null ? "italic text-white/60" : "text-white/85"}`}>
+              <div key={c.canteiro_id} className="flex flex-col items-center gap-0.5 rounded-lg bg-black/30 px-2 py-2">
+                <span className="flex w-full items-center justify-center gap-1">
+                  <BandeiraPixel bandeira={band} />
+                  <span className="sr-only">{info.rotulo}</span>
+                  <span className="truncate text-sm font-bold text-white">{c.identificacao}</span>
+                </span>
+                <span className={`text-[11px] ${c.responsavel == null ? "italic text-white/60" : "text-white/85"}`}>
                   {responsavel}
                 </span>
                 <span
                   className={`rounded px-1.5 text-[11px] font-bold text-white ${
-                    p.prontas > 0 ? "bg-amber-500/90" : "bg-black/45"
+                    c.prontas > 0 ? "bg-amber-500/90" : "bg-black/45"
                   }`}
                 >
-                  {p.prontas > 0
-                    ? `🧺 ${p.prontas} pronta${p.prontas > 1 ? "s" : ""}`
-                    : p.crescendo > 0
-                      ? `🌱 ${p.crescendo} crescendo`
+                  {c.prontas > 0
+                    ? `🧺 ${c.prontas} pronta${c.prontas > 1 ? "s" : ""}`
+                    : c.crescendo > 0
+                      ? `🌱 ${c.crescendo} crescendo`
                       : "sem plantas"}
                 </span>
               </div>

@@ -1,6 +1,8 @@
+from datetime import datetime, timezone
+
 from sqlalchemy import (
     Column, Integer, String, Float, Boolean, Date, ForeignKey, Text, DateTime,
-    CheckConstraint, UniqueConstraint, Index, func, text,
+    CheckConstraint, UniqueConstraint, Index, event, func, text,
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
@@ -234,9 +236,28 @@ class Demanda(Base):
     status = Column(String(50))
     ativo = Column(Boolean, default=True, nullable=False)      # baixa cardinalidade — sem índice B-tree
     deletado_em = Column(DateTime(timezone=True), nullable=True)
+    criado_em = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    # nullable: só recebe data ao ser concluída/cancelada — enquanto aberta, não há.
+    finalizado_em = Column(DateTime(timezone=True), nullable=True)
 
     horta = relationship("Horta", back_populates="demandas")
     canteiro = relationship("Canteiro", back_populates="demandas")
+
+
+_STATUS_DEMANDA_FINAIS = {StatusDemanda.ATENDIDA.value, StatusDemanda.CANCELADA.value}
+
+
+@event.listens_for(Demanda.status, "set")
+def _carimbar_finalizado_em(demanda, novo_status, _antigo, _iniciador):
+    # A conclusão/cancelamento de uma demanda pode chegar por vários endpoints
+    # (PATCH de status, PATCH genérico, criação já finalizada). Carimbar aqui,
+    # no set do próprio status, garante finalizado_em em TODOS os caminhos.
+    status = getattr(novo_status, "value", novo_status)
+    if status in _STATUS_DEMANDA_FINAIS:
+        if demanda.finalizado_em is None:
+            demanda.finalizado_em = datetime.now(timezone.utc)
+    else:
+        demanda.finalizado_em = None
 
 
 class Post(Base):

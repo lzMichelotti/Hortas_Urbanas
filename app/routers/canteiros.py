@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import func, and_
@@ -15,6 +15,9 @@ from app.permissions import exigir_lider_da_horta
 router = APIRouter(tags=["Canteiros"])
 
 DBDep = Annotated[Session, Depends(get_db)]
+
+# Previsão de colheita é estimativa: só conta como atraso além desta folga.
+TOLERANCIA_ATRASO_DIAS = 3
 
 @router.get("/canteiros", response_model=list[CanteiroRead])
 def read_canteiros(
@@ -42,6 +45,12 @@ def read_produtividade(
     def contar(status: str):
         return func.count().filter(CicloProducao.status == status)
 
+    data_corte = datetime.now(timezone.utc).date() - timedelta(days=TOLERANCIA_ATRASO_DIAS)
+    atrasadas = func.count().filter(
+        CicloProducao.status.notin_(("COLHIDO", "PERDIDO")),
+        CicloProducao.previsao_colheita < data_corte,
+    )
+
     rows = (
         db.query(
             Canteiro.id.label("canteiro_id"),
@@ -56,6 +65,7 @@ def read_produtividade(
                 0,
             ).label("colhido_total"),
             contar("PERDIDO").label("perdas"),
+            atrasadas.label("atrasadas"),
         )
         .outerjoin(
             CicloProducao,

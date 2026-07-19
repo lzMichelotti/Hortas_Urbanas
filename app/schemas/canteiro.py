@@ -30,3 +30,4 @@ class ProdutividadeCanteiro(BaseModel):
     colheitas: int        # nº de ciclos COLHIDO
     colhido_total: int    # soma de `quantidade` dos COLHIDO (unidades)
     perdas: int           # nº de ciclos PERDIDO
+    atrasadas: int        # ciclos ativos com previsão vencida além da tolerância

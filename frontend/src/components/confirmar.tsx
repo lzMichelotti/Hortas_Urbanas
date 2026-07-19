@@ -8,6 +8,7 @@ export function ConfirmacaoInline({
   pergunta,
   rotuloConfirmar = "Sim, excluir",
   rotuloConfirmando = "Excluindo…",
+  rotuloCancelar = "Cancelar",
   confirmando,
   aoConfirmar,
   aoCancelar,
@@ -15,6 +16,7 @@ export function ConfirmacaoInline({
   pergunta: ReactNode
   rotuloConfirmar?: string
   rotuloConfirmando?: string
+  rotuloCancelar?: string
   confirmando: boolean
   aoConfirmar: () => void
   aoCancelar: () => void
@@ -40,7 +42,7 @@ export function ConfirmacaoInline({
           onClick={aoCancelar}
           className="h-11 rounded-lg border-hu-soft bg-transparent text-hu-text hover:bg-black/5"
         >
-          Cancelar
+          {rotuloCancelar}
         </Button>
       </div>
     </div>

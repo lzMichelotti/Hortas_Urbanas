@@ -1129,6 +1129,13 @@ export interface components {
             status: components["schemas"]["StatusDemanda"];
             /** Ativo */
             ativo: boolean;
+            /**
+             * Criado Em
+             * Format: date-time
+             */
+            criado_em: string;
+            /** Finalizado Em */
+            finalizado_em?: string | null;
         };
         /** DemandaUpdate */
         DemandaUpdate: {
@@ -1555,6 +1562,8 @@ export interface components {
             colhido_total: number;
             /** Perdas */
             perdas: number;
+            /** Atrasadas */
+            atrasadas: number;
         };
         /** ProdutoRead */
         ProdutoRead: {
