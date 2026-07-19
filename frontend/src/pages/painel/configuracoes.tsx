@@ -1,8 +1,7 @@
 import { useState } from "react"
-import { LogOut } from "lucide-react"
 import { FalaDaGuia } from "@/components/guia"
 import { useMe } from "@/features/auth/use-me"
-import { useLogout } from "@/features/auth/use-logout"
+import { ConfirmarSair } from "@/features/auth/confirmar-sair"
 import { ROTULO_PAPEL } from "@/features/auth/papeis"
 import { useMeuCanteiro } from "@/features/canteiro/use-meu-canteiro"
 import { AVATARES, AVATAR_PADRAO, srcAvatar } from "@/features/perfil/avatares"
@@ -49,8 +48,8 @@ function Segmento({
 
 export function ConfiguracoesPage() {
   const [tema, setTemaState] = useState<Tema>(getTema)
+  const [confirmandoSair, setConfirmandoSair] = useState(false)
   const me = useMe()
-  const logout = useLogout()
   const ehMembro = me.data?.privilegio === "MEMBRO_CANTEIRO"
   const ehLider = me.data?.privilegio === "LIDER_HORTA"
   const canteiro = useMeuCanteiro(ehMembro)
@@ -130,23 +129,34 @@ export function ConfiguracoesPage() {
             </>
           )}
           <FalaDaGuia>Toque em mim, a jardineira, para abrir o menu com tudo.</FalaDaGuia>
-          <FalaDaGuia>Para sair, use o botão no canto de cima da tela.</FalaDaGuia>
+          <FalaDaGuia>Para sair, abra esse menu e toque em Sair, lá embaixo.</FalaDaGuia>
         </section>
       )}
 
-      <section className="rounded-2xl border-4 border-hu-bright bg-hu-panel p-5">
+      <section className="flex flex-col items-center gap-3 p-5">
         <button
           type="button"
-          onClick={logout}
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-red-400/50 text-base font-bold text-red-600 hover:bg-red-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+          aria-label="Sair da conta"
+          onClick={() => setConfirmandoSair(true)}
+          className="group flex flex-col items-center gap-2 rounded-sm transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hu-bright"
         >
-          <LogOut className="size-5" aria-hidden />
-          Sair da conta
+          <span className="flex -rotate-6 flex-col items-center">
+            <span className="relative rounded-sm border-[3px] border-[#5b3a1a] bg-[#8a5a2b] px-4 py-2 shadow-[0_4px_0_#5b3a1a]">
+              <span className="absolute left-1.5 top-1.5 size-1 rounded-full bg-[#5b3a1a]" />
+              <span className="absolute right-1.5 top-1.5 size-1 rounded-full bg-[#5b3a1a]" />
+              <span className="absolute bottom-1.5 left-1.5 size-1 rounded-full bg-[#5b3a1a]" />
+              <span className="absolute bottom-1.5 right-1.5 size-1 rounded-full bg-[#5b3a1a]" />
+              <span className="font-pixel text-xs text-[#ffe8c2]">SAIR</span>
+            </span>
+            <span className="h-6 w-2.5 bg-[#5b3a1a]" />
+          </span>
         </button>
-        <p className="mt-3 text-center text-sm text-hu-muted">
+        <p className="text-center text-sm text-hu-muted">
           Você volta para a tela de entrada e pode entrar com outra conta.
         </p>
       </section>
+
+      <ConfirmarSair aberta={confirmandoSair} aoMudar={setConfirmandoSair} />
     </div>
   )
 }

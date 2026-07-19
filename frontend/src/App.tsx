@@ -16,6 +16,7 @@ const PainelLayout = lazyComRetry(() => import("@/components/painel-layout").the
 const PainelHome = lazyComRetry(() => import("@/pages/painel/home").then((m) => ({ default: m.PainelHome })))
 const CadastroHortaPage = lazyComRetry(() => import("@/pages/painel/cadastro-horta").then((m) => ({ default: m.CadastroHortaPage })))
 const HortasPage = lazyComRetry(() => import("@/pages/painel/hortas").then((m) => ({ default: m.HortasPage })))
+const HortaDetalhePage = lazyComRetry(() => import("@/pages/painel/horta-detalhe").then((m) => ({ default: m.HortaDetalhePage })))
 const UsuariosPage = lazyComRetry(() => import("@/pages/painel/usuarios").then((m) => ({ default: m.UsuariosPage })))
 const MinhaHortaPage = lazyComRetry(() => import("@/pages/painel/minha-horta").then((m) => ({ default: m.MinhaHortaPage })))
 const PlaceholderPainel = lazyComRetry(() => import("@/components/placeholder-painel").then((m) => ({ default: m.PlaceholderPainel })))
@@ -63,6 +64,7 @@ function App() {
                 }
               />
               <Route path="hortas" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><HortasPage /></RoleRoute>} />
+              <Route path="hortas/:id" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><HortaDetalhePage /></RoleRoute>} />
               <Route path="usuarios" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><UsuariosPage /></RoleRoute>} />
               <Route path="riscos" element={<PlaceholderPainel titulo="Zonas de risco" />} />
               <Route path="config" element={<ConfiguracoesPage />} />

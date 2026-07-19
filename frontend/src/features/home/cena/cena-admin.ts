@@ -1,12 +1,12 @@
 import type { Cena } from "@/features/home/cena/tipos"
 
-export const cenaLider: Cena = {
+export const cenaAdmin: Cena = {
   proporcao: 0,
 
   objetos: [
     {
-      id: "horta",
-      label: "Minha horta",
+      id: "hortas",
+      label: "Hortas",
       x: 50,
       y: 46,
       largura: 92,
@@ -16,15 +16,15 @@ export const cenaLider: Cena = {
       z: 2,
     },
     {
-      id: "solicitacoes",
-      label: "Pedidos",
+      id: "demandas",
+      label: "Demandas",
       x: 19,
-      y: 86,
-      largura: 26,
-      proporcao: 1.3,
-      acao: { tipo: "rota", para: "/painel/solicitacoes" },
-      badge: "solicitacoes",
-      asset: { tipo: "maquete", maquete: "carrinho" },
+      y: 85,
+      largura: 20,
+      proporcao: 1,
+      acao: { tipo: "rota", para: "/painel/admin-demandas" },
+      badge: "demandas",
+      asset: { tipo: "sprite", src: "/demandas.png" },
       z: 3,
     },
     {

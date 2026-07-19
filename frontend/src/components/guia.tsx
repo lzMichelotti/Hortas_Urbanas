@@ -7,6 +7,26 @@ export function Guia({ className }: { humor?: Humor; className?: string }) {
   return <img src="/persona-pixel.png" alt="" className={cn("[image-rendering:pixelated] object-contain", className)} />
 }
 
+// Só a cabeça do sprite de corpo inteiro (persona-pixel.png, 64×128), como um retrato
+// "falando". backgroundSize/Position enquadram o rosto — os dois números são o ajuste fino.
+export function RostoGuia({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "block shrink-0 rounded-full border-2 border-hu-bright bg-[#bfe3f6] bg-no-repeat [image-rendering:pixelated] dark:bg-[#243049]",
+        className,
+      )}
+      style={{
+        // Enquadra chapéu+rosto+ombro (sprite: cabeça y0–30, ombros ~y31 de 128).
+        backgroundImage: "url(/persona-pixel.png)",
+        backgroundSize: "170%",
+        backgroundPosition: "50% 2%",
+      }}
+    />
+  )
+}
+
 export function FalaDaGuia({ humor = "neutra", children }: { humor?: Humor; children: ReactNode }) {
   return (
     <div className="flex items-start gap-3">
