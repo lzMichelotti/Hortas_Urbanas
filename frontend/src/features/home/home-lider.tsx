@@ -21,13 +21,16 @@ export function HomeLider() {
   const badges: Badges = { solicitacoes: { valor: pendentes } }
 
   return (
-    <div className="absolute inset-x-0 top-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))]">
-      <Cena
-        cena={cenaLider}
-        badges={badges}
-        slots={{ horta: <HortaVitrine /> }}
-        aoAbrirFolha={() => setMenu(true)}
-      />
+    <div className="absolute inset-x-0 top-0 bottom-0">
+      <div aria-hidden className="absolute inset-0 bg-[#5da33f] dark:bg-[#16291c]" />
+      <div className="absolute inset-x-0 top-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))]">
+        <Cena
+          cena={cenaLider}
+          badges={badges}
+          slots={{ horta: <HortaVitrine /> }}
+          aoAbrirFolha={() => setMenu(true)}
+        />
+      </div>
       <QuadroMenu aberta={menu} aoMudar={setMenu} opcoes={OPCOES_LIDER} />
     </div>
   )
