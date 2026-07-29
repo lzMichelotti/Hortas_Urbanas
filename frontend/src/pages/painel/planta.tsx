@@ -9,7 +9,7 @@ import { Voltar } from "@/components/voltar"
 import { ArtePlanta } from "@/features/produtos/sprite-produto"
 import { FalaDaGuia } from "@/components/guia"
 import { CelebracaoOverlay } from "@/components/celebracao"
-import { ConfirmacaoInline } from "@/components/confirmar"
+import { EscolherMotivoPerda } from "@/features/ciclos/motivo-perda"
 import { Aviso, Carregando } from "@/components/feedback"
 import { Button } from "@/components/ui/button"
 import type { components } from "@/lib/api/schema"
@@ -148,12 +148,15 @@ export function PlantaDetalhePage() {
             A planta se perdeu?
           </button>
         ) : (
-          <ConfirmacaoInline
-            pergunta={<>Marcar <strong>{nome}</strong> como perdida? Não dá pra desfazer.</>}
-            rotuloConfirmar="Sim, perdeu-se"
-            rotuloConfirmando="Salvando…"
-            confirmando={atualizar.isPending}
-            aoConfirmar={() => atualizar.mutate({ id: ciclo.id, status: "PERDIDO" }, { onSuccess: () => navigate("/painel") })}
+          <EscolherMotivoPerda
+            pergunta={<>O que houve com <strong>{nome}</strong>? Depois não dá pra desfazer.</>}
+            salvando={atualizar.isPending}
+            aoEscolher={(motivo, observacao) =>
+              atualizar.mutate(
+                { id: ciclo.id, status: "PERDIDO", motivo_perda: motivo, observacao_perda: observacao },
+                { onSuccess: () => navigate("/painel") },
+              )
+            }
             aoCancelar={() => setConfirmarPerda(false)}
           />
         )}

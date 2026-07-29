@@ -7,7 +7,8 @@ import { Voltar } from "@/components/voltar"
 import { Button } from "@/components/ui/button"
 import type { components } from "@/lib/api/schema"
 import { Aviso, Carregando } from "@/components/feedback"
-import { ConfirmacaoInline } from "@/components/confirmar"
+import { EscolherMotivoPerda } from "@/features/ciclos/motivo-perda"
+import { rotuloMotivo } from "@/features/ciclos/motivos"
 
 type StatusCiclo = components["schemas"]["StatusCiclo"]
 
@@ -148,12 +149,15 @@ export function CalendarioPage() {
                       </div>
                     )}
                     {confirmarPerdaId === c.id && (
-                      <ConfirmacaoInline
-                        pergunta={<>Marcar <strong>{nomeProduto(c.produto_id)}</strong> como perdida? Não dá pra desfazer.</>}
-                        rotuloConfirmar="Sim, perdeu-se"
-                        rotuloConfirmando="Salvando…"
-                        confirmando={atualizandoEste}
-                        aoConfirmar={() => atualizar.mutate({ id: c.id, status: "PERDIDO" }, { onSuccess: () => setConfirmarPerdaId(null) })}
+                      <EscolherMotivoPerda
+                        pergunta={<>O que houve com <strong>{nomeProduto(c.produto_id)}</strong>? Depois não dá pra desfazer.</>}
+                        salvando={atualizandoEste}
+                        aoEscolher={(motivo, observacao) =>
+                          atualizar.mutate(
+                            { id: c.id, status: "PERDIDO", motivo_perda: motivo, observacao_perda: observacao },
+                            { onSuccess: () => setConfirmarPerdaId(null) },
+                          )
+                        }
                         aoCancelar={() => setConfirmarPerdaId(null)}
                       />
                     )}
@@ -181,6 +185,13 @@ export function CalendarioPage() {
                               : ` · 🧺 previsão ${fmt(c.previsao_colheita)}`}
                             {c.quantidade ? ` · ${c.quantidade} un.` : ""}
                           </p>
+                          {c.status === "PERDIDO" && rotuloMotivo(c.motivo_perda) && (
+                            <p className="mt-1 text-sm text-hu-muted">
+                              {rotuloMotivo(c.motivo_perda)}
+                              {c.perdido_em ? ` · ${fmt(c.perdido_em)}` : ""}
+                              {c.observacao_perda ? ` — ${c.observacao_perda}` : ""}
+                            </p>
+                          )}
                         </div>
                         <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-bold ${status.cor}`}>
                           {status.rotulo}

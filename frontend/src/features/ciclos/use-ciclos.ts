@@ -4,7 +4,9 @@ import { unwrap } from "@/lib/api/errors"
 import type { components } from "@/lib/api/schema"
 
 type CicloCreate = components["schemas"]["CicloCreate"]
+type CicloUpdate = components["schemas"]["CicloUpdate"]
 type StatusCiclo = components["schemas"]["StatusCiclo"]
+type MotivoPerda = components["schemas"]["MotivoPerda"]
 
 export function useCiclos(canteiroId: number | undefined) {
   return useQuery({
@@ -74,13 +76,18 @@ export function useColher(canteiroId: number) {
 export function useAtualizarStatusCiclo(canteiroId: number) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, status }: { id: number; status: StatusCiclo }) =>
-      unwrap(
-        api.PATCH("/ciclos/{id}", {
-          params: { path: { id } },
-          body: { status },
-        }),
-      ),
+    mutationFn: ({
+      id,
+      status,
+      motivo_perda,
+      observacao_perda,
+    }: { id: number; status: StatusCiclo; motivo_perda?: MotivoPerda; observacao_perda?: string }) => {
+      const body: CicloUpdate = { status }
+      // A API recusa motivo sem PERDIDO — só envia o que o status comporta.
+      if (motivo_perda) body.motivo_perda = motivo_perda
+      if (observacao_perda) body.observacao_perda = observacao_perda
+      return unwrap(api.PATCH("/ciclos/{id}", { params: { path: { id } }, body }))
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["ciclos", canteiroId] }),
   })
 }

@@ -77,6 +77,23 @@ class StatusCiclo(str, Enum):
     PERDIDO              = "PERDIDO"
 
 
+class MotivoPerda(str, Enum):
+    GEADA         = "GEADA"
+    SECA          = "SECA"
+    CHUVA_EXCESSO = "CHUVA_EXCESSO"
+    CALOR         = "CALOR"
+    PRAGA         = "PRAGA"
+    ANIMAIS       = "ANIMAIS"
+    FURTO         = "FURTO"
+    OUTRO         = "OUTRO"
+
+
+# Recorte climático das perdas — o dado que a pesquisa de resiliência busca.
+MOTIVOS_CLIMATICOS = frozenset({
+    MotivoPerda.GEADA, MotivoPerda.SECA, MotivoPerda.CHUVA_EXCESSO, MotivoPerda.CALOR,
+})
+
+
 class StatusIntencao(str, Enum):
     PLANEJADO            = "PLANEJADO"
     AGUARDANDO_SEMENTES  = "AGUARDANDO_SEMENTES"

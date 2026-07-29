@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
+from app.database.enums import StatusCiclo
 from app.database.models import Canteiro, CicloProducao, Usuario
 from app.schemas.ciclo import CicloCreate, CicloUpdate, CicloRead
 from app.dependencies import get_current_user
@@ -75,8 +76,24 @@ def update_ciclo(
     exigir_acesso_horta(usuario, canteiro.horta_id)
     exigir_dono_do_canteiro(usuario, canteiro)
 
-    for key, value in ciclo.model_dump(exclude_unset=True).items():
+    era_perdido = db_ciclo.status == StatusCiclo.PERDIDO
+    dados = ciclo.model_dump(exclude_unset=True)
+    novo_status = dados.get("status")
+
+    for key, value in dados.items():
         setattr(db_ciclo, key, value)
+
+    # A data da perda é do servidor — é ela que cruza a perda com o evento
+    # climático, então não vem do cliente. Preservada ao corrigir só o motivo.
+    if novo_status == StatusCiclo.PERDIDO:
+        if db_ciclo.perdido_em is None:
+            hoje = datetime.now(timezone.utc).date()
+            # CHECK exige perdido_em >= data_plantio: plantio futuro registra na data do plantio.
+            db_ciclo.perdido_em = max(hoje, db_ciclo.data_plantio or hoje)
+    elif era_perdido and novo_status is not None:
+        db_ciclo.motivo_perda = None
+        db_ciclo.observacao_perda = None
+        db_ciclo.perdido_em = None
 
     db.commit()
     return db_ciclo

@@ -11,7 +11,7 @@ from app.database.session import Base
 from app.database.enums import (
     FonteAgua, TipoSolo, NivelVulnerabilidade, TipoZona, NivelRisco,
     Privilegio, StatusCiclo, StatusIntencao, StatusSolicitacao, StatusDemanda,
-    TipoPost, enum_check,
+    TipoPost, MotivoPerda, enum_check,
 )
 
 
@@ -140,9 +140,14 @@ class CicloProducao(Base):
     __tablename__ = 'Ciclos_Producao'
     __table_args__ = (
         enum_check("status", StatusCiclo, name="ck_ciclos_producao_status"),
+        enum_check("motivo_perda", MotivoPerda, name="ck_ciclos_producao_motivo_perda"),
         CheckConstraint(
             "previsao_colheita > data_plantio",
             name="ck_ciclos_producao_datas",
+        ),
+        CheckConstraint(
+            "perdido_em >= data_plantio",
+            name="ck_ciclos_producao_perdido_em",
         ),
         CheckConstraint(
             "quantidade > 0",
@@ -163,6 +168,10 @@ class CicloProducao(Base):
     data_colheita_real = Column(Date, nullable=True)
     status = Column(String(50))
     quantidade = Column(Integer, nullable=True)
+
+    motivo_perda = Column(String(50), nullable=True)
+    observacao_perda = Column(String(140), nullable=True)
+    perdido_em = Column(Date, nullable=True)
 
     ativo = Column(Boolean, default=True, nullable=False)
     deletado_em = Column(DateTime(timezone=True), nullable=True)

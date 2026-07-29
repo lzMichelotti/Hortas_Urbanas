@@ -1019,6 +1019,11 @@ export interface components {
             status: components["schemas"]["StatusCiclo"];
             /** Quantidade */
             quantidade?: number | null;
+            motivo_perda?: components["schemas"]["MotivoPerda"] | null;
+            /** Observacao Perda */
+            observacao_perda?: string | null;
+            /** Perdido Em */
+            perdido_em?: string | null;
         };
         /** CicloUpdate */
         CicloUpdate: {
@@ -1033,6 +1038,9 @@ export interface components {
             status?: components["schemas"]["StatusCiclo"] | null;
             /** Quantidade */
             quantidade?: number | null;
+            motivo_perda?: components["schemas"]["MotivoPerda"] | null;
+            /** Observacao Perda */
+            observacao_perda?: string | null;
         };
         /** ClimaAtual */
         ClimaAtual: {
@@ -1398,6 +1406,11 @@ export interface components {
             /** Eu Curti */
             eu_curti: boolean;
         };
+        /**
+         * MotivoPerda
+         * @enum {string}
+         */
+        MotivoPerda: "GEADA" | "SECA" | "CHUVA_EXCESSO" | "CALOR" | "PRAGA" | "ANIMAIS" | "FURTO" | "OUTRO";
         /**
          * NivelRisco
          * @enum {string}
