@@ -32,6 +32,7 @@ const DemandasPage = lazyComRetry(() => import("@/pages/painel/demandas").then((
 const AdminDemandasPage = lazyComRetry(() => import("@/pages/painel/admin-demandas").then((m) => ({ default: m.AdminDemandasPage })))
 const ConfiguracoesPage = lazyComRetry(() => import("@/pages/painel/configuracoes").then((m) => ({ default: m.ConfiguracoesPage })))
 const PlantaDetalhePage = lazyComRetry(() => import("@/pages/painel/planta").then((m) => ({ default: m.PlantaDetalhePage })))
+const MeuCanteiroPage = lazyComRetry(() => import("@/pages/painel/meu-canteiro").then((m) => ({ default: m.MeuCanteiroPage })))
 
 function Carregando() {
   return (
@@ -77,10 +78,12 @@ function App() {
               <Route path="demandas" element={<RoleRoute roles={["LIDER_HORTA"]}><DemandasPage /></RoleRoute>} />
               <Route path="admin-demandas" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><AdminDemandasPage /></RoleRoute>} />
               <Route path="membros" element={<RoleRoute roles={["LIDER_HORTA", "ADMIN_SUPREMO"]}><MembrosPage /></RoleRoute>} />
-              <Route path="plantar" element={<RoleRoute roles={["MEMBRO_CANTEIRO"]}><PlantarPage /></RoleRoute>} />
-              <Route path="planta/:id" element={<RoleRoute roles={["MEMBRO_CANTEIRO"]}><PlantaDetalhePage /></RoleRoute>} />
-              <Route path="colher" element={<RoleRoute roles={["MEMBRO_CANTEIRO"]}><ColherPage /></RoleRoute>} />
-              <Route path="calendario" element={<RoleRoute roles={["MEMBRO_CANTEIRO"]}><CalendarioPage /></RoleRoute>} />
+              <Route path="meu-canteiro" element={<RoleRoute roles={["LIDER_HORTA"]}><MeuCanteiroPage /></RoleRoute>} />
+              {/* Líder também cuida do próprio canteiro — mesmas telas do membro. */}
+              <Route path="plantar" element={<RoleRoute roles={["MEMBRO_CANTEIRO", "LIDER_HORTA"]}><PlantarPage /></RoleRoute>} />
+              <Route path="planta/:id" element={<RoleRoute roles={["MEMBRO_CANTEIRO", "LIDER_HORTA"]}><PlantaDetalhePage /></RoleRoute>} />
+              <Route path="colher" element={<RoleRoute roles={["MEMBRO_CANTEIRO", "LIDER_HORTA"]}><ColherPage /></RoleRoute>} />
+              <Route path="calendario" element={<RoleRoute roles={["MEMBRO_CANTEIRO", "LIDER_HORTA"]}><CalendarioPage /></RoleRoute>} />
               <Route path="comunidade" element={<RoleRoute roles={["MEMBRO_CANTEIRO"]}><ComunidadePage /></RoleRoute>} />
             </Route>
           </Route>

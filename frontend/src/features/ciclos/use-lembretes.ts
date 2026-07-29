@@ -8,14 +8,20 @@ import { sincronizarLembretes } from "./lembretes"
 
 export function useLembretesColheita() {
   const me = useMe()
-  const ehMembro = me.data?.privilegio === "MEMBRO_CANTEIRO"
-  const canteiro = useMeuCanteiro(ehMembro)
-  const ciclos = useCiclos(ehMembro ? canteiro.data?.id : undefined)
+  // O lembrete é notificação local do app — na web não há o que agendar, então
+  // nem vale buscar os dados. Admin é o único papel que não cuida de canteiro.
+  const ativo =
+    Capacitor.isNativePlatform() &&
+    me.data != null &&
+    me.data.privilegio !== "ADMIN_SUPREMO"
+
+  const canteiro = useMeuCanteiro(ativo)
+  const ciclos = useCiclos(ativo ? canteiro.data?.id : undefined)
   const nomeProduto = useNomeProduto()
 
   const dados = ciclos.data
   useEffect(() => {
-    if (!ehMembro || !dados || !Capacitor.isNativePlatform()) return
+    if (!ativo || !dados) return
     void sincronizarLembretes(dados, nomeProduto)
-  }, [ehMembro, dados, nomeProduto])
+  }, [ativo, dados, nomeProduto])
 }

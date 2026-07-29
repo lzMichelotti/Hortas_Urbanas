@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useMeuCanteiro } from "@/features/canteiro/use-meu-canteiro"
+import { SemCanteiro } from "@/features/canteiro/sem-canteiro"
 import { useCiclos, useColher } from "@/features/ciclos/use-ciclos"
 import { useNomeProduto } from "@/features/produtos/use-nome-produto"
 import { SpriteProduto } from "@/features/produtos/sprite-produto"
@@ -31,9 +32,7 @@ export function ColherPage() {
     return (
       <div className="mx-auto max-w-2xl">
         <Voltar />
-        <p className="mt-6 rounded-2xl border-4 border-hu-bright bg-hu-panel p-8 text-center text-hu-text">
-          Você ainda não tem um canteiro. Fale com o líder da sua horta.
-        </p>
+        <SemCanteiro className="mt-6" />
       </div>
     )
   }

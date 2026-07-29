@@ -7,6 +7,7 @@ import { QuadroMenu, type OpcaoMenu } from "@/features/home/quadro-menu"
 
 const OPCOES_LIDER: OpcaoMenu[] = [
   { label: "Minha horta", img: "/minha-horta.png", to: "/painel/horta" },
+  { label: "Meu canteiro", img: "/plantar.png", to: "/painel/meu-canteiro" },
   { label: "Membros", img: "/membros.png", to: "/painel/membros" },
   { label: "Demandas", img: "/demandas.png", to: "/painel/demandas" },
   { label: "Mapa", img: "/mapa.png", to: "/mapa" },

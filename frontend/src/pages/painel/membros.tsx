@@ -62,6 +62,13 @@ export function MembrosPage() {
     (u) => u.privilegio === "MEMBRO_CANTEIRO" && u.horta_id === hortaId,
   )
 
+  // O líder também pode cuidar de um canteiro na própria horta — por isso entra
+  // como opção de responsável, sem virar item da lista de membros.
+  const eu = me.data?.privilegio === "LIDER_HORTA" ? me.data : null
+  const opcoesResponsavel: { id: number; nome: string }[] = eu
+    ? [{ id: eu.id, nome: `${eu.nome} (você)` }, ...membros]
+    : membros
+
   const canteiroDoMembro = (userId: number) =>
     (canteiros.data ?? []).find((c) => c.usuario_id === userId)
 
@@ -411,7 +418,7 @@ export function MembrosPage() {
               className="h-11 rounded-lg border-2 border-hu-soft bg-hu-bg px-3 text-hu-text"
             >
               <option value="">Sem responsável por agora</option>
-              {membros.map((u) => (
+              {opcoesResponsavel.map((u) => (
                 <option key={u.id} value={u.id}>{u.nome}</option>
               ))}
             </select>
@@ -532,7 +539,7 @@ export function MembrosPage() {
                       className="h-10 flex-1 rounded-lg border-2 border-hu-soft bg-hu-bg px-3 text-sm text-hu-text"
                     >
                       <option value="">Sem responsável</option>
-                      {membros.map((u) => (
+                      {opcoesResponsavel.map((u) => (
                         <option key={u.id} value={u.id}>{u.nome}</option>
                       ))}
                     </select>

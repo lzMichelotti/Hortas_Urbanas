@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react"
 import { ArrowLeft, ChevronRight, Minus, Pencil, Plus, RotateCw, Send, Trash2 } from "lucide-react"
 import { useMeuCanteiro } from "@/features/canteiro/use-meu-canteiro"
+import { SemCanteiro } from "@/features/canteiro/sem-canteiro"
 import { useProdutos } from "@/features/produtos/use-produtos"
 import { useNomeProduto } from "@/features/produtos/use-nome-produto"
 import {
@@ -225,9 +226,7 @@ export function ComunidadePage() {
     return (
       <div className="mx-auto max-w-2xl">
         <Voltar />
-        <p className="mt-6 rounded-2xl border-4 border-hu-bright bg-hu-panel p-8 text-center text-hu-text">
-          Você ainda não tem um canteiro. Fale com o líder da sua horta.
-        </p>
+        <SemCanteiro className="mt-6" />
       </div>
     )
   }

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Link, useNavigate } from "react-router"
 import { AlertTriangle, ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, Clock, Sprout } from "lucide-react"
+import { useMe } from "@/features/auth/use-me"
 import { useMeuCanteiro } from "@/features/canteiro/use-meu-canteiro"
+import { SemCanteiro } from "@/features/canteiro/sem-canteiro"
 import { useProdutos } from "@/features/produtos/use-produtos"
 import { usePlantar } from "@/features/ciclos/use-ciclos"
 import {
@@ -41,6 +43,8 @@ type Etapa = "produto" | "data" | "quantidade" | "fim"
 const ORDEM: Etapa[] = ["produto", "data", "quantidade"]
 
 export function PlantarPage() {
+  const me = useMe()
+  const ehLider = me.data?.privilegio === "LIDER_HORTA"
   const canteiro = useMeuCanteiro()
   const produtos = useProdutos()
   const plantar = usePlantar(canteiro.data?.id ?? 0)
@@ -144,9 +148,7 @@ export function PlantarPage() {
   if (!canteiro.data) {
     return (
       <div className="mx-auto max-w-2xl">
-        <p className="mt-6 rounded-2xl border-4 border-hu-bright bg-hu-panel p-8 text-center text-hu-text">
-          Você ainda não tem um canteiro. Fale com o líder da sua horta.
-        </p>
+        <SemCanteiro className="mt-6" />
       </div>
     )
   }
@@ -318,7 +320,13 @@ export function PlantarPage() {
                 asChild
                 className="h-12 w-full rounded-xl bg-hu-bright text-base font-bold text-hu-bg hover:bg-hu-bright/90"
               >
-                <Link to="/painel" state={{ abrirCanteiro: true }}>Ver meu canteiro</Link>
+                {/* O membro vê o canteiro na cena da home; o líder, na página dele. */}
+                <Link
+                  to={ehLider ? "/painel/meu-canteiro" : "/painel"}
+                  state={ehLider ? undefined : { abrirCanteiro: true }}
+                >
+                  Ver meu canteiro
+                </Link>
               </Button>
               <Button
                 onClick={plantarOutra}

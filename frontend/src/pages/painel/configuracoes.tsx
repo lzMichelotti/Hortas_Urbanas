@@ -52,7 +52,8 @@ export function ConfiguracoesPage() {
   const me = useMe()
   const ehMembro = me.data?.privilegio === "MEMBRO_CANTEIRO"
   const ehLider = me.data?.privilegio === "LIDER_HORTA"
-  const canteiro = useMeuCanteiro(ehMembro)
+  const podeTerCanteiro = ehMembro || ehLider
+  const canteiro = useMeuCanteiro(podeTerCanteiro)
   const atualizar = useAtualizarAvatar()
   const escolhido = me.data?.avatar ?? AVATAR_PADRAO
 
@@ -66,7 +67,7 @@ export function ConfiguracoesPage() {
           <div className="min-w-0">
             <p className="truncate text-lg font-bold">{me.data?.nome ?? "Bem-vindo!"}</p>
             {me.data && <p className="text-sm text-hu-muted">{ROTULO_PAPEL[me.data.privilegio]}</p>}
-            {ehMembro && canteiro.data && (
+            {podeTerCanteiro && canteiro.data && (
               <p className="truncate text-sm text-hu-muted">Canteiro: {canteiro.data.identificacao}</p>
             )}
           </div>

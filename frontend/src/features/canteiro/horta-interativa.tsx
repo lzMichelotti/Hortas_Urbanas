@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { Link } from "react-router"
 import { Plus } from "lucide-react"
 import { useMeuCanteiro } from "@/features/canteiro/use-meu-canteiro"
+import { SemCanteiro } from "@/features/canteiro/sem-canteiro"
 import { useCiclos } from "@/features/ciclos/use-ciclos"
 import { estagioDe, progresso } from "@/features/ciclos/crescimento"
 import { useNomeProduto } from "@/features/produtos/use-nome-produto"
@@ -99,13 +100,7 @@ export function CanteiroGrade({
       </Aviso>
     )
   }
-  if (!canteiro.data) {
-    return (
-      <p className="mt-2 rounded-2xl border-4 border-hu-bright bg-hu-panel p-8 text-center text-hu-text">
-        Você ainda não tem um canteiro. Fale com o líder da sua horta.
-      </p>
-    )
-  }
+  if (!canteiro.data) return <SemCanteiro className="mt-2" />
 
   const ativos = (ciclos.data ?? []).filter((c) => ATIVOS.includes(c.status ?? ""))
   const vazios = Math.max(2, minBlocos - ativos.length)

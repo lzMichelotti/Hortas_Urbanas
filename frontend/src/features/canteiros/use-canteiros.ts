@@ -6,9 +6,12 @@ import type { components } from "@/lib/api/schema"
 type CanteiroCreate = components["schemas"]["CanteiroCreate"]
 type CanteiroUpdate = components["schemas"]["CanteiroUpdate"]
 
+// staleTime igual ao de useMeuCanteiro: a chave é compartilhada e a validade é
+// avaliada por observer — valores diferentes fariam esta tela refetchar à toa.
 export function useCanteiros() {
   return useQuery({
     queryKey: ["canteiros"],
+    staleTime: 5 * 60_000,
     queryFn: ({ signal }) => unwrap(api.GET("/canteiros", { signal })),
   })
 }
