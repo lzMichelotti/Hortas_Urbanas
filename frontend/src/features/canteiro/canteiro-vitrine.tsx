@@ -34,8 +34,8 @@ export function CanteiroVitrine() {
             aria-label="Abrir meu canteiro em tela cheia"
             className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl bg-black/15 transition-colors hover:bg-black/25 active:bg-black/30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hu-bright/70"
           >
-            <span className="flex items-center gap-2 rounded-xl border-2 border-[#5b3a1a] bg-hu-panel px-4 py-2.5 font-pixel text-[11px] leading-tight text-hu-text shadow-[0_3px_0_#5b3a1a]">
-              <Maximize2 className="size-4 text-hu-bright" aria-hidden />
+            <span className="flex items-center justify-center gap-2 rounded-xl border-2 border-[#5b3a1a] bg-hu-panel px-4 py-2.5 text-center font-pixel text-[11px] leading-tight text-hu-text shadow-[0_3px_0_#5b3a1a]">
+              <Maximize2 className="size-4 shrink-0 text-hu-bright" aria-hidden />
               Abrir meu canteiro
             </span>
           </button>
