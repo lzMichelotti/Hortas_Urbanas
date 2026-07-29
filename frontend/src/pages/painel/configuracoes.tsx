@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { FalaDaGuia } from "@/components/guia"
+import { VersaoApp } from "@/components/versao-app"
 import { useMe } from "@/features/auth/use-me"
 import { ConfirmarSair } from "@/features/auth/confirmar-sair"
 import { ROTULO_PAPEL } from "@/features/auth/papeis"
@@ -156,6 +157,8 @@ export function ConfiguracoesPage() {
           Você volta para a tela de entrada e pode entrar com outra conta.
         </p>
       </section>
+
+      <VersaoApp />
 
       <ConfirmarSair aberta={confirmandoSair} aoMudar={setConfirmandoSair} />
     </div>

@@ -6,6 +6,8 @@ const config: CapacitorConfig = {
   webDir: "dist",
   server: {
     url: "https://app.hortasurbanassm.com.br",
+    // Servida do APK quando a WebView nem consegue carregar o site.
+    errorPath: "erro.html",
   },
 }
 

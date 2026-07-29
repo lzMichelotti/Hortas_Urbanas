@@ -1,5 +1,15 @@
 apply plugin: 'com.android.application'
 
+// A chave de release nunca entra no git: vem do keystore.properties local ou de
+// variáveis de ambiente. Sem ela, só o release para — o debug segue funcionando.
+def arquivoChaves = rootProject.file("keystore.properties")
+def chaves = new Properties()
+if (arquivoChaves.exists()) {
+    arquivoChaves.withInputStream { chaves.load(it) }
+}
+def caminhoKeystore = chaves['storeFile'] ?: System.getenv('HU_KEYSTORE_FILE')
+def temChaveRelease = caminhoKeystore != null && !caminhoKeystore.isEmpty()
+
 android {
     namespace = "br.com.hortasurbanas.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +17,8 @@ android {
         applicationId "br.com.hortasurbanas.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,11 +26,35 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (temChaveRelease) {
+                storeFile file(caminhoKeystore)
+                storePassword chaves['storePassword'] ?: System.getenv('HU_KEYSTORE_PASSWORD')
+                keyAlias chaves['keyAlias'] ?: System.getenv('HU_KEY_ALIAS')
+                keyPassword chaves['keyPassword'] ?: System.getenv('HU_KEY_PASSWORD')
+            }
+        }
+    }
     buildTypes {
         release {
+            if (temChaveRelease) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+}
+
+gradle.taskGraph.whenReady { grafo ->
+    if (!temChaveRelease && grafo.allTasks.any { it.name.toLowerCase().contains('release') }) {
+        throw new GradleException(
+            "Build de release sem chave de assinatura.\n" +
+            "Crie android/keystore.properties (storeFile, storePassword, keyAlias, keyPassword)\n" +
+            "ou exporte HU_KEYSTORE_FILE, HU_KEYSTORE_PASSWORD, HU_KEY_ALIAS, HU_KEY_PASSWORD.\n" +
+            "Um APK sem assinatura nao instala, e trocar de chave impede atualizar por cima."
+        )
     }
 }
 

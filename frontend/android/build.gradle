@@ -15,6 +15,16 @@ buildscript {
     }
 }
 
+// AGP 8.13 exige JDK 17+ e o Gradle 8.14 roda em Java até 24. O PATH herdado do
+// Windows expõe um JDK 25, que quebraria o build com erro ilegível.
+def javaMajor = JavaVersion.current().majorVersion.toInteger()
+if (javaMajor < 17 || javaMajor > 24) {
+    throw new GradleException(
+        "Este build precisa de JDK 17 a 24 (achei ${javaMajor} em ${System.getProperty('java.home')}).\n" +
+        "Use: export JAVA_HOME=~/tools/jdk21"
+    )
+}
+
 apply from: "variables.gradle"
 
 allprojects {
