@@ -1,3 +1,4 @@
+import { plural } from "@/lib/utils"
 import type { components } from "@/lib/api/schema"
 
 export type ProdutividadeCanteiro = components["schemas"]["ProdutividadeCanteiro"]
@@ -12,7 +13,6 @@ export function bandeiraDoCanteiro(c: ProdutividadeCanteiro): Bandeira {
   return "verde"
 }
 
-const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
 
 // Motivos legíveis do estado atual, do mais grave ao mais brando. Podem acumular.
 export function motivosDoCanteiro(c: ProdutividadeCanteiro): string[] {

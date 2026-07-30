@@ -14,7 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
-export type FonteItens = "plantio" | "lista" | "livre"
+type FonteItens = "plantio" | "lista" | "livre"
 
 export interface ItemMaterial {
   id: string

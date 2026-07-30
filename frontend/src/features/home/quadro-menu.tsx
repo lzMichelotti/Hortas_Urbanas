@@ -67,14 +67,16 @@ export function QuadroMenu({
                   <Dialog.Close asChild key={o.to}>
                     <Link
                       to={o.to}
-                      className="flex flex-col items-center gap-2 rounded-xl border-4 border-[#5b3a1a] bg-hu-panel p-4 text-center transition-transform hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hu-bright/60"
+                      className="flex flex-col items-center gap-2 rounded-xl border-4 border-[#5b3a1a] bg-hu-panel py-4 text-center transition-transform hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hu-bright/60"
                     >
                       {o.img ? (
                         <img src={o.img} alt="" className="size-12 [image-rendering:pixelated]" />
                       ) : Icone ? (
                         <Icone className="size-12 text-hu-text" strokeWidth={2.5} aria-hidden />
                       ) : null}
-                      <span className="font-pixel text-[11px] leading-tight text-hu-text">{o.label}</span>
+                      <span className="max-w-full font-pixel text-[10px] leading-tight break-words text-hu-text min-[360px]:text-[11px]">
+                        {o.label}
+                      </span>
                     </Link>
                   </Dialog.Close>
                 )

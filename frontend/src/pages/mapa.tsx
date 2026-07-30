@@ -14,6 +14,7 @@ import {
   useMapEvents,
   ZoomControl,
 } from "react-leaflet"
+import { endereco } from "@/lib/utils"
 import type { components } from "@/lib/api/schema"
 import {
   useAlertasAtivos,
@@ -81,10 +82,6 @@ function popupZonaHtml(p: PropsZona): string {
     ${p.descricao ? `<p style="margin:4px 0">${esc(p.descricao)}</p>` : ""}
     ${data}${badge}
   </div>`
-}
-
-function endereco(p: { rua?: string | null; numero?: string | null; bairro?: string | null; cidade?: string | null; uf?: string | null }): string {
-  return [p.rua, p.numero, p.bairro, p.cidade, p.uf].filter(Boolean).join(", ")
 }
 
 function BadgeSituacao({ situacao, emergencia, zonaTipo }: { situacao: Situacao; emergencia: boolean; zonaTipo?: string }) {

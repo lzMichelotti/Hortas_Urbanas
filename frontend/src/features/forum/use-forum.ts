@@ -12,7 +12,6 @@ import { unwrap } from "@/lib/api/errors"
 import { CONTENT_TYPE } from "@/features/forum/fotos"
 import type { components } from "@/lib/api/schema"
 
-type PostCreate = components["schemas"]["PostCreate"]
 type RespostaCreate = components["schemas"]["RespostaCreate"]
 type Feed = components["schemas"]["FeedRead"]
 type Detalhe = components["schemas"]["PostDetalhe"]
@@ -44,14 +43,6 @@ export function usePost(id: number) {
   })
 }
 
-export function useCriarPost() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (body: Pick<PostCreate, "conteudo">) =>
-      unwrap(api.POST("/forum/posts", { body: { ...body, tipo: "AJUDA" } })),
-    onSuccess: () => qc.invalidateQueries({ queryKey: FEED_KEY, refetchType: "all" }),
-  })
-}
 
 async function putComRetry(url: string, foto: File, tentativas = 3) {
   for (let i = 1; ; i++) {

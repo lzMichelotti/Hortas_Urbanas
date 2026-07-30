@@ -22,7 +22,7 @@ export const queryClient = new QueryClient({
   },
 })
 
-export const PERSIST_BUSTER = "2"
+const PERSIST_BUSTER = "2"
 
 export const persister = createAsyncStoragePersister({
   storage: window.localStorage,

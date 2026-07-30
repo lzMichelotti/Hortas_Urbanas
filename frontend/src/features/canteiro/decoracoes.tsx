@@ -8,7 +8,7 @@ const FOLHA = "#4ccc6f"
 const FOLHA_ESC = "#2e8b57"
 const UVA = "#6b3fa0"
 
-export function Parreira({ className }: { className?: string }) {
+function Parreira({ className }: { className?: string }) {
   const ripas = [16, 32, 48, 64, 80, 96, 112, 128, 144]
   const vinhas = [26, 60, 96, 134]
   return (
@@ -46,7 +46,7 @@ export function Parreira({ className }: { className?: string }) {
   )
 }
 
-export function Cerca({ className }: { className?: string }) {
+function Cerca({ className }: { className?: string }) {
   return (
     <div className={cn("pointer-events-none flex h-8 w-full items-stretch", className)} aria-hidden>
       <img src="/cerca-esquerda.png" alt="" className="h-full w-auto [image-rendering:pixelated]" />
@@ -59,7 +59,7 @@ export function Cerca({ className }: { className?: string }) {
   )
 }
 
-export function Plaquinha({ children, className }: { children: ReactNode; className?: string }) {
+function Plaquinha({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div className={cn("pointer-events-none flex flex-col items-center", className)} aria-hidden>
       <div className="rounded-[3px] border-[3px] border-[#5b3a1a] bg-[#8a5a2b] px-2 py-1 shadow-[0_2px_0_rgba(0,0,0,.3)]">

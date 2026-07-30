@@ -36,7 +36,7 @@ const VALIDACAO_PT: Record<string, string> = {
 }
 const VALIDACAO_PADRAO = "Confira o que foi preenchido e tente de novo."
 
-export function mensagemDeErro(error: unknown): string {
+function mensagemDeErro(error: unknown): string {
   if (error && typeof error === "object" && "detail" in error) {
     const detail = (error as { detail: unknown }).detail
     if (typeof detail === "string") return detail

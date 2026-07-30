@@ -10,22 +10,26 @@ export function FolhaInferior({
   aoMudar,
   titulo,
   gatilho,
+  // Camadas: 1000 = mapa, 1100 = folha/menu, 1200 = tela cheia. Uma folha aberta
+  // de dentro de uma tela cheia precisa subir acima dela.
+  camada = "z-[1100]",
   children,
 }: {
   aberta?: boolean
   aoMudar?: (v: boolean) => void
   titulo: string
   gatilho?: ReactNode
+  camada?: string
   children: ReactNode
 }) {
   return (
     <Dialog.Root open={aberta} onOpenChange={aoMudar}>
       {gatilho && <Dialog.Trigger asChild>{gatilho}</Dialog.Trigger>}
       <Dialog.Portal>
-        <Dialog.Overlay className="hu-folha-overlay fixed inset-0 z-[1100] bg-black/50" />
+        <Dialog.Overlay className={`hu-folha-overlay fixed inset-0 ${camada} bg-black/50`} />
         <Dialog.Content
           aria-describedby={undefined}
-          className="hu-folha fixed inset-x-0 bottom-0 z-[1100] max-h-[85svh] overflow-auto rounded-t-2xl border-t-4 border-hu-bright bg-hu-panel p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-hu-text"
+          className={`hu-folha fixed inset-x-0 bottom-0 ${camada} max-h-[85svh] overflow-auto rounded-t-2xl border-t-4 border-hu-bright bg-hu-panel p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-hu-text`}
         >
           <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-hu-bright/50" aria-hidden />
           <div className="mb-3 flex items-center justify-between gap-2">

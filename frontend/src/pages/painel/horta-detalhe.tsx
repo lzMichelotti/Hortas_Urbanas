@@ -10,13 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plantinha } from "@/components/plantinha"
 import { Aviso, Carregando } from "@/components/feedback"
-import type { components } from "@/lib/api/schema"
-
-type Horta = components["schemas"]["HortaPublica"]
-
-function endereco(h: Horta): string {
-  return [h.rua, h.numero, h.bairro, h.cidade, h.uf].filter(Boolean).join(", ")
-}
+import { endereco } from "@/lib/utils"
 
 export function HortaDetalhePage() {
   const { id } = useParams()

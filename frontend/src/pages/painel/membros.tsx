@@ -48,8 +48,12 @@ export function MembrosPage() {
 
   const [mostraFormCanteiro, setMostraFormCanteiro] = useState(false)
   const [identificacao, setIdentificacao] = useState("")
+  const [numero, setNumero] = useState("")
   const [area, setArea] = useState("")
   const [membroIdCanteiro, setMembroIdCanteiro] = useState<number | "">("")
+
+  const [editandoNumeroId, setEditandoNumeroId] = useState<number | null>(null)
+  const [novoNumero, setNovoNumero] = useState("")
 
   const [atribuindoId, setAtribuindoId] = useState<number | null>(null)
   const [novoMembroId, setNovoMembroId] = useState<number | "">("")
@@ -108,23 +112,45 @@ export function MembrosPage() {
     )
   }
 
+  // Sugere a primeira placa livre para o líder não precisar conferir a horta inteira.
+  const proximoNumero = String(
+    (canteiros.data ?? []).reduce((maior, c) => Math.max(maior, c.numero), 0) + 1,
+  )
+
   function resetFormCanteiro() {
     setIdentificacao("")
+    setNumero("")
     setArea("")
     setMembroIdCanteiro("")
     setMostraFormCanteiro(false)
+    criarCanteiro.reset()
   }
 
   function onSubmitCanteiro(e: FormEvent) {
     e.preventDefault()
-    if (!identificacao.trim()) return
+    if (!identificacao.trim() || !numero) return
     criarCanteiro.mutate(
       {
         identificacao: identificacao.trim(),
+        numero: Number(numero),
         area_produtiva: area ? Number(area) : undefined,
         usuario_id: membroIdCanteiro !== "" ? membroIdCanteiro : undefined,
       },
       { onSuccess: resetFormCanteiro },
+    )
+  }
+
+  function onSubmitNumero(e: FormEvent, canteiroId: number) {
+    e.preventDefault()
+    if (!novoNumero) return
+    atualizarCanteiro.mutate(
+      { id: canteiroId, body: { numero: Number(novoNumero) } },
+      {
+        onSuccess: () => {
+          setEditandoNumeroId(null)
+          setNovoNumero("")
+        },
+      },
     )
   }
 
@@ -380,6 +406,25 @@ export function MembrosPage() {
           <p className="mb-4 font-pixel text-xs text-hu-text">Novo canteiro</p>
 
           <div className="flex flex-col gap-1.5">
+            <Label htmlFor="numero" className="text-sm text-hu-text">Número da placa</Label>
+            <Input
+              id="numero"
+              type="number"
+              inputMode="numeric"
+              min="1"
+              step="1"
+              placeholder={proximoNumero}
+              value={numero}
+              onChange={(e) => setNumero(e.target.value)}
+              required
+              className="h-11 rounded-lg border-2 border-hu-soft bg-hu-bg text-hu-text placeholder:text-hu-muted"
+            />
+            <p className="text-xs text-hu-muted">
+              É o número da placa fincada no canteiro. Sugestão: {proximoNumero}.
+            </p>
+          </div>
+
+          <div className="mt-3 flex flex-col gap-1.5">
             <Label htmlFor="ident" className="text-sm text-hu-text">Nome do canteiro</Label>
             <Input
               id="ident"
@@ -433,7 +478,7 @@ export function MembrosPage() {
           <div className="mt-4 flex gap-2">
             <Button
               type="submit"
-              disabled={!identificacao.trim() || criarCanteiro.isPending}
+              disabled={!identificacao.trim() || !numero || criarCanteiro.isPending}
               className={`h-11 flex-1 ${BOTAO_PIXEL}`}
             >
               {criarCanteiro.isPending ? "Criando…" : "Criar canteiro"}
@@ -462,6 +507,7 @@ export function MembrosPage() {
           const nomeResponsavel = c.usuario_id != null ? (responsavel?.nome ?? `Usuário #${c.usuario_id}`) : null
           const deletandoEste = deletarCanteiro.isPending && deletarCanteiro.variables === c.id
           const esteAtribuindo = atribuindoId === c.id
+          const editandoNumeroEste = editandoNumeroId === c.id
           const confirmarCanteiroEste = confirmarCanteiroId === c.id
 
           return (
@@ -470,8 +516,11 @@ export function MembrosPage() {
                 className="flex items-center justify-between gap-2 px-4 py-3 [image-rendering:pixelated]"
                 style={TERRA}
               >
-                <h3 className="min-w-0 truncate font-bold leading-none text-white [text-shadow:0_1px_2px_rgba(0,0,0,.7)]">
-                  {c.identificacao}
+                <h3 className="flex min-w-0 items-center gap-2 font-bold leading-none text-white [text-shadow:0_1px_2px_rgba(0,0,0,.7)]">
+                  <span className="shrink-0 rounded border-2 border-[#5b3a1a] bg-[#a8703f] px-2 py-1 font-pixel text-[11px] text-[#ffe8c2]">
+                    {c.numero}
+                  </span>
+                  <span className="min-w-0 truncate">{c.identificacao}</span>
                 </h3>
                 {c.area_produtiva != null && (
                   <span className="shrink-0 rounded-full border border-hu-soft bg-hu-panel px-2.5 py-1 text-xs font-bold text-hu-text">
@@ -496,15 +545,24 @@ export function MembrosPage() {
                   <p className="text-sm italic text-hu-muted">Sem responsável</p>
                 )}
 
-                <div className="mt-3 flex items-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => {
                       setAtribuindoId(esteAtribuindo ? null : c.id)
                       setNovoMembroId(c.usuario_id ?? "")
                     }}
-                    className="min-h-11 flex-1 rounded-lg border border-hu-soft/40 px-3 text-sm text-hu-muted hover:bg-black/5"
+                    className="min-h-11 flex-auto basis-40 rounded-lg border border-hu-soft/40 px-3 text-sm text-hu-muted hover:bg-black/5"
                   >
                     {esteAtribuindo ? "Fechar" : nomeResponsavel ? "Trocar responsável" : "Definir responsável"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditandoNumeroId(editandoNumeroEste ? null : c.id)
+                      setNovoNumero(String(c.numero))
+                    }}
+                    className="min-h-11 flex-auto basis-28 rounded-lg border border-hu-soft/40 px-3 text-sm text-hu-muted hover:bg-black/5"
+                  >
+                    {editandoNumeroEste ? "Fechar" : "Trocar placa"}
                   </button>
                   <button
                     onClick={() => setConfirmarCanteiroId(confirmarCanteiroEste ? null : c.id)}
@@ -516,6 +574,42 @@ export function MembrosPage() {
                     <Trash2 className="size-3.5" aria-hidden />
                   </button>
                 </div>
+
+                {editandoNumeroEste && (
+                  <form
+                    onSubmit={(e) => onSubmitNumero(e, c.id)}
+                    className="mt-3 border-t border-hu-soft/30 pt-3"
+                  >
+                    <Label htmlFor={`numero-${c.id}`} className="text-sm text-hu-text">
+                      Número da placa
+                    </Label>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <Input
+                        id={`numero-${c.id}`}
+                        type="number"
+                        inputMode="numeric"
+                        min="1"
+                        step="1"
+                        value={novoNumero}
+                        onChange={(e) => setNovoNumero(e.target.value)}
+                        required
+                        className="h-11 flex-auto basis-24 rounded-lg border-2 border-hu-soft bg-hu-bg text-hu-text"
+                      />
+                      <Button
+                        type="submit"
+                        disabled={!novoNumero || atualizarCanteiro.isPending}
+                        className={`h-11 flex-auto basis-28 ${BOTAO_PIXEL}`}
+                      >
+                        {atualizarCanteiro.isPending ? "Salvando…" : "Salvar"}
+                      </Button>
+                    </div>
+                    {atualizarCanteiro.isError && (
+                      <Aviso variante="erro" className="mt-2">
+                        {atualizarCanteiro.error.message}
+                      </Aviso>
+                    )}
+                  </form>
+                )}
 
                 {confirmarCanteiroEste && (
                   <ConfirmacaoInline

@@ -1,11 +1,11 @@
-export type AcaoCena =
+type AcaoCena =
   | { tipo: "rota"; para: string }
   | { tipo: "folha"; folha: FolhaId }
   | { tipo: "conteudo" }
 
 export type FolhaId = "menu"
 
-export type Asset =
+type Asset =
   | { tipo: "maquete"; maquete: import("@/features/home/cena/maquetes").MaqueteId }
   | { tipo: "sprite"; src: string }
 

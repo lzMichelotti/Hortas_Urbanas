@@ -945,6 +945,8 @@ export interface components {
             usuario_id?: number | null;
             /** Identificacao */
             identificacao: string;
+            /** Numero */
+            numero: number;
             /** Area Produtiva */
             area_produtiva?: number | null;
             /** Area Ociosa */
@@ -956,6 +958,8 @@ export interface components {
             usuario_id?: number | null;
             /** Identificacao */
             identificacao: string;
+            /** Numero */
+            numero: number;
             /** Area Produtiva */
             area_produtiva?: number | null;
             /** Area Ociosa */
@@ -971,6 +975,8 @@ export interface components {
             usuario_id?: number | null;
             /** Identificacao */
             identificacao?: string | null;
+            /** Numero */
+            numero?: number | null;
             /** Area Produtiva */
             area_produtiva?: number | null;
             /** Area Ociosa */
@@ -1561,6 +1567,8 @@ export interface components {
             canteiro_id: number;
             /** Identificacao */
             identificacao: string;
+            /** Numero */
+            numero: number;
             /** Responsavel */
             responsavel?: string | null;
             /** Plantadas */

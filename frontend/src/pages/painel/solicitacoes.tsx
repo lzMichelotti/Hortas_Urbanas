@@ -9,6 +9,7 @@ import { useMe } from "@/features/auth/use-me"
 import { useNomeProduto } from "@/features/produtos/use-nome-produto"
 import { spriteProduto } from "@/features/produtos/sprites"
 import { Voltar } from "@/components/voltar"
+import { dataBR as fmt } from "@/features/ciclos/status"
 import { Button } from "@/components/ui/button"
 import type { components } from "@/lib/api/schema"
 import { Aviso, Carregando, EstadoVazio } from "@/components/feedback"
@@ -52,7 +53,6 @@ const STATUS_MATERIAL: Record<StatusDemanda, { rotulo: string; chip: string }> =
   },
 }
 
-const fmt = (d: string) => d.split("-").reverse().join("/")
 
 const ABA_CLASSE =
   "flex min-h-11 items-center justify-center gap-2 rounded-xl border-2 border-[#5b3a1a] bg-hu-panel font-bold text-hu-text shadow-[0_3px_0_#5b3a1a] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hu-bright data-[state=inactive]:hover:-translate-y-0.5 data-[state=active]:translate-y-0.5 data-[state=active]:bg-hu-bright data-[state=active]:text-hu-bg data-[state=active]:shadow-[0_1px_0_#5b3a1a]"

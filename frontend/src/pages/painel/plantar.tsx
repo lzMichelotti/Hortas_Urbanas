@@ -197,7 +197,7 @@ export function PlantarPage() {
                     setProdutoId(p.id)
                     setEtapa("data")
                   }}
-                  className="flex items-center gap-2 rounded-lg border-2 border-hu-soft p-3 text-left text-sm text-hu-text transition-colors hover:bg-black/5 active:scale-95"
+                  className="flex flex-col items-center gap-1.5 rounded-lg border-2 border-hu-soft p-3 text-center text-sm leading-tight text-hu-text transition-colors hover:bg-black/5 active:scale-95"
                 >
                   <SpriteProduto nome={p.nome} className="size-7 shrink-0" />
                   {p.nome}

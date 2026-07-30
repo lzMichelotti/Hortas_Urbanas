@@ -6,6 +6,7 @@ import { diasRestantes, estagioDe, progresso } from "@/features/ciclos/crescimen
 import { useProdutos } from "@/features/produtos/use-produtos"
 import { formatarEpoca } from "@/features/produtos/colheita"
 import { Voltar } from "@/components/voltar"
+import { dataBR as fmt } from "@/features/ciclos/status"
 import { ArtePlanta } from "@/features/produtos/sprite-produto"
 import { FalaDaGuia } from "@/components/guia"
 import { CelebracaoOverlay } from "@/components/celebracao"
@@ -17,7 +18,6 @@ import type { components } from "@/lib/api/schema"
 type StatusCiclo = components["schemas"]["StatusCiclo"]
 type Produto = components["schemas"]["ProdutoRead"]
 
-const fmt = (d: string) => d.split("-").reverse().join("/")
 
 const SELO: Partial<Record<StatusCiclo, { rotulo: string; cor: string }>> = {
   PLANTADO: { rotulo: "Plantado", cor: "bg-hu-soft text-hu-text" },

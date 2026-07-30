@@ -1,4 +1,4 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api/client"
 import { unwrap } from "@/lib/api/errors"
 import type { components } from "@/lib/api/schema"
@@ -19,28 +19,6 @@ export function useCiclos(canteiroId: number | undefined) {
           signal,
         }),
       ),
-  })
-}
-
-// Agrega os ciclos de vários canteiros (visão da horta inteira p/ o líder).
-// Compartilha a queryKey ["ciclos", id] com useCiclos — mesmo cache, mesmas
-// invalidações de plantar/colher.
-export function useCiclosDaHorta(canteiroIds: number[]) {
-  return useQueries({
-    queries: canteiroIds.map((id) => ({
-      queryKey: ["ciclos", id],
-      queryFn: ({ signal }: { signal: AbortSignal }) =>
-        unwrap(
-          api.GET("/canteiros/{canteiro_id}/ciclos", {
-            params: { path: { canteiro_id: id } },
-            signal,
-          }),
-        ),
-    })),
-    combine: (resultados) => ({
-      isPending: canteiroIds.length > 0 && resultados.some((r) => r.isPending),
-      ciclos: resultados.flatMap((r) => r.data ?? []),
-    }),
   })
 }
 

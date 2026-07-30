@@ -10,18 +10,11 @@ import type { components } from "@/lib/api/schema"
 import { Aviso, Carregando } from "@/components/feedback"
 import { EscolherMotivoPerda } from "@/features/ciclos/motivo-perda"
 import { rotuloMotivo } from "@/features/ciclos/motivos"
+import { STATUS, dataBR } from "@/features/ciclos/status"
 
 type StatusCiclo = components["schemas"]["StatusCiclo"]
 
-const fmt = (d: string) => d.split("-").reverse().join("/")
-
-const STATUS: Record<StatusCiclo, { rotulo: string; cor: string }> = {
-  PLANTADO: { rotulo: "Plantado", cor: "bg-hu-soft text-hu-text" },
-  EM_CRESCIMENTO: { rotulo: "Crescendo", cor: "bg-hu-bright text-hu-bg" },
-  PRONTO_PARA_COLHEITA: { rotulo: "Pronto p/ colher", cor: "bg-amber-400 text-black" },
-  COLHIDO: { rotulo: "Colhido ✓", cor: "bg-hu-soft text-hu-text" },
-  PERDIDO: { rotulo: "Perdido", cor: "bg-red-500 text-white" },
-}
+const fmt = dataBR
 
 const PROXIMO: Partial<Record<StatusCiclo, StatusCiclo>> = {
   PLANTADO: "EM_CRESCIMENTO",

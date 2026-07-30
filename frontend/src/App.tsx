@@ -20,7 +20,6 @@ const HortasPage = lazyComRetry(() => import("@/pages/painel/hortas").then((m) =
 const HortaDetalhePage = lazyComRetry(() => import("@/pages/painel/horta-detalhe").then((m) => ({ default: m.HortaDetalhePage })))
 const UsuariosPage = lazyComRetry(() => import("@/pages/painel/usuarios").then((m) => ({ default: m.UsuariosPage })))
 const MinhaHortaPage = lazyComRetry(() => import("@/pages/painel/minha-horta").then((m) => ({ default: m.MinhaHortaPage })))
-const ProdutividadePage = lazyComRetry(() => import("@/pages/painel/produtividade").then((m) => ({ default: m.ProdutividadePage })))
 const PlaceholderPainel = lazyComRetry(() => import("@/components/placeholder-painel").then((m) => ({ default: m.PlaceholderPainel })))
 const PlantarPage = lazyComRetry(() => import("@/pages/painel/plantar").then((m) => ({ default: m.PlantarPage })))
 const ColherPage = lazyComRetry(() => import("@/pages/painel/colher").then((m) => ({ default: m.ColherPage })))
@@ -73,7 +72,8 @@ function App() {
               <Route path="riscos" element={<PlaceholderPainel titulo="Zonas de risco" />} />
               <Route path="config" element={<ConfiguracoesPage />} />
               <Route path="horta" element={<RoleRoute roles={["LIDER_HORTA"]}><MinhaHortaPage /></RoleRoute>} />
-              <Route path="produtividade" element={<RoleRoute roles={["LIDER_HORTA"]}><ProdutividadePage /></RoleRoute>} />
+              {/* Fundida na tela da horta: a lista de canteiros agora vive lá. */}
+              <Route path="produtividade" element={<Navigate to="/painel/horta" replace />} />
               <Route path="solicitacoes" element={<RoleRoute roles={["LIDER_HORTA", "ADMIN_SUPREMO"]}><SolicitacoesPage /></RoleRoute>} />
               <Route path="demandas" element={<RoleRoute roles={["LIDER_HORTA"]}><DemandasPage /></RoleRoute>} />
               <Route path="admin-demandas" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><AdminDemandasPage /></RoleRoute>} />

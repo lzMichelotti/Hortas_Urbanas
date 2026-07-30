@@ -50,7 +50,7 @@ type Variante = "erro" | "sucesso" | "info"
 
 const ESTILO: Record<Variante, { caixa: string; icone: string; Icone: typeof Info; papel: "alert" | "status" }> = {
   erro: {
-    caixa: "border-red-400/60 bg-red-500/15 text-red-50",
+    caixa: "border-red-400/60 bg-red-500/15 text-red-900 dark:text-red-100",
     icone: "text-red-600",
     Icone: CircleAlert,
     papel: "alert",

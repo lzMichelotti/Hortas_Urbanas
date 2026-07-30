@@ -9,10 +9,10 @@ import { useNomeProduto } from "@/features/produtos/use-nome-produto"
 import { Aviso, Carregando } from "@/components/feedback"
 import { ArtePlanta } from "@/features/produtos/sprite-produto"
 import { TERRA } from "@/features/canteiro/terra"
+import { ATIVOS } from "@/features/ciclos/status"
 
 type Ciclo = NonNullable<ReturnType<typeof useCiclos>["data"]>[number]
 
-const ATIVOS = ["PLANTADO", "EM_CRESCIMENTO", "PRONTO_PARA_COLHEITA"]
 const MIN_BLOCOS = 6
 
 const celulaClasse =
@@ -102,7 +102,7 @@ export function CanteiroGrade({
   }
   if (!canteiro.data) return <SemCanteiro className="mt-2" />
 
-  const ativos = (ciclos.data ?? []).filter((c) => ATIVOS.includes(c.status ?? ""))
+  const ativos = (ciclos.data ?? []).filter((c) => ATIVOS.includes(c.status))
   const vazios = Math.max(2, minBlocos - ativos.length)
 
   return (

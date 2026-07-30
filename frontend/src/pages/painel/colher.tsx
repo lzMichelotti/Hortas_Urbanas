@@ -5,10 +5,10 @@ import { useCiclos, useColher } from "@/features/ciclos/use-ciclos"
 import { useNomeProduto } from "@/features/produtos/use-nome-produto"
 import { SpriteProduto } from "@/features/produtos/sprite-produto"
 import { Voltar } from "@/components/voltar"
+import { dataBR as fmt } from "@/features/ciclos/status"
 import { Button } from "@/components/ui/button"
 import { Aviso, Carregando, EstadoVazio } from "@/components/feedback"
 
-const fmt = (d: string) => d.split("-").reverse().join("/")
 
 export function ColherPage() {
   const canteiro = useMeuCanteiro()
