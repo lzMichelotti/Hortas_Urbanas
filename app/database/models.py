@@ -105,6 +105,8 @@ class Canteiro(Base):
     usuario_id = Column(Integer, ForeignKey('Usuarios.id', ondelete='SET NULL'), nullable=True, index=True)
 
     identificacao = Column(String(100), nullable=False)
+    # Número da placa fincada no canteiro; único entre os ativos da horta.
+    numero = Column(Integer, nullable=False)
     area_produtiva = Column(Float)
     area_ociosa = Column(Float)
 

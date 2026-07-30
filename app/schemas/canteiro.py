@@ -1,15 +1,17 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 
 class CanteiroCreate(BaseModel):
     usuario_id: Optional[int] = None
     identificacao: str
+    numero: int = Field(gt=0)
     area_produtiva: Optional[float] = None
     area_ociosa: Optional[float] = None
 
 class CanteiroUpdate(BaseModel):
     usuario_id: Optional[int] = None
     identificacao: Optional[str] = None
+    numero: Optional[int] = Field(default=None, gt=0)
     area_produtiva: Optional[float] = None
     area_ociosa: Optional[float] = None
 
@@ -23,6 +25,7 @@ class CanteiroRead(CanteiroCreate):
 class ProdutividadeCanteiro(BaseModel):
     canteiro_id: int
     identificacao: str
+    numero: int
     responsavel: Optional[str] = None   # nome do dono do canteiro; None se vazio
     plantadas: int
     crescendo: int

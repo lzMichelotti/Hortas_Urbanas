@@ -18,7 +18,7 @@ def ciclo(client, db, admin_headers):
 
     canteiro = client.post(
         f"/hortas/{horta['id']}/canteiros",
-        json={"identificacao": "Canteiro 1"},
+        json={"identificacao": "Canteiro 1", "numero": 1},
         headers=admin_headers,
     ).json()
 
@@ -157,7 +157,7 @@ def lider_com_canteiro(client, db, admin_headers):
 
     r = client.post(
         f"/hortas/{horta['id']}/canteiros",
-        json={"identificacao": "Canteiro do Líder", "usuario_id": lider["id"]},
+        json={"identificacao": "Canteiro do Líder", "numero": 1, "usuario_id": lider["id"]},
         headers=headers,
     )
     assert r.status_code == 201, r.json()
@@ -193,3 +193,77 @@ class TestCanteiroDoLider:
         meus = [c for c in r.json() if c["usuario_id"] == lider_com_canteiro["lider"]["id"]]
         assert len(meus) == 1
         assert meus[0]["identificacao"] == "Canteiro do Líder"
+
+
+@pytest.fixture
+def horta(client, admin_headers):
+    return client.post(
+        "/hortas", json={"nome": "Horta das Placas", "area_total": 40.0}, headers=admin_headers
+    ).json()
+
+
+class TestNumeroDaPlaca:
+    """A placa é física: o número não pode repetir entre canteiros ativos da horta."""
+
+    def test_numero_repetido_na_mesma_horta_retorna_400(self, client, horta, admin_headers):
+        client.post(
+            f"/hortas/{horta['id']}/canteiros",
+            json={"identificacao": "Canteiro A", "numero": 7},
+            headers=admin_headers,
+        )
+        r = client.post(
+            f"/hortas/{horta['id']}/canteiros",
+            json={"identificacao": "Canteiro B", "numero": 7},
+            headers=admin_headers,
+        )
+        assert r.status_code == 400
+        assert "placa 7" in r.json()["detail"]
+
+    def test_numero_zero_retorna_422(self, client, horta, admin_headers):
+        r = client.post(
+            f"/hortas/{horta['id']}/canteiros",
+            json={"identificacao": "Canteiro Zero", "numero": 0},
+            headers=admin_headers,
+        )
+        assert r.status_code == 422
+
+    def test_numero_liberado_ao_excluir_canteiro(self, client, horta, admin_headers):
+        primeiro = client.post(
+            f"/hortas/{horta['id']}/canteiros",
+            json={"identificacao": "Canteiro A", "numero": 3},
+            headers=admin_headers,
+        ).json()
+
+        client.delete(f"/canteiros/{primeiro['id']}", headers=admin_headers)
+
+        r = client.post(
+            f"/hortas/{horta['id']}/canteiros",
+            json={"identificacao": "Canteiro B", "numero": 3},
+            headers=admin_headers,
+        )
+        assert r.status_code == 201, r.json()
+
+    def test_trocar_numero_do_canteiro(self, client, horta, admin_headers):
+        canteiro = client.post(
+            f"/hortas/{horta['id']}/canteiros",
+            json={"identificacao": "Canteiro A", "numero": 4},
+            headers=admin_headers,
+        ).json()
+
+        r = client.patch(f"/canteiros/{canteiro['id']}", json={"numero": 9}, headers=admin_headers)
+        assert r.status_code == 200, r.json()
+        assert r.json()["numero"] == 9
+
+    def test_manter_o_proprio_numero_ao_editar(self, client, horta, admin_headers):
+        canteiro = client.post(
+            f"/hortas/{horta['id']}/canteiros",
+            json={"identificacao": "Canteiro A", "numero": 5},
+            headers=admin_headers,
+        ).json()
+
+        r = client.patch(
+            f"/canteiros/{canteiro['id']}",
+            json={"numero": 5, "identificacao": "Canteiro A renomeado"},
+            headers=admin_headers,
+        )
+        assert r.status_code == 200, r.json()

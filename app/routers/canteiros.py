@@ -19,6 +19,24 @@ DBDep = Annotated[Session, Depends(get_db)]
 # Previsão de colheita é estimativa: só conta como atraso além desta folga.
 TOLERANCIA_ATRASO_DIAS = 3
 
+def exigir_numero_livre(db: Session, horta_id: int, numero: int, ignorar_id: int | None = None):
+    """O número vira placa física na horta, então não pode repetir entre os ativos.
+    Espelha o índice parcial do banco, só que com mensagem que o líder entende."""
+    query = db.query(Canteiro).filter(
+        Canteiro.horta_id == horta_id,
+        Canteiro.numero == numero,
+        Canteiro.ativo == True,
+    )
+    if ignorar_id is not None:
+        query = query.filter(Canteiro.id != ignorar_id)
+
+    existente = query.first()
+    if existente:
+        raise HTTPException(
+            400,
+            f"A placa {numero} já é do canteiro \"{existente.identificacao}\". Escolha outro número.",
+        )
+
 @router.get("/canteiros", response_model=list[CanteiroRead])
 def read_canteiros(
     db: DBDep,
@@ -55,6 +73,7 @@ def read_produtividade(
         db.query(
             Canteiro.id.label("canteiro_id"),
             Canteiro.identificacao,
+            Canteiro.numero,
             Usuario.nome.label("responsavel"),
             contar("PLANTADO").label("plantadas"),
             contar("EM_CRESCIMENTO").label("crescendo"),
@@ -74,7 +93,7 @@ def read_produtividade(
         .outerjoin(Usuario, Usuario.id == Canteiro.usuario_id)
         .filter(Canteiro.horta_id == horta_id, Canteiro.ativo == True)
         .group_by(Canteiro.id, Usuario.nome)
-        .order_by(Canteiro.identificacao)
+        .order_by(Canteiro.numero)
         .all()
     )
 
@@ -97,6 +116,8 @@ def create_canteiro(
         ).first()
         if not usuario:
             raise HTTPException(400, "Usuário não pertence a esta horta")
+
+    exigir_numero_livre(db, horta_id, canteiro.numero)
 
     db_canteiro = Canteiro(**canteiro.model_dump(), horta_id=horta_id)
     db.add(db_canteiro)
@@ -127,6 +148,9 @@ def update_canteiro(
         ).first()
         if not usuario:
             raise HTTPException(400, "Usuário não pertence a esta horta")
+
+    if "numero" in dados:
+        exigir_numero_livre(db, db_canteiro.horta_id, dados["numero"], ignorar_id=db_canteiro.id)
 
     for key, value in dados.items():
         setattr(db_canteiro, key, value)
