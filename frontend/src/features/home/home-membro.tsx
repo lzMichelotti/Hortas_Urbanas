@@ -12,9 +12,7 @@ export function HomeMembro() {
   const canteiro = useMeuCanteiro()
   const solicitacoes = useSolicitacoesDoMembro(canteiro.data?.id)
 
-  const respostas = (solicitacoes.data ?? []).filter(
-    (s) => s.status === "APROVADA" || s.status === "RECUSADA",
-  ).length
+  const respostas = (solicitacoes.data ?? []).filter((s) => s.status !== "ABERTA").length
 
   const badges: Badges = { pedidos: { valor: respostas } }
 

@@ -28,24 +28,17 @@ import { ConfirmacaoInline } from "@/components/confirmar"
 import { CelebracaoOverlay } from "@/components/celebracao"
 import type { components } from "@/lib/api/schema"
 
-type StatusSolicitacao = components["schemas"]["StatusSolicitacao"]
-type StatusDemanda = components["schemas"]["StatusDemanda"]
+type StatusPedido = components["schemas"]["StatusPedido"]
 type Demanda = components["schemas"]["DemandaRead"]
 type Solicitacao = components["schemas"]["SolicitacaoRead"]
 
 type Chip = { rotulo: string; ponto: string; chip: string }
 
-const STATUS_PLANTA: Record<StatusSolicitacao, Chip> = {
-  PENDENTE: { rotulo: "Esperando", ponto: "bg-amber-400", chip: "bg-amber-400 text-black" },
-  APROVADA: { rotulo: "Aprovado ✓", ponto: "bg-hu-bright", chip: "bg-hu-bright text-hu-bg" },
-  RECUSADA: { rotulo: "Recusado", ponto: "bg-red-400", chip: "bg-red-500 text-white" },
-}
-
-const STATUS_MATERIAL: Record<StatusDemanda, Chip> = {
+const STATUS: Record<StatusPedido, Chip> = {
   ABERTA: { rotulo: "Esperando", ponto: "bg-amber-400", chip: "bg-amber-400 text-black" },
   EM_ATENDIMENTO: { rotulo: "Preparando", ponto: "bg-sky-400", chip: "bg-sky-400 text-black" },
   ATENDIDA: { rotulo: "Pronto ✓", ponto: "bg-hu-bright", chip: "bg-hu-bright text-hu-bg" },
-  CANCELADA: { rotulo: "Cancelado", ponto: "bg-hu-soft", chip: "bg-hu-soft text-hu-text" },
+  CANCELADA: { rotulo: "Recusado", ponto: "bg-red-400", chip: "bg-red-500 text-white" },
 }
 
 type Etapa = "lista" | "categoria" | "planta" | "item" | "livre" | "quantidade" | "revisao" | "fim"
@@ -182,14 +175,23 @@ export function ComunidadePage() {
         },
       )
     } else {
+      if (!idemRef.current) idemRef.current = crypto.randomUUID()
       criarMaterial.mutate(
         {
-          tipo_demanda: categoria.rotulo,
-          descricao,
-          quantidade,
-          unidade_medida: unidade,
+          body: {
+            tipo_demanda: categoria.rotulo,
+            descricao,
+            quantidade,
+            unidade_medida: unidade,
+          },
+          idempotencyKey: idemRef.current,
         },
-        { onSuccess: () => celebrar(descricao) },
+        {
+          onSuccess: () => {
+            idemRef.current = ""
+            celebrar(descricao)
+          },
+        },
       )
     }
   }
@@ -204,10 +206,13 @@ export function ComunidadePage() {
 
   function repetirMaterial(d: Demanda) {
     criarMaterial.mutate({
-      tipo_demanda: d.tipo_demanda,
-      descricao: d.descricao,
-      quantidade: d.quantidade,
-      unidade_medida: d.unidade_medida,
+      body: {
+        tipo_demanda: d.tipo_demanda,
+        descricao: d.descricao,
+        quantidade: d.quantidade,
+        unidade_medida: d.unidade_medida,
+      },
+      idempotencyKey: crypto.randomUUID(),
     })
   }
 
@@ -469,10 +474,12 @@ export function ComunidadePage() {
   const carregando = solicitacoes.isPending || demandas.isPending
   const vazio = !carregando && plantas.length === 0 && materiais.length === 0
 
-  const plantasEsperando = plantas.filter((s) => s.status === "PENDENTE")
-  const plantasRespondidas = plantas.filter((s) => s.status !== "PENDENTE")
-  const materiaisEsperando = materiais.filter((d) => d.status === "ABERTA" || d.status === "EM_ATENDIMENTO")
-  const materiaisRespondidos = materiais.filter((d) => d.status === "ATENDIDA" || d.status === "CANCELADA")
+  const emAberto = (status: StatusPedido) => status === "ABERTA" || status === "EM_ATENDIMENTO"
+
+  const plantasEsperando = plantas.filter((s) => emAberto(s.status))
+  const plantasRespondidas = plantas.filter((s) => !emAberto(s.status))
+  const materiaisEsperando = materiais.filter((d) => emAberto(d.status))
+  const materiaisRespondidos = materiais.filter((d) => !emAberto(d.status))
 
   const temEsperando = plantasEsperando.length > 0 || materiaisEsperando.length > 0
   const temRespondidos = plantasRespondidas.length > 0 || materiaisRespondidos.length > 0
@@ -503,7 +510,7 @@ export function ComunidadePage() {
 
       {temEsperando && (
         <section className="mt-6">
-          <p className="mb-3 font-pixel text-xs text-hu-muted">Esperando o líder</p>
+          <p className="mb-3 font-pixel text-xs text-hu-muted">Em andamento</p>
           <ul className="flex flex-col gap-3">
             {plantasEsperando.map((s) => {
               const cancelandoEste = cancelarPlanta.isPending && cancelarPlanta.variables === s.id
@@ -514,7 +521,7 @@ export function ComunidadePage() {
                       <p className="font-bold">{nomeProduto(s.produto_id)}</p>
                       <p className="mt-0.5 text-sm text-hu-muted">Planta</p>
                     </div>
-                    <ChipStatus info={STATUS_PLANTA[s.status]} />
+                    <ChipStatus info={STATUS[s.status]} />
                   </div>
                   <button
                     onClick={() => setConfirmarCancelar(confirmarCancelar === `p${s.id}` ? null : `p${s.id}`)}
@@ -550,7 +557,7 @@ export function ComunidadePage() {
                         {d.quantidade} {d.unidade_medida} · {d.tipo_demanda}
                       </p>
                     </div>
-                    <ChipStatus info={STATUS_MATERIAL[d.status]} />
+                    <ChipStatus info={STATUS[d.status]} />
                   </div>
                   <button
                     onClick={() => setConfirmarCancelar(confirmarCancelar === `m${d.id}` ? null : `m${d.id}`)}
@@ -597,7 +604,7 @@ export function ComunidadePage() {
                       <p className="font-bold">{nomeProduto(s.produto_id)}</p>
                       <p className="mt-0.5 text-sm text-hu-muted">Planta</p>
                     </div>
-                    <ChipStatus info={STATUS_PLANTA[s.status]} />
+                    <ChipStatus info={STATUS[s.status]} />
                   </div>
                   <button
                     onClick={() => repetirPlanta(s)}
@@ -612,7 +619,7 @@ export function ComunidadePage() {
             })}
 
             {materiaisRespondidos.map((d) => {
-              const repetindoEste = criarMaterial.isPending && criarMaterial.variables?.descricao === d.descricao
+              const repetindoEste = criarMaterial.isPending && criarMaterial.variables?.body.descricao === d.descricao
               return (
                 <li key={`m${d.id}`} className="rounded-2xl border-4 border-hu-soft bg-hu-panel p-4 text-hu-text">
                   <div className="flex items-start justify-between gap-3">
@@ -622,7 +629,7 @@ export function ComunidadePage() {
                         {d.quantidade} {d.unidade_medida} · {d.tipo_demanda}
                       </p>
                     </div>
-                    <ChipStatus info={STATUS_MATERIAL[d.status]} />
+                    <ChipStatus info={STATUS[d.status]} />
                   </div>
                   <button
                     onClick={() => repetirMaterial(d)}

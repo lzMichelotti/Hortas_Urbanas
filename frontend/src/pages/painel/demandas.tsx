@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react"
+import { type FormEvent, useRef, useState } from "react"
 import { Plus, Trash2 } from "lucide-react"
 import { useMe } from "@/features/auth/use-me"
 import { useDemandas, useCriarDemanda, useAtualizarStatusDemanda, useDeletarDemanda } from "@/features/demandas/use-demandas"
@@ -12,9 +12,9 @@ import { ConfirmacaoInline } from "@/components/confirmar"
 import { DivisorCerca } from "@/components/divisor-cerca"
 import { dataCurta } from "@/lib/tempo"
 
-type StatusDemanda = components["schemas"]["StatusDemanda"]
+type StatusPedido = components["schemas"]["StatusPedido"]
 
-const STATUS_CONFIG: Record<StatusDemanda, { rotulo: string; chip: string }> = {
+const STATUS_CONFIG: Record<StatusPedido, { rotulo: string; chip: string }> = {
   ABERTA: {
     rotulo: "Aguardando",
     chip: "border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-200",
@@ -48,6 +48,8 @@ export function DemandasPage() {
   const cancelar = useAtualizarStatusDemanda(me.data?.horta_id ?? 0)
   const deletar = useDeletarDemanda()
 
+  const idemRef = useRef("")
+
   const [mostraForm, setMostraForm] = useState(false)
   const [confirmarExcluirId, setConfirmarExcluirId] = useState<number | null>(null)
   const [confirmarCancelarId, setConfirmarCancelarId] = useState<number | null>(null)
@@ -62,18 +64,22 @@ export function DemandasPage() {
     setQuantidade("")
     setUnidade("")
     setMostraForm(false)
+    idemRef.current = ""
   }
 
   function onSubmit(e: FormEvent) {
     e.preventDefault()
     if (!tipo.trim() || !descricao.trim() || !quantidade || !unidade.trim()) return
+    if (!idemRef.current) idemRef.current = crypto.randomUUID()
     criar.mutate(
       {
-        tipo_demanda: tipo.trim(),
-        descricao: descricao.trim(),
-        quantidade: Number(quantidade),
-        unidade_medida: unidade.trim(),
-        status: "ABERTA",
+        body: {
+          tipo_demanda: tipo.trim(),
+          descricao: descricao.trim(),
+          quantidade: Number(quantidade),
+          unidade_medida: unidade.trim(),
+        },
+        idempotencyKey: idemRef.current,
       },
       { onSuccess: resetForm },
     )

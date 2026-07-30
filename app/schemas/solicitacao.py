@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from datetime import date
 from typing import Optional
 
-from app.database.enums import StatusSolicitacao
+from app.database.enums import StatusPedido
 
 
 class SolicitacaoCreate(BaseModel):
@@ -20,7 +20,7 @@ class SolicitacaoCreate(BaseModel):
 
 
 class SolicitacaoUpdateStatus(BaseModel):
-    status: StatusSolicitacao
+    status: StatusPedido
 
 
 class SolicitacaoRead(BaseModel):
@@ -30,6 +30,6 @@ class SolicitacaoRead(BaseModel):
     quantidade: int
     justificativa: Optional[str] = None
     data_desejada_plantio: Optional[date] = None
-    status: StatusSolicitacao
+    status: StatusPedido
 
     model_config = ConfigDict(from_attributes=True)

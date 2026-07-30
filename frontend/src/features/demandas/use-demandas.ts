@@ -4,8 +4,7 @@ import { unwrap } from "@/lib/api/errors"
 import type { components } from "@/lib/api/schema"
 
 type DemandaCreate = components["schemas"]["DemandaCreate"]
-type DemandaMembroCreate = components["schemas"]["DemandaMembroCreate"]
-type StatusDemanda = components["schemas"]["StatusDemanda"]
+type StatusPedido = components["schemas"]["StatusPedido"]
 
 export function useDemandas() {
   return useQuery({
@@ -17,10 +16,11 @@ export function useDemandas() {
 export function useCriarDemanda(hortaId: number) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: DemandaCreate) =>
+    mutationFn: ({ body, idempotencyKey }: { body: DemandaCreate; idempotencyKey: string }) =>
       unwrap(
         api.POST("/hortas/{horta_id}/demandas", {
           params: { path: { horta_id: hortaId } },
+          headers: { "Idempotency-Key": idempotencyKey },
           body,
         }),
       ),
@@ -31,7 +31,7 @@ export function useCriarDemanda(hortaId: number) {
 export function useAtualizarStatusDemanda(hortaId: number) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ demandaId, status }: { demandaId: number; status: StatusDemanda }) =>
+    mutationFn: ({ demandaId, status }: { demandaId: number; status: StatusPedido }) =>
       unwrap(
         api.PATCH("/hortas/{horta_id}/demandas/{demanda_id}/status", {
           params: { path: { horta_id: hortaId, demanda_id: demandaId } },
@@ -45,7 +45,7 @@ export function useAtualizarStatusDemanda(hortaId: number) {
 export function useAtualizarStatusDemandaAdmin() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ hortaId, demandaId, status }: { hortaId: number; demandaId: number; status: StatusDemanda }) =>
+    mutationFn: ({ hortaId, demandaId, status }: { hortaId: number; demandaId: number; status: StatusPedido }) =>
       unwrap(
         api.PATCH("/hortas/{horta_id}/demandas/{demanda_id}/status", {
           params: { path: { horta_id: hortaId, demanda_id: demandaId } },
@@ -82,10 +82,11 @@ export function useDemandasDoMembro(canteiroId: number | undefined) {
 export function useCriarDemandaMembro(canteiroId: number) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: DemandaMembroCreate) =>
+    mutationFn: ({ body, idempotencyKey }: { body: DemandaCreate; idempotencyKey: string }) =>
       unwrap(
         api.POST("/canteiros/{canteiro_id}/demandas", {
           params: { path: { canteiro_id: canteiroId } },
+          headers: { "Idempotency-Key": idempotencyKey },
           body,
         }),
       ),

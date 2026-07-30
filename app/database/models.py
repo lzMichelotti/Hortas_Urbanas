@@ -10,7 +10,7 @@ from geoalchemy2 import Geography
 from app.database.session import Base
 from app.database.enums import (
     FonteAgua, TipoSolo, NivelVulnerabilidade, TipoZona, NivelRisco,
-    Privilegio, StatusCiclo, StatusIntencao, StatusSolicitacao, StatusDemanda,
+    Privilegio, StatusCiclo, StatusIntencao, StatusPedido,
     TipoPost, MotivoPerda, enum_check,
 )
 
@@ -99,6 +99,15 @@ class Usuario(Base):
 
 class Canteiro(Base):
     __tablename__ = 'Canteiros'
+    __table_args__ = (
+        CheckConstraint("numero > 0", name="ck_canteiros_numero_positivo"),
+        Index(
+            "uq_canteiros_horta_numero_ativo",
+            "horta_id", "numero",
+            unique=True,
+            postgresql_where=text("ativo"),
+        ),
+    )
 
     id = Column(Integer, primary_key=True)
     horta_id = Column(Integer, ForeignKey('Hortas.id', ondelete='CASCADE'), nullable=False, index=True)
@@ -203,7 +212,7 @@ class IntencaoPlantio(Base):
 class SolicitacaoPlantio(Base):
     __tablename__ = 'Solicitacoes_Plantio'
     __table_args__ = (
-        enum_check("status", StatusSolicitacao, name="ck_solicitacoes_plantio_status"),
+        enum_check("status", StatusPedido, name="ck_solicitacoes_plantio_status"),
         CheckConstraint(
             "quantidade > 0",
             name="ck_solicitacoes_plantio_quantidade_positiva",
@@ -220,7 +229,7 @@ class SolicitacaoPlantio(Base):
     quantidade = Column(Integer, nullable=False, server_default=text("1"))
     justificativa = Column(Text, nullable=True)
     data_desejada_plantio = Column(Date, nullable=True)
-    status = Column(String(50), nullable=False, default="PENDENTE")
+    status = Column(String(50), nullable=False, default="ABERTA")
     idempotency_key = Column(UUID(as_uuid=True), nullable=True)
 
     canteiro = relationship("Canteiro", back_populates="solicitacoes")
@@ -230,10 +239,14 @@ class SolicitacaoPlantio(Base):
 class Demanda(Base):
     __tablename__ = 'Demandas'
     __table_args__ = (
-        enum_check("status", StatusDemanda, name="ck_demandas_status"),
+        enum_check("status", StatusPedido, name="ck_demandas_status"),
         CheckConstraint(
             "quantidade > 0",
             name="ck_demandas_quantidade_positiva",
+        ),
+        UniqueConstraint(
+            "horta_id", "idempotency_key",
+            name="uq_demandas_idempotency",
         ),
     )
 
@@ -245,8 +258,7 @@ class Demanda(Base):
     quantidade = Column(Float, nullable=False)
     unidade_medida = Column(String(20), nullable=False)
     status = Column(String(50))
-    ativo = Column(Boolean, default=True, nullable=False)      # baixa cardinalidade — sem índice B-tree
-    deletado_em = Column(DateTime(timezone=True), nullable=True)
+    idempotency_key = Column(UUID(as_uuid=True), nullable=True)
     criado_em = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     # nullable: só recebe data ao ser concluída/cancelada — enquanto aberta, não há.
     finalizado_em = Column(DateTime(timezone=True), nullable=True)
@@ -255,16 +267,13 @@ class Demanda(Base):
     canteiro = relationship("Canteiro", back_populates="demandas")
 
 
-_STATUS_DEMANDA_FINAIS = {StatusDemanda.ATENDIDA.value, StatusDemanda.CANCELADA.value}
+_STATUS_PEDIDO_FINAIS = {StatusPedido.ATENDIDA.value, StatusPedido.CANCELADA.value}
 
 
 @event.listens_for(Demanda.status, "set")
 def _carimbar_finalizado_em(demanda, novo_status, _antigo, _iniciador):
-    # A conclusão/cancelamento de uma demanda pode chegar por vários endpoints
-    # (PATCH de status, PATCH genérico, criação já finalizada). Carimbar aqui,
-    # no set do próprio status, garante finalizado_em em TODOS os caminhos.
     status = getattr(novo_status, "value", novo_status)
-    if status in _STATUS_DEMANDA_FINAIS:
+    if status in _STATUS_PEDIDO_FINAIS:
         if demanda.finalizado_em is None:
             demanda.finalizado_em = datetime.now(timezone.utc)
     else:

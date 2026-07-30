@@ -5,21 +5,21 @@ import { Button } from "@/components/ui/button"
 import type { components } from "@/lib/api/schema"
 import { Aviso, Carregando } from "@/components/feedback"
 
-type StatusDemanda = components["schemas"]["StatusDemanda"]
+type StatusPedido = components["schemas"]["StatusPedido"]
 
-const STATUS_CONFIG: Record<StatusDemanda, { rotulo: string; cor: string }> = {
+const STATUS_CONFIG: Record<StatusPedido, { rotulo: string; cor: string }> = {
   ABERTA: { rotulo: "Aguardando", cor: "bg-amber-400 text-black" },
   EM_ATENDIMENTO: { rotulo: "Em andamento", cor: "bg-hu-bright text-hu-bg" },
   ATENDIDA: { rotulo: "Concluída ✓", cor: "bg-white text-hu-bg" },
   CANCELADA: { rotulo: "Cancelada", cor: "bg-red-500 text-hu-text" },
 }
 
-const PROXIMO: Partial<Record<StatusDemanda, StatusDemanda>> = {
+const PROXIMO: Partial<Record<StatusPedido, StatusPedido>> = {
   ABERTA: "EM_ATENDIMENTO",
   EM_ATENDIMENTO: "ATENDIDA",
 }
 
-const ROTULO_PROXIMO: Partial<Record<StatusDemanda, string>> = {
+const ROTULO_PROXIMO: Partial<Record<StatusPedido, string>> = {
   ABERTA: "Iniciar atendimento",
   EM_ATENDIMENTO: "Marcar como concluída",
 }

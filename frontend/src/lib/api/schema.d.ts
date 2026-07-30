@@ -392,24 +392,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/demandas/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete Demanda */
-        delete: operations["delete_demanda_demandas__id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Demanda */
-        patch: operations["update_demanda_demandas__id__patch"];
-        trace?: never;
-    };
     "/hortas/{horta_id}/demandas/{demanda_id}/status": {
         parameters: {
             query?: never;
@@ -425,6 +407,23 @@ export interface paths {
         head?: never;
         /** Update Demanda Status */
         patch: operations["update_demanda_status_hortas__horta_id__demandas__demanda_id__status_patch"];
+        trace?: never;
+    };
+    "/demandas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Demanda */
+        delete: operations["delete_demanda_demandas__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/intencoes": {
@@ -1095,24 +1094,6 @@ export interface components {
             tipo_demanda: string;
             /** Descricao */
             descricao: string;
-            status: components["schemas"]["StatusDemanda"];
-            /**
-             * Quantidade
-             * @description Quantidade solicitada (não pode ser zero ou negativa)
-             */
-            quantidade: number;
-            /**
-             * Unidade Medida
-             * @description Ex: kg, unidades, litros
-             */
-            unidade_medida: string;
-        };
-        /** DemandaMembroCreate */
-        DemandaMembroCreate: {
-            /** Tipo Demanda */
-            tipo_demanda: string;
-            /** Descricao */
-            descricao: string;
             /**
              * Quantidade
              * @description Quantidade solicitada (não pode ser zero ou negativa)
@@ -1140,9 +1121,7 @@ export interface components {
             quantidade: number;
             /** Unidade Medida */
             unidade_medida: string;
-            status: components["schemas"]["StatusDemanda"];
-            /** Ativo */
-            ativo: boolean;
+            status: components["schemas"]["StatusPedido"];
             /**
              * Criado Em
              * Format: date-time
@@ -1151,21 +1130,9 @@ export interface components {
             /** Finalizado Em */
             finalizado_em?: string | null;
         };
-        /** DemandaUpdate */
-        DemandaUpdate: {
-            /** Tipo Demanda */
-            tipo_demanda?: string | null;
-            /** Descricao */
-            descricao?: string | null;
-            status?: components["schemas"]["StatusDemanda"] | null;
-            /** Quantidade */
-            quantidade?: number | null;
-            /** Unidade Medida */
-            unidade_medida?: string | null;
-        };
         /** DemandaUpdateStatus */
         DemandaUpdateStatus: {
-            status: components["schemas"]["StatusDemanda"];
+            status: components["schemas"]["StatusPedido"];
         };
         /** DenunciaCreate */
         DenunciaCreate: {
@@ -1760,11 +1727,11 @@ export interface components {
             justificativa?: string | null;
             /** Data Desejada Plantio */
             data_desejada_plantio?: string | null;
-            status: components["schemas"]["StatusSolicitacao"];
+            status: components["schemas"]["StatusPedido"];
         };
         /** SolicitacaoUpdateStatus */
         SolicitacaoUpdateStatus: {
-            status: components["schemas"]["StatusSolicitacao"];
+            status: components["schemas"]["StatusPedido"];
         };
         /**
          * StatusCiclo
@@ -1772,20 +1739,15 @@ export interface components {
          */
         StatusCiclo: "PLANTADO" | "EM_CRESCIMENTO" | "PRONTO_PARA_COLHEITA" | "COLHIDO" | "PERDIDO";
         /**
-         * StatusDemanda
-         * @enum {string}
-         */
-        StatusDemanda: "ABERTA" | "EM_ATENDIMENTO" | "ATENDIDA" | "CANCELADA";
-        /**
          * StatusIntencao
          * @enum {string}
          */
         StatusIntencao: "PLANEJADO" | "AGUARDANDO_SEMENTES" | "EM_PLANTIO" | "CONCLUIDO";
         /**
-         * StatusSolicitacao
+         * StatusPedido
          * @enum {string}
          */
-        StatusSolicitacao: "PENDENTE" | "APROVADA" | "RECUSADA";
+        StatusPedido: "ABERTA" | "EM_ATENDIMENTO" | "ATENDIDA" | "CANCELADA";
         /**
          * TipoPost
          * @enum {string}
@@ -2749,7 +2711,9 @@ export interface operations {
     create_demanda_membro_canteiros__canteiro_id__demandas_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path: {
                 canteiro_id: number;
             };
@@ -2757,7 +2721,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DemandaMembroCreate"];
+                "application/json": components["schemas"]["DemandaCreate"];
             };
         };
         responses: {
@@ -2814,7 +2778,9 @@ export interface operations {
     create_demanda_hortas__horta_id__demandas_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path: {
                 horta_id: number;
             };
@@ -2828,70 +2794,6 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DemandaRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_demanda_demandas__id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_demanda_demandas__id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DemandaUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2934,6 +2836,35 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DemandaRead"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_demanda_demandas__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

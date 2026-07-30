@@ -3,7 +3,7 @@ import { api } from "@/lib/api/client"
 import { unwrap } from "@/lib/api/errors"
 import type { components } from "@/lib/api/schema"
 
-type StatusSolicitacao = components["schemas"]["StatusSolicitacao"]
+type StatusPedido = components["schemas"]["StatusPedido"]
 
 export function useSolicitacoesLider() {
   return useQuery({
@@ -15,7 +15,7 @@ export function useSolicitacoesLider() {
 export function useResponderSolicitacao() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, status }: { id: number; status: StatusSolicitacao }) =>
+    mutationFn: ({ id, status }: { id: number; status: StatusPedido }) =>
       unwrap(
         api.PATCH("/solicitacoes/{id}/status", {
           params: { path: { id } },

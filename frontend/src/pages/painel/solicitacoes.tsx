@@ -16,25 +16,9 @@ import { Aviso, Carregando, EstadoVazio } from "@/components/feedback"
 import { ConfirmacaoInline } from "@/components/confirmar"
 import { DivisorCerca } from "@/components/divisor-cerca"
 
-type StatusSolicitacao = components["schemas"]["StatusSolicitacao"]
-type StatusDemanda = components["schemas"]["StatusDemanda"]
+type StatusPedido = components["schemas"]["StatusPedido"]
 
-const STATUS_SOLICITACAO: Record<StatusSolicitacao, { rotulo: string; chip: string }> = {
-  PENDENTE: {
-    rotulo: "Aguardando",
-    chip: "border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-200",
-  },
-  APROVADA: {
-    rotulo: "Aprovada ✓",
-    chip: "border-green-300 bg-green-100 text-green-800 dark:border-green-500/40 dark:bg-green-500/15 dark:text-green-200",
-  },
-  RECUSADA: {
-    rotulo: "Recusada",
-    chip: "border-red-300 bg-red-100 text-red-800 dark:border-red-500/40 dark:bg-red-500/15 dark:text-red-200",
-  },
-}
-
-const STATUS_MATERIAL: Record<StatusDemanda, { rotulo: string; chip: string }> = {
+const STATUS: Record<StatusPedido, { rotulo: string; chip: string }> = {
   ABERTA: {
     rotulo: "Aguardando",
     chip: "border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-200",
@@ -78,12 +62,6 @@ export function SolicitacoesPage() {
   const [confirmarRecusarId, setConfirmarRecusarId] = useState<number | null>(null)
   const [confirmarRecusarMaterialId, setConfirmarRecusarMaterialId] = useState<number | null>(null)
 
-  const nomeCanteiroMap = new Map(
-    (canteiros.data ?? []).map((c) => [c.id, c.identificacao]),
-  )
-  const nomeCanteiro = (id: number | null | undefined) =>
-    id == null ? "Canteiro" : nomeCanteiroMap.get(id) ?? `Canteiro #${id}`
-
   // Melhoria progressiva: cruza canteiro→responsável via useUsuarios(), já
   // cacheada por outras telas. Se a query ainda não voltou (ou falhar), o mapa
   // fica vazio e a linha de contexto só mostra o canteiro — nunca bloqueia.
@@ -94,7 +72,7 @@ export function SolicitacoesPage() {
     const c = canteiroPorId.get(id)
     if (!c) return `Canteiro #${id}`
     const responsavel = c.usuario_id != null ? usuarioPorId.get(c.usuario_id)?.nome : undefined
-    return responsavel ? `${c.identificacao} · ${responsavel}` : c.identificacao
+    return [`Placa ${c.numero}`, c.identificacao, responsavel].filter(Boolean).join(" · ")
   }
 
   function toggleRecusar(id: number) {
@@ -109,12 +87,16 @@ export function SolicitacoesPage() {
     return <Carregando />
   }
 
-  const pendentes = (solicitacoes.data ?? []).filter((s) => s.status === "PENDENTE")
-  const respondidas = (solicitacoes.data ?? []).filter((s) => s.status !== "PENDENTE")
+  const emAberto = (status: StatusPedido) => status === "ABERTA" || status === "EM_ATENDIMENTO"
+
+  const pendentes = (solicitacoes.data ?? []).filter((s) => emAberto(s.status))
+  const respondidas = (solicitacoes.data ?? []).filter((s) => !emAberto(s.status))
+  const novasPlantas = pendentes.filter((s) => s.status === "ABERTA").length
 
   const materiais = (demandas.data ?? []).filter((d) => d.canteiro_id != null)
-  const materiaisPendentes = materiais.filter((m) => m.status === "ABERTA" || m.status === "EM_ATENDIMENTO")
-  const materiaisRespondidos = materiais.filter((m) => m.status === "ATENDIDA" || m.status === "CANCELADA")
+  const materiaisPendentes = materiais.filter((m) => emAberto(m.status))
+  const materiaisRespondidos = materiais.filter((m) => !emAberto(m.status))
+  const novosMateriais = materiaisPendentes.filter((m) => m.status === "ABERTA").length
 
   return (
     <div className="mx-auto max-w-2xl pb-4">
@@ -125,15 +107,11 @@ export function SolicitacoesPage() {
         <Tabs.List className="mt-4 grid grid-cols-2 gap-2">
           <Tabs.Trigger value="plantas" className={ABA_CLASSE}>
             Plantas
-            {pendentes.length > 0 && <span className="rounded-full bg-amber-400 px-2 text-xs text-black">{pendentes.length}</span>}
+            {novasPlantas > 0 && <span className="rounded-full bg-amber-400 px-2 text-xs text-black">{novasPlantas}</span>}
           </Tabs.Trigger>
           <Tabs.Trigger value="materiais" className={ABA_CLASSE}>
             Materiais
-            {materiaisPendentes.filter((m) => m.status === "ABERTA").length > 0 && (
-              <span className="rounded-full bg-amber-400 px-2 text-xs text-black">
-                {materiaisPendentes.filter((m) => m.status === "ABERTA").length}
-              </span>
-            )}
+            {novosMateriais > 0 && <span className="rounded-full bg-amber-400 px-2 text-xs text-black">{novosMateriais}</span>}
           </Tabs.Trigger>
         </Tabs.List>
 
@@ -146,18 +124,22 @@ export function SolicitacoesPage() {
 
           {pendentes.length > 0 && (
             <section className="mt-5">
-              <p className="mb-3 font-pixel text-xs text-amber-400">
-                {pendentes.length} aguardando resposta
-              </p>
+              {novasPlantas > 0 && (
+                <p className="mb-3 font-pixel text-xs text-amber-400">
+                  {novasPlantas} aguardando resposta
+                </p>
+              )}
               <ul className="flex flex-col gap-3">
                 {pendentes.map((s) => {
                   const respondendoEste = responder.isPending && responder.variables?.id === s.id
-                  const recusandoEste = respondendoEste && responder.variables?.status === "RECUSADA"
+                  const recusandoEste = respondendoEste && responder.variables?.status === "CANCELADA"
                   const sprite = spriteProduto(nomeProduto(s.produto_id))
                   return (
                     <li
                       key={s.id}
-                      className="rounded-2xl border-2 border-amber-400/60 bg-hu-panel p-4 text-hu-text"
+                      className={`rounded-2xl border-2 bg-hu-panel p-4 text-hu-text ${
+                        s.status === "ABERTA" ? "border-amber-400/60" : "border-hu-bright"
+                      }`}
                     >
                       <div className="flex items-start gap-3">
                         {sprite && (
@@ -185,31 +167,48 @@ export function SolicitacoesPage() {
                             </p>
                           )}
                         </div>
+                        <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-bold ${STATUS[s.status].chip}`}>
+                          {STATUS[s.status].rotulo}
+                        </span>
                       </div>
 
                       <div className="mt-3 flex gap-2 border-t border-hu-soft/40 pt-3">
-                        <Button
-                          size="sm"
-                          onClick={() => responder.mutate({ id: s.id, status: "APROVADA" })}
-                          disabled={responder.isPending}
-                          className={BOTAO_PIXEL}
-                        >
-                          <Check className="size-4" aria-hidden />
-                          {respondendoEste && responder.variables?.status === "APROVADA"
-                            ? "Aprovando…"
-                            : "Aprovar"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => toggleRecusar(s.id)}
-                          disabled={responder.isPending}
-                          aria-expanded={confirmarRecusarId === s.id}
-                          className={BOTAO_OUTLINE_VERMELHO}
-                        >
-                          <X className="size-4" aria-hidden />
-                          {recusandoEste ? "Recusando…" : "Recusar"}
-                        </Button>
+                        {s.status === "ABERTA" ? (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => responder.mutate({ id: s.id, status: "EM_ATENDIMENTO" })}
+                              disabled={responder.isPending}
+                              className={BOTAO_PIXEL}
+                            >
+                              <Check className="size-4" aria-hidden />
+                              {respondendoEste && responder.variables?.status === "EM_ATENDIMENTO"
+                                ? "Aprovando…"
+                                : "Aprovar"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => toggleRecusar(s.id)}
+                              disabled={responder.isPending}
+                              aria-expanded={confirmarRecusarId === s.id}
+                              className={BOTAO_OUTLINE_VERMELHO}
+                            >
+                              <X className="size-4" aria-hidden />
+                              {recusandoEste ? "Recusando…" : "Recusar"}
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => responder.mutate({ id: s.id, status: "ATENDIDA" })}
+                            disabled={responder.isPending}
+                            className={BOTAO_PIXEL}
+                          >
+                            <Check className="size-4" aria-hidden />
+                            {respondendoEste ? "Salvando…" : "Marcar como entregue"}
+                          </Button>
+                        )}
                       </div>
 
                       {confirmarRecusarId === s.id && (
@@ -221,7 +220,7 @@ export function SolicitacoesPage() {
                           confirmando={recusandoEste}
                           aoConfirmar={() =>
                             responder.mutate(
-                              { id: s.id, status: "RECUSADA" },
+                              { id: s.id, status: "CANCELADA" },
                               { onSuccess: () => setConfirmarRecusarId(null) },
                             )
                           }
@@ -249,7 +248,7 @@ export function SolicitacoesPage() {
                 <ul className="flex flex-col gap-2">
                   {respondidas.map((s) => {
                     const sprite = spriteProduto(nomeProduto(s.produto_id))
-                    const cfg = STATUS_SOLICITACAO[s.status]
+                    const cfg = STATUS[s.status]
                     return (
                       <li
                         key={s.id}
@@ -298,6 +297,11 @@ export function SolicitacoesPage() {
 
           {materiaisPendentes.length > 0 && (
             <section className="mt-5">
+              {novosMateriais > 0 && (
+                <p className="mb-3 font-pixel text-xs text-amber-400">
+                  {novosMateriais} aguardando resposta
+                </p>
+              )}
               <ul className="flex flex-col gap-3">
                 {materiaisPendentes.map((m) => {
                   const respondendoEste = responderMaterial.isPending && responderMaterial.variables?.demandaId === m.id
@@ -313,14 +317,14 @@ export function SolicitacoesPage() {
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-bold">{m.descricao}</p>
                           <p className="mt-0.5 truncate text-sm text-hu-muted">
-                            {nomeCanteiro(m.canteiro_id)} · {m.tipo_demanda}
+                            {contextoCanteiro(m.canteiro_id)} · {m.tipo_demanda}
                           </p>
                           <span className={CHIP_QUANTIDADE}>
                             {m.quantidade} {m.unidade_medida}
                           </span>
                         </div>
-                        <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-bold ${STATUS_MATERIAL[m.status].chip}`}>
-                          {STATUS_MATERIAL[m.status].rotulo}
+                        <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-bold ${STATUS[m.status].chip}`}>
+                          {STATUS[m.status].rotulo}
                         </span>
                       </div>
 
@@ -399,7 +403,7 @@ export function SolicitacoesPage() {
                 <p className="mb-3 font-pixel text-xs text-hu-muted">Respondidos</p>
                 <ul className="flex flex-col gap-2">
                   {materiaisRespondidos.map((m) => {
-                    const cfg = STATUS_MATERIAL[m.status]
+                    const cfg = STATUS[m.status]
                     return (
                       <li
                         key={m.id}
@@ -408,7 +412,7 @@ export function SolicitacoesPage() {
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium">{m.descricao}</p>
                           <p className="truncate text-xs text-hu-muted">
-                            {nomeCanteiro(m.canteiro_id)} · {m.tipo_demanda} · {m.quantidade} {m.unidade_medida}
+                            {contextoCanteiro(m.canteiro_id)} · {m.tipo_demanda} · {m.quantidade} {m.unidade_medida}
                           </p>
                         </div>
                         <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-bold ${cfg.chip}`}>

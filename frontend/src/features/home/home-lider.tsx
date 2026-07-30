@@ -17,7 +17,7 @@ export function HomeLider() {
   const [menu, setMenu] = useState(false)
 
   const solicitacoes = useSolicitacoesLider()
-  const pendentes = (solicitacoes.data ?? []).filter((s) => s.status === "PENDENTE").length
+  const pendentes = (solicitacoes.data ?? []).filter((s) => s.status === "ABERTA").length
 
   const badges: Badges = { solicitacoes: { valor: pendentes } }
 

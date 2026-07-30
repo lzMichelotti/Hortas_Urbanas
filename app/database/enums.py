@@ -101,13 +101,7 @@ class StatusIntencao(str, Enum):
     CONCLUIDO            = "CONCLUIDO"
 
 
-class StatusSolicitacao(str, Enum):
-    PENDENTE = "PENDENTE"
-    APROVADA = "APROVADA"
-    RECUSADA = "RECUSADA"
-
-
-class StatusDemanda(str, Enum):
+class StatusPedido(str, Enum):
     ABERTA          = "ABERTA"
     EM_ATENDIMENTO  = "EM_ATENDIMENTO"
     ATENDIDA        = "ATENDIDA"
