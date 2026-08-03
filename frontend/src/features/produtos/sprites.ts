@@ -1,12 +1,12 @@
 const DISPONIVEIS = new Set([
-  "abacate", "abacaxi", "abobora", "abobrinha", "alface", "alho", "alho-poro",
-  "ameixa", "banana", "batata", "batata-doce", "bergamota", "berinjela",
-  "beterraba", "brocolis", "caqui", "cebola", "cebolinha", "cenoura", "chuchu",
-  "couve", "couve-chinesa", "couve-flor", "ervilha", "espinafre", "feijao-vagem",
+  "abacate", "abacaxi", "abobora", "abobrinha", "agriao", "alface", "alho", "alho-poro",
+  "almeirao", "ameixa", "banana", "batata", "batata-doce", "bergamota", "berinjela",
+  "beterraba", "brocolis", "caqui", "cebola", "cebolinha", "cenoura", "chicoria", "chuchu",
+  "coentro", "couve", "couve-chinesa", "couve-flor", "ervilha", "espinafre", "feijao-vagem",
   "figo", "gengibre", "goiaba", "inhame", "jabuticaba", "kiwi", "laranja",
   "limao", "maca", "mamao", "manga", "maracuja", "maxixe", "melancia", "melao",
-  "milho-verde", "moranga", "morango", "nabo", "pepino", "pera", "pessego",
-  "pimenta", "pimentao", "pitaya", "quiabo", "rabanete", "repolho", "tomate", "uva",
+  "milho-verde", "moranga", "morango", "mostarda", "nabo", "pepino", "pera", "pessego",
+  "pimenta", "pimentao", "pitaya", "quiabo", "rabanete", "repolho", "rucula", "salsa", "tomate", "uva",
 ])
 
 const ALIAS: Record<string, string> = {
