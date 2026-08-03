@@ -3,6 +3,8 @@ import { Plus, Trash2, UserCheck, UserX } from "lucide-react"
 import { useMe } from "@/features/auth/use-me"
 import { useCanteiros, useCriarCanteiro, useAtualizarCanteiro, useDeletarCanteiro } from "@/features/canteiros/use-canteiros"
 import { useUsuarios, useCriarMembro, useRemoverMembro } from "@/features/usuarios/use-usuarios"
+import { CamposHorticultor } from "@/features/usuarios/campos-horticultor"
+import { HORTICULTOR_VAZIO, type DadosHorticultor } from "@/features/usuarios/horticultor"
 import { formatCPF, formatTelefone, digitos, validarCPF, validarTelefone } from "@/lib/br"
 import { srcAvatar } from "@/features/perfil/avatares"
 import { TERRA } from "@/features/canteiro/terra"
@@ -39,6 +41,7 @@ export function MembrosPage() {
   const [email, setEmail] = useState("")
   const [cpf, setCpf] = useState("")
   const [telefone, setTelefone] = useState("")
+  const [horticultor, setHorticultor] = useState<DadosHorticultor>(HORTICULTOR_VAZIO)
   const [tentouEnviar, setTentouEnviar] = useState(false)
 
   const cpfValido = validarCPF(cpf)
@@ -86,6 +89,7 @@ export function MembrosPage() {
     setEmail("")
     setCpf("")
     setTelefone("")
+    setHorticultor(HORTICULTOR_VAZIO)
     setTentouEnviar(false)
     setMostraFormMembro(false)
     criarMembro.reset()
@@ -102,6 +106,7 @@ export function MembrosPage() {
         cpf: digitos(cpf),
         telefone: digitos(telefone),
         privilegio: "MEMBRO_CANTEIRO",
+        ...horticultor,
       },
       {
         onSuccess: (novo) => {
@@ -281,6 +286,15 @@ export function MembrosPage() {
                 <p className="text-xs text-red-600">Telefone deve ter 10 ou 11 dígitos.</p>
               )}
             </div>
+          </div>
+
+          <div className="mt-5 border-t border-hu-soft/30 pt-4">
+            <p className="mb-1 text-sm font-bold text-hu-text">Dados do horticultor</p>
+            <p className="mb-3 text-xs text-hu-muted">
+              Para a pesquisa das hortas. Pergunte à pessoa e marque o que ela responder — pode
+              deixar em branco, e ela mesma muda depois em Configurações.
+            </p>
+            <CamposHorticultor prefixo="novo" valor={horticultor} aoMudar={setHorticultor} />
           </div>
 
           {criarMembro.isError && (

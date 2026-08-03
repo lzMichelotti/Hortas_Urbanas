@@ -67,6 +67,21 @@ class Privilegio(str, Enum):
     MEMBRO_CANTEIRO = "MEMBRO_CANTEIRO"
 
 
+class Sexo(str, Enum):
+    FEMININO  = "FEMININO"
+    MASCULINO = "MASCULINO"
+    OUTRO     = "OUTRO"
+
+
+# Categorias do IBGE (Censo/PNAD) — mudar quebra a comparação com as bases oficiais.
+class RacaCor(str, Enum):
+    BRANCA   = "BRANCA"
+    PRETA    = "PRETA"
+    PARDA    = "PARDA"
+    AMARELA  = "AMARELA"
+    INDIGENA = "INDIGENA"
+
+
 # --- Fluxos de Plantio / Demanda ---
 
 class StatusCiclo(str, Enum):

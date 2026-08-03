@@ -1,4 +1,6 @@
 """Testes de integração das rotas de usuários — requer TEST_DATABASE_URL."""
+from datetime import datetime, timezone
+
 import pytest
 from validate_docbr import CPF
 
@@ -154,3 +156,115 @@ class TestAvatarMe:
     def test_avatar_exige_autenticacao(self, client):
         r = client.patch("/usuarios/me", json={"avatar": "idoso"})
         assert r.status_code == 401
+
+
+class TestDadosHorticultor:
+    def _headers(self, client, db, horta, email):
+        cpf = _cpf.generate()
+        _membro(db, horta, email, cpf)
+        r = client.post("/token", data={"username": email, "password": cpf})
+        assert r.status_code == 200, r.json()
+        return {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+    def test_membro_novo_nasce_sem_dados_informados(self, client, db, horta):
+        h = self._headers(client, db, horta, "dh1@horta-urbana.com")
+        corpo = client.get("/usuarios/me", headers=h).json()
+        assert corpo["nascimento_ano"] is None
+        assert corpo["sexo"] is None
+        assert corpo["raca_cor"] is None
+        assert corpo["grupo_familiar"] is None
+        assert corpo["idade"] is None
+
+    def test_lider_informa_os_dados_ao_cadastrar(self, client, lider_headers):
+        r = client.post(
+            "/usuarios",
+            json={
+                "nome": "Maria",
+                "email": "dh2@horta-urbana.com",
+                "cpf": _cpf.generate(),
+                "telefone": "11999999999",
+                "privilegio": "MEMBRO_CANTEIRO",
+                "nascimento_ano": 1955,
+                "sexo": "FEMININO",
+                "raca_cor": "PARDA",
+                "grupo_familiar": 4,
+            },
+            headers=lider_headers,
+        )
+        assert r.status_code == 201, r.json()
+        corpo = r.json()
+        assert corpo["nascimento_ano"] == 1955
+        assert corpo["sexo"] == "FEMININO"
+        assert corpo["raca_cor"] == "PARDA"
+        assert corpo["grupo_familiar"] == 4
+        assert corpo["idade"] == datetime.now(timezone.utc).year - 1955
+
+    def test_dono_edita_os_proprios_dados(self, client, db, horta):
+        h = self._headers(client, db, horta, "dh3@horta-urbana.com")
+        r = client.patch(
+            "/usuarios/me",
+            json={"nascimento_ano": 1960, "sexo": "MASCULINO", "raca_cor": "PRETA", "grupo_familiar": 2},
+            headers=h,
+        )
+        assert r.status_code == 200, r.json()
+        assert client.get("/usuarios/me", headers=h).json()["raca_cor"] == "PRETA"
+
+    def test_patch_parcial_nao_apaga_o_resto(self, client, db, horta):
+        h = self._headers(client, db, horta, "dh4@horta-urbana.com")
+        client.patch("/usuarios/me", json={"sexo": "FEMININO", "grupo_familiar": 3}, headers=h)
+        client.patch("/usuarios/me", json={"avatar": "idoso"}, headers=h)
+        corpo = client.get("/usuarios/me", headers=h).json()
+        assert corpo["avatar"] == "idoso"
+        assert corpo["sexo"] == "FEMININO"
+        assert corpo["grupo_familiar"] == 3
+
+    def test_null_explicito_volta_a_nao_informado(self, client, db, horta):
+        h = self._headers(client, db, horta, "dh5@horta-urbana.com")
+        client.patch("/usuarios/me", json={"raca_cor": "BRANCA"}, headers=h)
+        r = client.patch("/usuarios/me", json={"raca_cor": None}, headers=h)
+        assert r.status_code == 200
+        assert client.get("/usuarios/me", headers=h).json()["raca_cor"] is None
+
+    def test_avatar_nulo_nao_derruba_a_coluna(self, client, db, horta):
+        h = self._headers(client, db, horta, "dh6@horta-urbana.com")
+        r = client.patch("/usuarios/me", json={"avatar": None}, headers=h)
+        assert r.status_code == 422
+        assert client.get("/usuarios/me", headers=h).json()["avatar"] == "jardineira"
+
+    @pytest.mark.parametrize(
+        "corpo",
+        [
+            {"nascimento_ano": 1800},
+            {"nascimento_ano": 2400},
+            {"sexo": "NAO_SEI"},
+            {"raca_cor": "OUTRA"},
+            {"grupo_familiar": 0},
+            {"grupo_familiar": 31},
+        ],
+    )
+    def test_valores_fora_do_esperado_dao_422(self, client, db, horta, corpo):
+        h = self._headers(client, db, horta, f"dh-{abs(hash(str(corpo)))}@horta-urbana.com")
+        assert client.patch("/usuarios/me", json=corpo, headers=h).status_code == 422
+
+    def test_listagem_nao_expoe_dado_sensivel(self, client, lider_headers):
+        r = client.post(
+            "/usuarios",
+            json={
+                "nome": "Joao",
+                "email": "dh7@horta-urbana.com",
+                "cpf": _cpf.generate(),
+                "telefone": "11999999999",
+                "privilegio": "MEMBRO_CANTEIRO",
+                "raca_cor": "INDIGENA",
+                "nascimento_ano": 1970,
+            },
+            headers=lider_headers,
+        )
+        assert r.status_code == 201, r.json()
+        lista = client.get("/usuarios", headers=lider_headers).json()
+        assert lista
+        for u in lista:
+            assert "raca_cor" not in u
+            assert "nascimento_ano" not in u
+            assert "sexo" not in u
+            assert "grupo_familiar" not in u

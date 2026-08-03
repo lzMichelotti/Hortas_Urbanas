@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.database.models import Usuario
-from app.schemas.usuario import AvatarUpdate, UsuarioCreate, UsuarioRead, UsuarioReadCompleto, UsuarioUpdate
+from app.schemas.usuario import PerfilUpdate, UsuarioCreate, UsuarioRead, UsuarioReadCompleto, UsuarioUpdate
 from app.dependencies import get_current_user, get_lider_user
 from app.permissions import exigir_lider_da_horta, exigir_lider_pode_criar_usuario
 from app.core.security import get_password_hash
@@ -42,11 +42,12 @@ def read_users_me(
 
 @router.patch("/usuarios/me", response_model=UsuarioReadCompleto)
 def update_me(
-    dados: AvatarUpdate,
+    dados: PerfilUpdate,
     db: DBDep,
     current_user: Annotated[Usuario, Depends(get_current_user)],
 ):
-    current_user.avatar = dados.avatar
+    for campo, valor in dados.model_dump(exclude_unset=True).items():
+        setattr(current_user, campo, valor)
     db.commit()
     return current_user
 

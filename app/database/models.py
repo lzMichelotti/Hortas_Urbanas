@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import (
-    Column, Integer, String, Float, Boolean, Date, ForeignKey, Text, DateTime,
+    Column, Integer, SmallInteger, String, Float, Boolean, Date, ForeignKey, Text, DateTime,
     CheckConstraint, UniqueConstraint, Index, event, func, text,
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
@@ -10,7 +10,7 @@ from geoalchemy2 import Geography
 from app.database.session import Base
 from app.database.enums import (
     FonteAgua, TipoSolo, NivelVulnerabilidade, TipoZona, NivelRisco,
-    Privilegio, StatusCiclo, StatusIntencao, StatusPedido,
+    Privilegio, RacaCor, Sexo, StatusCiclo, StatusIntencao, StatusPedido,
     TipoPost, MotivoPerda, enum_check,
 )
 
@@ -79,6 +79,10 @@ class Usuario(Base):
     __tablename__ = 'Usuarios'
     __table_args__ = (
         enum_check("privilegio", Privilegio, name="ck_usuarios_privilegio"),
+        enum_check("sexo", Sexo, name="ck_usuarios_sexo"),
+        enum_check("raca_cor", RacaCor, name="ck_usuarios_raca_cor"),
+        CheckConstraint("nascimento_ano BETWEEN 1900 AND 2100", name="ck_usuarios_nascimento_ano"),
+        CheckConstraint("grupo_familiar BETWEEN 1 AND 30", name="ck_usuarios_grupo_familiar"),
     )
 
     id = Column(Integer, primary_key=True)
@@ -89,6 +93,11 @@ class Usuario(Base):
     senha_hash = Column(String(255), nullable=False)
     telefone = Column(String(20), nullable=False)
     privilegio = Column(String(50), nullable=False)
+
+    nascimento_ano = Column(SmallInteger, nullable=True)
+    sexo = Column(String(20), nullable=True)
+    raca_cor = Column(String(20), nullable=True)
+    grupo_familiar = Column(SmallInteger, nullable=True)
     avatar = Column(String(30), nullable=False, server_default=text("'jardineira'"))
     ativo = Column(Boolean, default=True, nullable=False)      # baixa cardinalidade — sem índice B-tree
     deletado_em = Column(DateTime(timezone=True), nullable=True)

@@ -909,11 +909,6 @@ export interface components {
             /** Horta */
             horta?: string | null;
         };
-        /** AvatarUpdate */
-        AvatarUpdate: {
-            /** Avatar */
-            avatar: string;
-        };
         /** Body_login_for_access_token_token_post */
         Body_login_for_access_token_token_post: {
             /** Grant Type */
@@ -1394,6 +1389,21 @@ export interface components {
          * @enum {string}
          */
         NivelVulnerabilidade: "alto" | "medio" | "baixo";
+        /**
+         * PerfilUpdate
+         * @description PATCH /usuarios/me — o próprio dono edita foto e dados do horticultor.
+         *     Campo ausente = não mexe; campo enviado como null = "prefiro não informar".
+         */
+        PerfilUpdate: {
+            /** Nascimento Ano */
+            nascimento_ano?: number | null;
+            sexo?: components["schemas"]["Sexo"] | null;
+            raca_cor?: components["schemas"]["RacaCor"] | null;
+            /** Grupo Familiar */
+            grupo_familiar?: number | null;
+            /** Avatar */
+            avatar?: string | null;
+        };
         /** PoligonoGeografico */
         PoligonoGeografico: {
             /**
@@ -1669,6 +1679,11 @@ export interface components {
             /** Data Fim */
             data_fim?: string | null;
         };
+        /**
+         * RacaCor
+         * @enum {string}
+         */
+        RacaCor: "BRANCA" | "PRETA" | "PARDA" | "AMARELA" | "INDIGENA";
         /** RefreshRequest */
         RefreshRequest: {
             /** Refresh Token */
@@ -1694,6 +1709,11 @@ export interface components {
              */
             criado_em: string;
         };
+        /**
+         * Sexo
+         * @enum {string}
+         */
+        Sexo: "FEMININO" | "MASCULINO" | "OUTRO";
         /**
          * SituacaoHorta
          * @enum {string}
@@ -1774,6 +1794,12 @@ export interface components {
         };
         /** UsuarioCreate */
         UsuarioCreate: {
+            /** Nascimento Ano */
+            nascimento_ano?: number | null;
+            sexo?: components["schemas"]["Sexo"] | null;
+            raca_cor?: components["schemas"]["RacaCor"] | null;
+            /** Grupo Familiar */
+            grupo_familiar?: number | null;
             /** Nome */
             nome: string;
             /**
@@ -1794,6 +1820,8 @@ export interface components {
          * @description Visão pública — CPF mascarado. Usar em listagens e edições por terceiros.
          *     CPF == credencial de login (decisão de produto); só pode ser exposto cheio
          *     para o próprio dono (/usuarios/me) ou em rotas administrativas auditadas.
+         *     Os dados do horticultor ficam de fora: raça/cor é dado sensível (LGPD Art. 5º II)
+         *     e nenhuma tela de listagem precisa deles.
          */
         UsuarioRead: {
             /** Id */
@@ -1821,6 +1849,10 @@ export interface components {
          * UsuarioReadCompleto
          * @description CPF cheio — só para o próprio dono em /usuarios/me e para o criador
          *     em POST /usuarios (que acabou de digitar o valor).
+         *
+         *     Repete os campos do horticultor sem os validadores de entrada de propósito:
+         *     a faixa de ano aceita é relativa ao ano corrente, e leitura não pode passar
+         *     a falhar com o tempo por causa de um dado que já está gravado.
          */
         UsuarioReadCompleto: {
             /** Id */
@@ -1843,6 +1875,14 @@ export interface components {
             horta_id?: number | null;
             /** Ativo */
             ativo: boolean;
+            /** Nascimento Ano */
+            nascimento_ano?: number | null;
+            sexo?: components["schemas"]["Sexo"] | null;
+            raca_cor?: components["schemas"]["RacaCor"] | null;
+            /** Grupo Familiar */
+            grupo_familiar?: number | null;
+            /** Idade */
+            readonly idade: number | null;
         };
         /** UsuarioUpdate */
         UsuarioUpdate: {
@@ -3230,7 +3270,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AvatarUpdate"];
+                "application/json": components["schemas"]["PerfilUpdate"];
             };
         };
         responses: {

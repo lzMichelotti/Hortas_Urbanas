@@ -1,12 +1,16 @@
-import { useState } from "react"
+import { type FormEvent, useState } from "react"
 import { FalaDaGuia } from "@/components/guia"
 import { VersaoApp } from "@/components/versao-app"
+import { Aviso } from "@/components/feedback"
+import { Button } from "@/components/ui/button"
 import { useMe } from "@/features/auth/use-me"
 import { ConfirmarSair } from "@/features/auth/confirmar-sair"
 import { ROTULO_PAPEL } from "@/features/auth/papeis"
 import { useMeuCanteiro } from "@/features/canteiro/use-meu-canteiro"
 import { AVATARES, AVATAR_PADRAO, srcAvatar } from "@/features/perfil/avatares"
-import { useAtualizarAvatar } from "@/features/perfil/use-atualizar-avatar"
+import { useAtualizarAvatar, useAtualizarPerfil } from "@/features/perfil/use-perfil"
+import { CamposHorticultor } from "@/features/usuarios/campos-horticultor"
+import type { DadosHorticultor } from "@/features/usuarios/horticultor"
 import { getTema, setTema, type Tema } from "@/lib/preferencias"
 
 function Segmento({
@@ -44,6 +48,51 @@ function Segmento({
         })}
       </div>
     </div>
+  )
+}
+
+function MeusDados({ inicial }: { inicial: DadosHorticultor }) {
+  const [dados, setDados] = useState<DadosHorticultor>(inicial)
+  const atualizar = useAtualizarPerfil()
+
+  function salvar(e: FormEvent) {
+    e.preventDefault()
+    atualizar.mutate(dados)
+  }
+
+  function mudar(novo: DadosHorticultor) {
+    setDados(novo)
+    atualizar.reset()
+  }
+
+  return (
+    <form
+      onSubmit={salvar}
+      className="rounded-2xl border-4 border-hu-bright bg-hu-panel p-5 text-hu-text"
+    >
+      <h2 className="mb-4 font-pixel text-xs text-hu-text">Meus dados</h2>
+
+      <CamposHorticultor prefixo="meus" valor={dados} aoMudar={mudar} />
+
+      {atualizar.isError && (
+        <Aviso variante="erro" className="mt-3">
+          {atualizar.error.message}
+        </Aviso>
+      )}
+      {atualizar.isSuccess && (
+        <Aviso variante="sucesso" className="mt-3">
+          Dados salvos.
+        </Aviso>
+      )}
+
+      <Button
+        type="submit"
+        disabled={atualizar.isPending}
+        className="mt-4 h-11 w-full rounded-xl bg-hu-bright font-bold text-hu-bg hover:bg-hu-bright/90"
+      >
+        {atualizar.isPending ? "Salvando…" : "Salvar meus dados"}
+      </Button>
+    </form>
   )
 }
 
@@ -96,6 +145,18 @@ export function ConfiguracoesPage() {
           })}
         </div>
       </section>
+
+      {me.data && (
+        <MeusDados
+          key={me.data.id}
+          inicial={{
+            nascimento_ano: me.data.nascimento_ano ?? null,
+            sexo: me.data.sexo ?? null,
+            raca_cor: me.data.raca_cor ?? null,
+            grupo_familiar: me.data.grupo_familiar ?? null,
+          }}
+        />
+      )}
 
       <section className="rounded-2xl border-4 border-hu-bright bg-hu-panel p-5 text-hu-text">
         <Segmento
