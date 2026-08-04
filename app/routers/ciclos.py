@@ -9,6 +9,7 @@ from app.database.models import Canteiro, CicloProducao, Usuario
 from app.schemas.ciclo import CicloCreate, CicloUpdate, CicloRead
 from app.dependencies import get_current_user
 from app.permissions import exigir_acesso_horta, exigir_dono_do_canteiro
+from app.core.config import hoje
 from app.core.idempotency import IdempotencyKeyHeader, commit_idempotente
 
 router = APIRouter(tags=["Ciclos"])
@@ -87,9 +88,9 @@ def update_ciclo(
     # climático, então não vem do cliente. Preservada ao corrigir só o motivo.
     if novo_status == StatusCiclo.PERDIDO:
         if db_ciclo.perdido_em is None:
-            hoje = datetime.now(timezone.utc).date()
+            data_perda = hoje()
             # CHECK exige perdido_em >= data_plantio: plantio futuro registra na data do plantio.
-            db_ciclo.perdido_em = max(hoje, db_ciclo.data_plantio or hoje)
+            db_ciclo.perdido_em = max(data_perda, db_ciclo.data_plantio or data_perda)
     elif era_perdido and novo_status is not None:
         db_ciclo.motivo_perda = None
         db_ciclo.observacao_perda = None

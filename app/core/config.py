@@ -1,4 +1,6 @@
+from datetime import date, datetime
 from typing import List
+from zoneinfo import ZoneInfo
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -12,6 +14,9 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     CORS_ORIGINS: List[str]
+
+    # Fuso do município: define o que é "hoje" para plantio, colheita e perda.
+    TIMEZONE: str = "America/Sao_Paulo"
 
     # --- Clima (Open-Meteo) ---
     CLIMA_LATITUDE: float = -29.6842
@@ -39,3 +44,16 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+FUSO = ZoneInfo(settings.TIMEZONE)
+
+
+def hoje() -> date:
+    """O "hoje" do horticultor, não o do servidor.
+
+    Plantio, colheita e perda são dia de calendário. Em UTC — que é o fuso do
+    container em produção — quem registra depois das 21h recebe a data de
+    amanhã. Instante (`criado_em`, `deletado_em`) segue em UTC: lá o fuso está
+    guardado na própria coluna timestamptz.
+    """
+    return datetime.now(FUSO).date()

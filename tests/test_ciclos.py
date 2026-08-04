@@ -5,6 +5,7 @@ import pytest
 from sqlalchemy import text
 from validate_docbr import CPF
 
+from app.core.config import hoje
 from app.database.models import Produto
 
 pytestmark = pytest.mark.integration
@@ -51,7 +52,7 @@ class TestMotivoDaPerda:
         assert r.status_code == 200
         body = r.json()
         assert body["motivo_perda"] == "GEADA"
-        assert body["perdido_em"] == date.today().isoformat()
+        assert body["perdido_em"] == hoje().isoformat()
 
     def test_perder_sem_motivo_retorna_422(self, client, admin_headers, ciclo):
         r = client.patch(

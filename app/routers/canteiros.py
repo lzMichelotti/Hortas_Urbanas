@@ -10,6 +10,7 @@ from app.schemas.canteiro import (
     CanteiroCreate, CanteiroUpdate, CanteiroRead, ProdutividadeCanteiro,
 )
 from app.dependencies import get_current_user, get_lider_user
+from app.core.config import hoje
 from app.permissions import exigir_lider_da_horta
 
 router = APIRouter(tags=["Canteiros"])
@@ -63,7 +64,7 @@ def read_produtividade(
     def contar(status: str):
         return func.count().filter(CicloProducao.status == status)
 
-    data_corte = datetime.now(timezone.utc).date() - timedelta(days=TOLERANCIA_ATRASO_DIAS)
+    data_corte = hoje() - timedelta(days=TOLERANCIA_ATRASO_DIAS)
     atrasadas = func.count().filter(
         CicloProducao.status.notin_(("COLHIDO", "PERDIDO")),
         CicloProducao.previsao_colheita < data_corte,

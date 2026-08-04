@@ -3,6 +3,7 @@ from typing import Annotated, Optional
 from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, computed_field, field_validator
 from validate_docbr import CPF as CpfValidator
 
+from app.core.config import hoje
 from app.database.enums import Privilegio, RacaCor, Sexo
 
 _cpf = CpfValidator()
@@ -18,7 +19,7 @@ def _validar_cpf_str(v: str) -> str:
 
 
 def _validar_ano_nascimento(v: int) -> int:
-    ano_atual = date.today().year
+    ano_atual = hoje().year
     if not (ano_atual - IDADE_MAXIMA <= v <= ano_atual - IDADE_MINIMA):
         raise ValueError("Confira o ano de nascimento.")
     return v
@@ -130,6 +131,6 @@ class UsuarioReadCompleto(BaseModel):
     @computed_field
     @property
     def idade(self) -> Optional[int]:
-        return date.today().year - self.nascimento_ano if self.nascimento_ano else None
+        return hoje().year - self.nascimento_ano if self.nascimento_ano else None
 
     model_config = ConfigDict(from_attributes=True)

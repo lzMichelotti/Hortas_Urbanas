@@ -2,6 +2,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from datetime import date
 from typing import Optional
 
+from app.core.config import hoje
 from app.database.enums import StatusPedido
 
 
@@ -14,7 +15,7 @@ class SolicitacaoCreate(BaseModel):
     @field_validator('data_desejada_plantio')
     @classmethod
     def check_data_futura(cls, valor_data):
-        if valor_data is not None and valor_data < date.today():
+        if valor_data is not None and valor_data < hoje():
             raise ValueError('A data de plantio não pode estar no passado.')
         return valor_data
 
