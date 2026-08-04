@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from app.core.config import hoje
@@ -24,6 +24,10 @@ class SolicitacaoUpdateStatus(BaseModel):
     status: StatusPedido
 
 
+class SolicitacaoUpdateEncaminhamento(BaseModel):
+    encaminhada: bool
+
+
 class SolicitacaoRead(BaseModel):
     id: int
     canteiro_id: int
@@ -32,5 +36,6 @@ class SolicitacaoRead(BaseModel):
     justificativa: Optional[str] = None
     data_desejada_plantio: Optional[date] = None
     status: StatusPedido
+    encaminhada_em: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -4,10 +4,13 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.database.models import Canteiro, Produto, SolicitacaoPlantio, Usuario
-from app.schemas.solicitacao import SolicitacaoCreate, SolicitacaoRead, SolicitacaoUpdateStatus
+from app.schemas.solicitacao import (
+    SolicitacaoCreate, SolicitacaoRead, SolicitacaoUpdateEncaminhamento, SolicitacaoUpdateStatus,
+)
 from app.dependencies import get_current_user, get_lider_user
 from app.permissions import exigir_acesso_horta, exigir_dono_do_canteiro, exigir_lider_da_horta
 from app.core.idempotency import IdempotencyKeyHeader, commit_idempotente
+from app.routers.demandas import aplicar_encaminhamento
 
 router = APIRouter(tags=["Solicitações de Plantio"])
 
@@ -19,16 +22,15 @@ def read_solicitacoes(
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
+    query = db.query(SolicitacaoPlantio)
     if lider.privilegio == "LIDER_HORTA":
-        return (
-            db.query(SolicitacaoPlantio)
-            .join(Canteiro)
-            .filter(Canteiro.horta_id == lider.horta_id, Canteiro.ativo == True)
-            .all()
+        query = query.join(Canteiro).filter(
+            Canteiro.horta_id == lider.horta_id, Canteiro.ativo == True
         )
-    return db.query(SolicitacaoPlantio).all()
+    else:
+        query = query.filter(SolicitacaoPlantio.encaminhada_em.isnot(None))
+    return query.all()
 
-    
 
 @router.get("/canteiros/{canteiro_id}/solicitacoes", response_model=list[SolicitacaoRead])
 def read_solicitacoes_do_canteiro(
@@ -70,6 +72,30 @@ def create_solicitacao(
     db_solicitacao = SolicitacaoPlantio(**solicitacao.model_dump(), canteiro_id=canteiro_id)
     db_solicitacao = commit_idempotente(db, db_solicitacao, idempotency_key, canteiro_id=canteiro_id)
     response.headers["Location"] = f"/solicitacoes/{db_solicitacao.id}"
+    return db_solicitacao
+
+
+@router.patch("/solicitacoes/{id}/encaminhamento", response_model=SolicitacaoRead)
+def encaminhar_solicitacao(
+    id: int,
+    update_data: SolicitacaoUpdateEncaminhamento,
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)],
+):
+    db_solicitacao = db.query(SolicitacaoPlantio).filter(SolicitacaoPlantio.id == id).first()
+
+    if not db_solicitacao:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
+
+    canteiro = db.query(Canteiro).filter(Canteiro.id == db_solicitacao.canteiro_id).first()
+
+    if not canteiro:
+        raise HTTPException(404, "Canteiro não encontrado")
+
+    exigir_lider_da_horta(lider, canteiro.horta_id)
+
+    aplicar_encaminhamento(db_solicitacao, update_data.encaminhada)
+    db.commit()
     return db_solicitacao
 
 

@@ -1,10 +1,15 @@
+from datetime import datetime, timezone
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
+from app.database.enums import StatusPedido
 from app.database.models import Canteiro, Demanda, Usuario
-from app.schemas.demanda import DemandaCreate, DemandaRead, DemandaUpdateStatus
+from app.schemas.demanda import (
+    DemandaCreate, DemandaRead, DemandaUpdateEncaminhamento, DemandaUpdateStatus,
+)
 from app.dependencies import get_current_user, get_lider_user
 from app.permissions import (
     exigir_acesso_horta, exigir_dono_do_canteiro, exigir_lider_da_horta, horta_id_visivel,
@@ -14,6 +19,28 @@ from app.core.idempotency import IdempotencyKeyHeader, commit_idempotente
 router = APIRouter(tags=["Demandas"])
 
 DBDep = Annotated[Session, Depends(get_db)]
+
+# O que chega à administração: o pedido aberto pela horta, ou o do canteiro que o
+# líder encaminhou. Importado pelo painel do admin para as duas telas não divergirem.
+CHEGA_A_ADMINISTRACAO = or_(
+    Demanda.canteiro_id.is_(None),
+    Demanda.encaminhada_em.isnot(None),
+)
+
+_STATUS_FINAIS = (StatusPedido.ATENDIDA.value, StatusPedido.CANCELADA.value)
+
+
+def aplicar_encaminhamento(pedido, encaminhada: bool):
+    """Regra de subir um pedido à administração, compartilhada com as solicitações
+    de plantio. Encaminhar de novo não reescreve a data da primeira vez."""
+    if pedido.status in _STATUS_FINAIS:
+        raise HTTPException(400, "Este pedido já foi encerrado.")
+
+    if not encaminhada:
+        pedido.encaminhada_em = None
+    elif pedido.encaminhada_em is None:
+        pedido.encaminhada_em = datetime.now(timezone.utc)
+
 
 @router.get("/demandas", response_model=list[DemandaRead])
 def read_demandas(
@@ -25,7 +52,7 @@ def read_demandas(
     if horta_id is not None:
         query = query.filter(Demanda.horta_id == horta_id)
     else:
-        query = query.filter(Demanda.canteiro_id.is_(None))
+        query = query.filter(CHEGA_A_ADMINISTRACAO)
     return query.all()
 
 
@@ -133,6 +160,34 @@ def update_demanda_status(
     db_demanda.status = update_data.status
     db.commit()
     return db_demanda
+
+@router.patch(
+    "/hortas/{horta_id}/demandas/{demanda_id}/encaminhamento",
+    response_model=DemandaRead,
+)
+def encaminhar_demanda(
+    horta_id: int,
+    demanda_id: int,
+    update_data: DemandaUpdateEncaminhamento,
+    db: DBDep,
+    lider: Annotated[Usuario, Depends(get_lider_user)],
+):
+    exigir_lider_da_horta(lider, horta_id)
+    db_demanda = db.query(Demanda).filter(
+        Demanda.id == demanda_id,
+        Demanda.horta_id == horta_id,
+    ).first()
+
+    if not db_demanda:
+        raise HTTPException(404, "Demanda não encontrada nesta horta.")
+
+    if db_demanda.canteiro_id is None:
+        raise HTTPException(400, "Este pedido já é da horta e a administração já o vê.")
+
+    aplicar_encaminhamento(db_demanda, update_data.encaminhada)
+    db.commit()
+    return db_demanda
+
 
 @router.delete("/demandas/{id}", status_code=204)
 def delete_demanda(

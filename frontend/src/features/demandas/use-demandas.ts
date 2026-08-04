@@ -65,6 +65,20 @@ export function useDeletarDemanda() {
   })
 }
 
+export function useEncaminharDemanda(hortaId: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ demandaId, encaminhada }: { demandaId: number; encaminhada: boolean }) =>
+      unwrap(
+        api.PATCH("/hortas/{horta_id}/demandas/{demanda_id}/encaminhamento", {
+          params: { path: { horta_id: hortaId, demanda_id: demandaId } },
+          body: { encaminhada },
+        }),
+      ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["demandas"] }),
+  })
+}
+
 export function useDemandasDoMembro(canteiroId: number | undefined) {
   return useQuery({
     queryKey: ["demandas-membro", canteiroId],

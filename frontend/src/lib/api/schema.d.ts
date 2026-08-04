@@ -409,6 +409,23 @@ export interface paths {
         patch: operations["update_demanda_status_hortas__horta_id__demandas__demanda_id__status_patch"];
         trace?: never;
     };
+    "/hortas/{horta_id}/demandas/{demanda_id}/encaminhamento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Encaminhar Demanda */
+        patch: operations["encaminhar_demanda_hortas__horta_id__demandas__demanda_id__encaminhamento_patch"];
+        trace?: never;
+    };
     "/demandas/{id}": {
         parameters: {
             query?: never;
@@ -511,6 +528,23 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/solicitacoes/{id}/encaminhamento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Encaminhar Solicitacao */
+        patch: operations["encaminhar_solicitacao_solicitacoes__id__encaminhamento_patch"];
         trace?: never;
     };
     "/solicitacoes/{id}/status": {
@@ -860,6 +894,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/forum/denuncias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Denuncias */
+        get: operations["listar_denuncias_forum_denuncias_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/forum/posts/{id}/denuncia": {
         parameters: {
             query?: never;
@@ -877,6 +928,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/forum/denuncias/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Arquivar Denuncia
+         * @description Denúncia analisada e sem providência. Apagar o conteúdo denunciado já
+         *     limpa a fila sozinho, via CASCADE — isto aqui é para o caso de manter o post.
+         */
+        delete: operations["arquivar_denuncia_forum_denuncias__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/forum/respostas/{id}/denuncia": {
         parameters: {
             query?: never;
@@ -888,6 +960,74 @@ export interface paths {
         put?: never;
         /** Denunciar Resposta */
         post: operations["denunciar_resposta_forum_respostas__id__denuncia_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/painel/admin/panorama": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Panorama */
+        get: operations["panorama_painel_admin_panorama_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/painel/admin/producao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Producao */
+        get: operations["producao_painel_admin_producao_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/painel/admin/hortas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ficha Horta */
+        get: operations["ficha_horta_painel_admin_hortas__id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/painel/admin/horticultores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Horticultores */
+        get: operations["horticultores_painel_admin_horticultores_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1124,6 +1264,13 @@ export interface components {
             criado_em: string;
             /** Finalizado Em */
             finalizado_em?: string | null;
+            /** Encaminhada Em */
+            encaminhada_em?: string | null;
+        };
+        /** DemandaUpdateEncaminhamento */
+        DemandaUpdateEncaminhamento: {
+            /** Encaminhada */
+            encaminhada: boolean;
         };
         /** DemandaUpdateStatus */
         DemandaUpdateStatus: {
@@ -1134,12 +1281,63 @@ export interface components {
             /** Motivo */
             motivo?: string | null;
         };
+        /**
+         * DenunciaRead
+         * @description Fila de moderação. `trecho` é o começo do texto denunciado — o bastante
+         *     para decidir na lista sem carregar o post inteiro.
+         */
+        DenunciaRead: {
+            /** Id */
+            id: number;
+            /** Post Id */
+            post_id?: number | null;
+            /** Resposta Id */
+            resposta_id?: number | null;
+            /** Trecho */
+            trecho: string;
+            autor?: components["schemas"]["AutorRead"] | null;
+            /** Motivo */
+            motivo?: string | null;
+            /**
+             * Criado Em
+             * Format: date-time
+             */
+            criado_em: string;
+        };
+        /**
+         * Fatia
+         * @description `n` vem nulo quando a contagem é pequena demais para ser publicada.
+         */
+        Fatia: {
+            /** Rotulo */
+            rotulo: string;
+            /** N */
+            n?: number | null;
+            /**
+             * Suprimido
+             * @default false
+             */
+            suprimido: boolean;
+        };
         /** FeedRead */
         FeedRead: {
             /** Items */
             items: components["schemas"]["PostRead"][];
             /** Proximo Cursor */
             proximo_cursor?: number | null;
+        };
+        /** FichaHorta */
+        FichaHorta: {
+            /** Dias */
+            dias: number;
+            horta: components["schemas"]["HortaPublica"];
+            lider?: components["schemas"]["LiderResumo"] | null;
+            /** Membros */
+            membros: number;
+            canteiros: components["schemas"]["ResumoCanteiros"];
+            producao: components["schemas"]["ResumoProducao"];
+            /** Ultima Atividade */
+            ultima_atividade?: string | null;
         };
         /**
          * FonteAgua
@@ -1367,6 +1565,17 @@ export interface components {
             /** Telefone */
             telefone: string;
         };
+        /** LiderResumo */
+        LiderResumo: {
+            /** Id */
+            id: number;
+            /** Nome */
+            nome: string;
+            /** Email */
+            email: string;
+            /** Telefone */
+            telefone: string;
+        };
         /** LikeRead */
         LikeRead: {
             /** Likes Count */
@@ -1389,6 +1598,46 @@ export interface components {
          * @enum {string}
          */
         NivelVulnerabilidade: "alto" | "medio" | "baixo";
+        /** Panorama */
+        Panorama: {
+            /** Dias */
+            dias: number;
+            /** Dias Sem Plantio */
+            dias_sem_plantio: number;
+            hortas: components["schemas"]["ResumoHortas"];
+            canteiros: components["schemas"]["ResumoCanteiros"];
+            pessoas: components["schemas"]["ResumoPessoas"];
+            producao: components["schemas"]["ResumoProducao"];
+            demandas: components["schemas"]["ResumoDemandas"];
+        };
+        /** PerdaPorMotivo */
+        PerdaPorMotivo: {
+            /** Motivo */
+            motivo: string;
+            /** Climatico */
+            climatico: boolean;
+            /** Total */
+            total: number;
+        };
+        /** PerfilHorticultores */
+        PerfilHorticultores: {
+            /** Total */
+            total: number;
+            /** Informaram */
+            informaram: number;
+            /** Limiar Supressao */
+            limiar_supressao: number;
+            /** Faixa Etaria */
+            faixa_etaria: components["schemas"]["Fatia"][];
+            /** Sexo */
+            sexo: components["schemas"]["Fatia"][];
+            /** Raca Cor */
+            raca_cor: components["schemas"]["Fatia"][];
+            /** Grupo Familiar Medio */
+            grupo_familiar_medio?: number | null;
+            /** Alcance Estimado */
+            alcance_estimado: number;
+        };
         /**
          * PerfilUpdate
          * @description PATCH /usuarios/me — o próprio dono edita foto e dados do horticultor.
@@ -1425,6 +1674,17 @@ export interface components {
             type: "Point";
             /** Coordinates */
             coordinates: number[];
+        };
+        /** PontoSerie */
+        PontoSerie: {
+            /** Mes */
+            mes: string;
+            /** Plantios */
+            plantios: number;
+            /** Colheitas */
+            colheitas: number;
+            /** Perdas */
+            perdas: number;
         };
         /** PostCreate */
         PostCreate: {
@@ -1538,6 +1798,42 @@ export interface components {
          * @enum {string}
          */
         Privilegio: "ADMIN_SUPREMO" | "LIDER_HORTA" | "MEMBRO_CANTEIRO";
+        /** Producao */
+        Producao: {
+            /**
+             * Desde
+             * Format: date
+             */
+            desde: string;
+            /**
+             * Ate
+             * Format: date
+             */
+            ate: string;
+            /** Serie Mensal */
+            serie_mensal: components["schemas"]["PontoSerie"][];
+            /** Por Horta */
+            por_horta: components["schemas"]["ProducaoHorta"][];
+            /** Perdas Por Motivo */
+            perdas_por_motivo: components["schemas"]["PerdaPorMotivo"][];
+            /** Produtos */
+            produtos: components["schemas"]["ProdutoNoPeriodo"][];
+        };
+        /** ProducaoHorta */
+        ProducaoHorta: {
+            /** Horta Id */
+            horta_id: number;
+            /** Nome */
+            nome: string;
+            /** Plantios */
+            plantios: number;
+            /** Colheitas */
+            colheitas: number;
+            /** Perdas */
+            perdas: number;
+            /** Atrasados */
+            atrasados: number;
+        };
         /** ProdutividadeCanteiro */
         ProdutividadeCanteiro: {
             /** Canteiro Id */
@@ -1562,6 +1858,17 @@ export interface components {
             perdas: number;
             /** Atrasadas */
             atrasadas: number;
+        };
+        /** ProdutoNoPeriodo */
+        ProdutoNoPeriodo: {
+            /** Produto Id */
+            produto_id: number;
+            /** Nome */
+            nome: string;
+            /** Plantios */
+            plantios: number;
+            /** Perdas */
+            perdas: number;
         };
         /** ProdutoRead */
         ProdutoRead: {
@@ -1709,6 +2016,57 @@ export interface components {
              */
             criado_em: string;
         };
+        /** ResumoCanteiros */
+        ResumoCanteiros: {
+            /** Ativos */
+            ativos: number;
+            /** Com Responsavel */
+            com_responsavel: number;
+            /** Ociosos */
+            ociosos: number;
+            /** Area Produtiva M2 */
+            area_produtiva_m2: number;
+            /** Area Ociosa M2 */
+            area_ociosa_m2: number;
+        };
+        /**
+         * ResumoDemandas
+         * @description Mesmo universo de GET /demandas para o admin: pedido aberto pela horta ou
+         *     pedido de canteiro que o líder encaminhou.
+         */
+        ResumoDemandas: {
+            /** Abertas */
+            abertas: number;
+            /** Em Atendimento */
+            em_atendimento: number;
+        };
+        /** ResumoHortas */
+        ResumoHortas: {
+            /** Ativas */
+            ativas: number;
+            /** Sem Lider */
+            sem_lider: number;
+            /** Paradas */
+            paradas: number;
+        };
+        /** ResumoPessoas */
+        ResumoPessoas: {
+            /** Membros */
+            membros: number;
+            /** Lideres */
+            lideres: number;
+        };
+        /** ResumoProducao */
+        ResumoProducao: {
+            /** Plantios */
+            plantios: number;
+            /** Colheitas */
+            colheitas: number;
+            /** Perdas */
+            perdas: number;
+            /** Perdas Climaticas */
+            perdas_climaticas: number;
+        };
         /**
          * Sexo
          * @enum {string}
@@ -1748,6 +2106,13 @@ export interface components {
             /** Data Desejada Plantio */
             data_desejada_plantio?: string | null;
             status: components["schemas"]["StatusPedido"];
+            /** Encaminhada Em */
+            encaminhada_em?: string | null;
+        };
+        /** SolicitacaoUpdateEncaminhamento */
+        SolicitacaoUpdateEncaminhamento: {
+            /** Encaminhada */
+            encaminhada: boolean;
         };
         /** SolicitacaoUpdateStatus */
         SolicitacaoUpdateStatus: {
@@ -2888,6 +3253,42 @@ export interface operations {
             };
         };
     };
+    encaminhar_demanda_hortas__horta_id__demandas__demanda_id__encaminhamento_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                horta_id: number;
+                demanda_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DemandaUpdateEncaminhamento"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemandaRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     delete_demanda_demandas__id__delete: {
         parameters: {
             query?: never;
@@ -3106,6 +3507,41 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SolicitacaoRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    encaminhar_solicitacao_solicitacoes__id__encaminhamento_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitacaoUpdateEncaminhamento"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3917,6 +4353,26 @@ export interface operations {
             };
         };
     };
+    listar_denuncias_forum_denuncias_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DenunciaRead"][];
+                };
+            };
+        };
+    };
     denunciar_post_forum_posts__id__denuncia_post: {
         parameters: {
             query?: never;
@@ -3940,6 +4396,35 @@ export interface operations {
                 content: {
                     "application/json": unknown;
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    arquivar_denuncia_forum_denuncias__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -3983,6 +4468,111 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    panorama_painel_admin_panorama_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Panorama"];
+                };
+            };
+        };
+    };
+    producao_painel_admin_producao_get: {
+        parameters: {
+            query?: {
+                /** @description Início do período (AAAA-MM-DD) */
+                desde?: string | null;
+                /** @description Fim do período (AAAA-MM-DD) */
+                ate?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Producao"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ficha_horta_painel_admin_hortas__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FichaHorta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    horticultores_painel_admin_horticultores_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerfilHorticultores"];
                 };
             };
         };

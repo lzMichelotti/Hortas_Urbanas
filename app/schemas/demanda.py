@@ -16,6 +16,10 @@ class DemandaUpdateStatus(BaseModel):
     status: StatusPedido
 
 
+class DemandaUpdateEncaminhamento(BaseModel):
+    encaminhada: bool
+
+
 class DemandaRead(BaseModel):
     id: int
     horta_id: int
@@ -27,5 +31,6 @@ class DemandaRead(BaseModel):
     status: StatusPedido
     criado_em: datetime
     finalizado_em: Optional[datetime] = None
+    encaminhada_em: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -12,6 +12,20 @@ export function useSolicitacoesLider() {
   })
 }
 
+export function useEncaminharSolicitacao() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, encaminhada }: { id: number; encaminhada: boolean }) =>
+      unwrap(
+        api.PATCH("/solicitacoes/{id}/encaminhamento", {
+          params: { path: { id } },
+          body: { encaminhada },
+        }),
+      ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["solicitacoes", "lider"] }),
+  })
+}
+
 export function useResponderSolicitacao() {
   const qc = useQueryClient()
   return useMutation({

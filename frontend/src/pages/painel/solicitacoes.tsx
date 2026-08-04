@@ -1,8 +1,12 @@
 import { useState } from "react"
 import { Tabs } from "radix-ui"
-import { Check, X } from "lucide-react"
-import { useSolicitacoesLider, useResponderSolicitacao } from "@/features/solicitacoes/use-solicitacoes-lider"
-import { useDemandas, useAtualizarStatusDemanda } from "@/features/demandas/use-demandas"
+import { Check, Send, Undo2, X } from "lucide-react"
+import {
+  useSolicitacoesLider,
+  useResponderSolicitacao,
+  useEncaminharSolicitacao,
+} from "@/features/solicitacoes/use-solicitacoes-lider"
+import { useDemandas, useAtualizarStatusDemanda, useEncaminharDemanda } from "@/features/demandas/use-demandas"
 import { useCanteiros } from "@/features/canteiros/use-canteiros"
 import { useUsuarios } from "@/features/usuarios/use-usuarios"
 import { useMe } from "@/features/auth/use-me"
@@ -45,6 +49,8 @@ const BOTAO_PIXEL =
   "flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-[#5b3a1a] bg-hu-bright font-bold text-hu-bg shadow-[0_3px_0_#5b3a1a] transition-transform hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[0_1px_0_#5b3a1a] disabled:pointer-events-none disabled:opacity-50"
 const BOTAO_OUTLINE_VERMELHO =
   "flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-red-400/50 bg-transparent text-red-600 hover:bg-red-500/15 disabled:pointer-events-none disabled:opacity-50"
+const BOTAO_OUTLINE =
+  "flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border-2 border-hu-soft bg-transparent font-bold text-hu-text hover:bg-black/5 disabled:pointer-events-none disabled:opacity-50"
 const CHIP_QUANTIDADE =
   "mt-2 inline-flex w-fit items-center rounded-full border border-hu-soft bg-hu-soft/20 px-2.5 py-1 text-xs font-medium text-hu-text"
 
@@ -57,6 +63,8 @@ export function SolicitacoesPage() {
   const responder = useResponderSolicitacao()
   const demandas = useDemandas()
   const responderMaterial = useAtualizarStatusDemanda(me.data?.horta_id ?? 0)
+  const encaminhar = useEncaminharDemanda(me.data?.horta_id ?? 0)
+  const encaminharPlanta = useEncaminharSolicitacao()
 
   const [aba, setAba] = useState<"plantas" | "materiais">("plantas")
   const [confirmarRecusarId, setConfirmarRecusarId] = useState<number | null>(null)
@@ -134,6 +142,8 @@ export function SolicitacoesPage() {
                   const respondendoEste = responder.isPending && responder.variables?.id === s.id
                   const recusandoEste = respondendoEste && responder.variables?.status === "CANCELADA"
                   const sprite = spriteProduto(nomeProduto(s.produto_id))
+                  const encaminhandoEstaPlanta =
+                    encaminharPlanta.isPending && encaminharPlanta.variables?.id === s.id
                   return (
                     <li
                       key={s.id}
@@ -211,6 +221,37 @@ export function SolicitacoesPage() {
                         )}
                       </div>
 
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {s.encaminhada_em == null ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => encaminharPlanta.mutate({ id: s.id, encaminhada: true })}
+                            disabled={encaminharPlanta.isPending}
+                            className={BOTAO_OUTLINE}
+                          >
+                            <Send className="size-4" aria-hidden />
+                            {encaminhandoEstaPlanta ? "Enviando…" : "Pedir ajuda à administração"}
+                          </Button>
+                        ) : (
+                          <>
+                            <span className="flex items-center gap-1.5 text-sm font-bold text-hu-bright">
+                              <Send className="size-4 shrink-0" aria-hidden />
+                              A administração já está vendo
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => encaminharPlanta.mutate({ id: s.id, encaminhada: false })}
+                              disabled={encaminharPlanta.isPending}
+                              className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm text-hu-muted underline underline-offset-2 hover:text-hu-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hu-bright disabled:opacity-50"
+                            >
+                              <Undo2 className="size-4 shrink-0" aria-hidden />
+                              {encaminhandoEstaPlanta ? "Desfazendo…" : "Desfazer"}
+                            </button>
+                          </>
+                        )}
+                      </div>
+
                       {confirmarRecusarId === s.id && (
                         <ConfirmacaoInline
                           pergunta={<>Recusar o pedido de <strong>{nomeProduto(s.produto_id)}</strong>?</>}
@@ -237,6 +278,12 @@ export function SolicitacoesPage() {
           {responder.isError && (
             <Aviso variante="erro" className="mt-4">
               {responder.error.message}
+            </Aviso>
+          )}
+
+          {encaminharPlanta.isError && (
+            <Aviso variante="erro" className="mt-4">
+              {encaminharPlanta.error.message}
             </Aviso>
           )}
 
@@ -306,6 +353,7 @@ export function SolicitacoesPage() {
                 {materiaisPendentes.map((m) => {
                   const respondendoEste = responderMaterial.isPending && responderMaterial.variables?.demandaId === m.id
                   const recusandoEste = respondendoEste && responderMaterial.variables?.status === "CANCELADA"
+                  const encaminhandoEste = encaminhar.isPending && encaminhar.variables?.demandaId === m.id
                   return (
                     <li
                       key={m.id}
@@ -367,6 +415,37 @@ export function SolicitacoesPage() {
                         )}
                       </div>
 
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {m.encaminhada_em == null ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => encaminhar.mutate({ demandaId: m.id, encaminhada: true })}
+                            disabled={encaminhar.isPending}
+                            className={BOTAO_OUTLINE}
+                          >
+                            <Send className="size-4" aria-hidden />
+                            {encaminhandoEste ? "Enviando…" : "Pedir ajuda à administração"}
+                          </Button>
+                        ) : (
+                          <>
+                            <span className="flex items-center gap-1.5 text-sm font-bold text-hu-bright">
+                              <Send className="size-4 shrink-0" aria-hidden />
+                              A administração já está vendo
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => encaminhar.mutate({ demandaId: m.id, encaminhada: false })}
+                              disabled={encaminhar.isPending}
+                              className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm text-hu-muted underline underline-offset-2 hover:text-hu-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hu-bright disabled:opacity-50"
+                            >
+                              <Undo2 className="size-4 shrink-0" aria-hidden />
+                              {encaminhandoEste ? "Desfazendo…" : "Desfazer"}
+                            </button>
+                          </>
+                        )}
+                      </div>
+
                       {confirmarRecusarMaterialId === m.id && (
                         <ConfirmacaoInline
                           pergunta={<>Recusar o pedido de <strong>{m.tipo_demanda}</strong>?</>}
@@ -393,6 +472,12 @@ export function SolicitacoesPage() {
           {responderMaterial.isError && (
             <Aviso variante="erro" className="mt-4">
               {responderMaterial.error.message}
+            </Aviso>
+          )}
+
+          {encaminhar.isError && (
+            <Aviso variante="erro" className="mt-4">
+              {encaminhar.error.message}
             </Aviso>
           )}
 
