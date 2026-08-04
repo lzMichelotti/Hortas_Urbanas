@@ -593,7 +593,7 @@ export function ComunidadePage() {
 
       {temRespondidos && (
         <section className="mt-6">
-          <p className="mb-3 font-pixel text-xs text-hu-muted">Já respondidos</p>
+          <p className="mb-3 font-pixel text-xs text-hu-muted">Últimos respondidos</p>
           <ul className="flex flex-col gap-3">
             {plantasRespondidas.map((s) => {
               const repetindoEste = criarPlanta.isPending && criarPlanta.variables?.body.produto_id === s.produto_id

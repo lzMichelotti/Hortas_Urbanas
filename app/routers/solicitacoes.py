@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
@@ -9,16 +9,29 @@ from app.schemas.solicitacao import (
 )
 from app.dependencies import get_current_user, get_lider_user
 from app.permissions import exigir_acesso_horta, exigir_dono_do_canteiro, exigir_lider_da_horta
+from app.core.http import aplica_etag
 from app.core.idempotency import IdempotencyKeyHeader, commit_idempotente
-from app.routers.demandas import aplicar_encaminhamento
+from app.routers.demandas import abertos_e_historico, aplicar_encaminhamento
 
 router = APIRouter(tags=["Solicitações de Plantio"])
 
 DBDep = Annotated[Session, Depends(get_db)]
 
 
+_CACHE_LISTA = "private, no-cache"
+
+
+def _pagina(request: Request, query):
+    payload = [
+        SolicitacaoRead.model_validate(s)
+        for s in abertos_e_historico(query, SolicitacaoPlantio.status, SolicitacaoPlantio.id)
+    ]
+    return aplica_etag(request, payload, cache_control=_CACHE_LISTA)
+
+
 @router.get("/solicitacoes", response_model=list[SolicitacaoRead])
 def read_solicitacoes(
+    request: Request,
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
@@ -29,12 +42,13 @@ def read_solicitacoes(
         )
     else:
         query = query.filter(SolicitacaoPlantio.encaminhada_em.isnot(None))
-    return query.all()
+    return _pagina(request, query)
 
 
 @router.get("/canteiros/{canteiro_id}/solicitacoes", response_model=list[SolicitacaoRead])
 def read_solicitacoes_do_canteiro(
     canteiro_id: int,
+    request: Request,
     db: DBDep,
     usuario: Annotated[Usuario, Depends(get_current_user)]
 ):
@@ -45,7 +59,10 @@ def read_solicitacoes_do_canteiro(
 
     exigir_acesso_horta(usuario, canteiro.horta_id)
 
-    return db.query(SolicitacaoPlantio).filter(SolicitacaoPlantio.canteiro_id == canteiro_id).all()
+    return _pagina(
+        request,
+        db.query(SolicitacaoPlantio).filter(SolicitacaoPlantio.canteiro_id == canteiro_id),
+    )
 
 
 @router.post("/canteiros/{canteiro_id}/solicitacoes", response_model=SolicitacaoRead, status_code=201)

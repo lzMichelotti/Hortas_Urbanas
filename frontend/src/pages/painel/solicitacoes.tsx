@@ -291,7 +291,7 @@ export function SolicitacoesPage() {
             <>
               <DivisorCerca className="mt-6" />
               <section className="mt-4">
-                <p className="mb-3 font-pixel text-xs text-hu-muted">Respondidos</p>
+                <p className="mb-3 font-pixel text-xs text-hu-muted">Últimos respondidos</p>
                 <ul className="flex flex-col gap-2">
                   {respondidas.map((s) => {
                     const sprite = spriteProduto(nomeProduto(s.produto_id))
@@ -485,7 +485,7 @@ export function SolicitacoesPage() {
             <>
               <DivisorCerca className="mt-6" />
               <section className="mt-4">
-                <p className="mb-3 font-pixel text-xs text-hu-muted">Respondidos</p>
+                <p className="mb-3 font-pixel text-xs text-hu-muted">Últimos respondidos</p>
                 <ul className="flex flex-col gap-2">
                   {materiaisRespondidos.map((m) => {
                     const cfg = STATUS[m.status]

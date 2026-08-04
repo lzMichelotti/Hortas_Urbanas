@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from app.core.http import aplica_etag
 from app.database.session import get_db
 from app.database.enums import StatusPedido
 from app.database.models import Canteiro, Demanda, Usuario
@@ -28,6 +29,13 @@ CHEGA_A_ADMINISTRACAO = or_(
 )
 
 _STATUS_FINAIS = (StatusPedido.ATENDIDA.value, StatusPedido.CANCELADA.value)
+_EM_ABERTO = (StatusPedido.ABERTA.value, StatusPedido.EM_ATENDIMENTO.value)
+
+LIMITE_HISTORICO = 20
+
+# Lista muda a cada resposta do líder, então nada de max-age: o ETag devolve 304
+# quando não mudou, e o aparelho nunca mostra um pedido já respondido.
+_CACHE_LISTA = "private, no-cache"
 
 
 def aplicar_encaminhamento(pedido, encaminhada: bool):
@@ -42,8 +50,25 @@ def aplicar_encaminhamento(pedido, encaminhada: bool):
         pedido.encaminhada_em = datetime.now(timezone.utc)
 
 
+def abertos_e_historico(query, status, ordem, limite: int = LIMITE_HISTORICO):
+    """Tudo que está em aberto, mais os últimos encerrados.
+
+    Sem o corte a lista cresce para sempre: um ano de uso já são milhares de
+    linhas que o celular baixa, converte em objeto e desenha na tela toda vez.
+    """
+    abertos = query.filter(status.in_(_EM_ABERTO)).order_by(ordem.desc()).all()
+    encerrados = (
+        query.filter(status.notin_(_EM_ABERTO))
+        .order_by(ordem.desc())
+        .limit(limite)
+        .all()
+    )
+    return abertos + encerrados
+
+
 @router.get("/demandas", response_model=list[DemandaRead])
 def read_demandas(
+    request: Request,
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
@@ -53,12 +78,18 @@ def read_demandas(
         query = query.filter(Demanda.horta_id == horta_id)
     else:
         query = query.filter(CHEGA_A_ADMINISTRACAO)
-    return query.all()
+
+    payload = [
+        DemandaRead.model_validate(d)
+        for d in abertos_e_historico(query, Demanda.status, Demanda.id)
+    ]
+    return aplica_etag(request, payload, cache_control=_CACHE_LISTA)
 
 
 @router.get("/canteiros/{canteiro_id}/demandas", response_model=list[DemandaRead])
 def read_demandas_do_canteiro(
     canteiro_id: int,
+    request: Request,
     db: DBDep,
     usuario: Annotated[Usuario, Depends(get_current_user)],
 ):
@@ -69,7 +100,12 @@ def read_demandas_do_canteiro(
     exigir_acesso_horta(usuario, canteiro.horta_id)
     exigir_dono_do_canteiro(usuario, canteiro)
 
-    return db.query(Demanda).filter(Demanda.canteiro_id == canteiro_id).all()
+    query = db.query(Demanda).filter(Demanda.canteiro_id == canteiro_id)
+    payload = [
+        DemandaRead.model_validate(d)
+        for d in abertos_e_historico(query, Demanda.status, Demanda.id)
+    ]
+    return aplica_etag(request, payload, cache_control=_CACHE_LISTA)
 
 
 @router.post("/canteiros/{canteiro_id}/demandas", response_model=DemandaRead, status_code=201)

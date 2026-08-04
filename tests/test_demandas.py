@@ -192,6 +192,96 @@ class TestEncaminharAoAdmin:
         assert depois["demandas"]["abertas"] == 1
 
 
+class TestListaLimitada:
+    def _encerrar(self, client, headers, horta_id, demanda_id):
+        client.patch(
+            f"/hortas/{horta_id}/demandas/{demanda_id}/status",
+            json={"status": "ATENDIDA"},
+            headers=headers,
+        )
+
+    def test_abertos_sempre_voltam_historico_e_cortado(
+        self, client, membro, membro_headers, lider_headers, horta
+    ):
+        from app.routers.demandas import LIMITE_HISTORICO
+
+        canteiro_id = membro["canteiro"].id
+        encerradas = []
+        for i in range(LIMITE_HISTORICO + 8):
+            d = client.post(
+                f"/canteiros/{canteiro_id}/demandas",
+                json={
+                    "tipo_demanda": "material",
+                    "descricao": f"Pedido {i}",
+                    "quantidade": 1,
+                    "unidade_medida": "un",
+                },
+                headers=membro_headers,
+            ).json()
+            self._encerrar(client, lider_headers, horta.id, d["id"])
+            encerradas.append(d["id"])
+
+        abertas = [
+            client.post(
+                f"/canteiros/{canteiro_id}/demandas",
+                json={
+                    "tipo_demanda": "material",
+                    "descricao": f"Aberta {i}",
+                    "quantidade": 1,
+                    "unidade_medida": "un",
+                },
+                headers=membro_headers,
+            ).json()["id"]
+            for i in range(3)
+        ]
+
+        lista = client.get("/demandas", headers=lider_headers).json()
+        ids = [d["id"] for d in lista]
+
+        assert set(abertas).issubset(ids)
+        assert len(lista) == len(abertas) + LIMITE_HISTORICO
+        assert set(encerradas[-LIMITE_HISTORICO:]).issubset(ids)
+        assert encerradas[0] not in ids
+
+    def test_lista_do_canteiro_tambem_e_limitada(
+        self, client, membro, membro_headers, lider_headers, horta
+    ):
+        from app.routers.demandas import LIMITE_HISTORICO
+
+        canteiro_id = membro["canteiro"].id
+        for i in range(LIMITE_HISTORICO + 5):
+            d = client.post(
+                f"/canteiros/{canteiro_id}/demandas",
+                json={
+                    "tipo_demanda": "material",
+                    "descricao": f"Pedido {i}",
+                    "quantidade": 1,
+                    "unidade_medida": "un",
+                },
+                headers=membro_headers,
+            ).json()
+            self._encerrar(client, lider_headers, horta.id, d["id"])
+
+        lista = client.get(f"/canteiros/{canteiro_id}/demandas", headers=membro_headers).json()
+        assert len(lista) == LIMITE_HISTORICO
+
+    def test_revisita_sem_mudanca_devolve_304(self, client, lider_headers, pedido):
+        primeira = client.get("/demandas", headers=lider_headers)
+        etag = primeira.headers["ETag"]
+        segunda = client.get("/demandas", headers={**lider_headers, "If-None-Match": etag})
+        assert segunda.status_code == 304
+
+    def test_responder_muda_o_etag(self, client, lider_headers, horta, pedido):
+        etag = client.get("/demandas", headers=lider_headers).headers["ETag"]
+        client.patch(
+            f"/hortas/{horta.id}/demandas/{pedido['id']}/status",
+            json={"status": "EM_ATENDIMENTO"},
+            headers=lider_headers,
+        )
+        depois = client.get("/demandas", headers={**lider_headers, "If-None-Match": etag})
+        assert depois.status_code == 200
+
+
 @pytest.fixture
 def produto(db):
     from app.database.models import Produto
