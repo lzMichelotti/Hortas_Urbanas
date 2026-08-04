@@ -4,6 +4,7 @@ import { useMeuCanteiro } from "@/features/canteiro/use-meu-canteiro"
 import { SemCanteiro } from "@/features/canteiro/sem-canteiro"
 import { useProdutos } from "@/features/produtos/use-produtos"
 import { useNomeProduto } from "@/features/produtos/use-nome-produto"
+import { SpriteProduto } from "@/features/produtos/sprite-produto"
 import {
   useCancelarSolicitacao,
   useCriarSolicitacao,
@@ -303,8 +304,9 @@ export function ComunidadePage() {
                       key={p.id}
                       type="button"
                       onClick={() => escolherProduto(p.id, p.nome)}
-                      className="rounded-lg border-2 border-hu-soft p-3 text-left text-sm text-hu-text transition-colors hover:bg-black/5 active:scale-95"
+                      className="flex flex-col items-center gap-1.5 rounded-lg border-2 border-hu-soft p-3 text-center text-sm leading-tight text-hu-text transition-colors hover:bg-black/5 active:scale-95"
                     >
+                      <SpriteProduto nome={p.nome} className="size-7 shrink-0" />
                       {p.nome}
                     </button>
                   ))}
@@ -517,9 +519,12 @@ export function ComunidadePage() {
               return (
                 <li key={`p${s.id}`} className="rounded-2xl border-4 border-hu-bright bg-hu-panel p-4 text-hu-text">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-bold">{nomeProduto(s.produto_id)}</p>
-                      <p className="mt-0.5 text-sm text-hu-muted">Planta</p>
+                    <div className="flex min-w-0 items-start gap-2">
+                      <SpriteProduto nome={nomeProduto(s.produto_id)} className="size-8 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-bold">{nomeProduto(s.produto_id)}</p>
+                        <p className="mt-0.5 text-sm text-hu-muted">Planta</p>
+                      </div>
                     </div>
                     <ChipStatus info={STATUS[s.status]} />
                   </div>
@@ -600,9 +605,12 @@ export function ComunidadePage() {
               return (
                 <li key={`p${s.id}`} className="rounded-2xl border-4 border-hu-soft bg-hu-panel p-4 text-hu-text">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-bold">{nomeProduto(s.produto_id)}</p>
-                      <p className="mt-0.5 text-sm text-hu-muted">Planta</p>
+                    <div className="flex min-w-0 items-start gap-2">
+                      <SpriteProduto nome={nomeProduto(s.produto_id)} className="size-8 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-bold">{nomeProduto(s.produto_id)}</p>
+                        <p className="mt-0.5 text-sm text-hu-muted">Planta</p>
+                      </div>
                     </div>
                     <ChipStatus info={STATUS[s.status]} />
                   </div>
