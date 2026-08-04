@@ -124,3 +124,15 @@ class FeedRead(BaseModel):
 class LikeRead(BaseModel):
     likes_count: int
     eu_curti: bool
+
+
+class DenunciaRead(BaseModel):
+    """Fila de moderação. `trecho` é o começo do texto denunciado — o bastante
+    para decidir na lista sem carregar o post inteiro."""
+    id: int
+    post_id: Optional[int] = None
+    resposta_id: Optional[int] = None
+    trecho: str
+    autor: Optional[AutorRead] = None
+    motivo: Optional[str] = None
+    criado_em: datetime

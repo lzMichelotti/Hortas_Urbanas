@@ -5,14 +5,14 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.database.session import get_db
-from app.database.models import Post, PostImagem, Resposta, Denuncia, Curtida, Usuario
+from app.database.models import Post, PostImagem, Resposta, Denuncia, Curtida, Horta, Usuario
 from app.database.enums import TipoPost
 from app.core import storage
 from app.core.config import settings
-from app.dependencies import get_current_user, get_current_user_opcional
+from app.dependencies import get_admin_user, get_current_user, get_current_user_opcional
 from app.permissions import exigir_dono_ou_moderador
 from app.schemas.forum import (
-    PostCreate, RespostaCreate, DenunciaCreate,
+    PostCreate, RespostaCreate, DenunciaCreate, DenunciaRead,
     PresignRequest, PresignResponse, ConfirmRequest,
     AutorRead, PostRead, PostImagemRead, PostDetalhe, RespostaRead, FeedRead, LikeRead,
 )
@@ -24,6 +24,9 @@ UserDep = Annotated[Usuario, Depends(get_current_user)]
 UserOpcionalDep = Annotated[Optional[Usuario], Depends(get_current_user_opcional)]
 
 _AUTOR_COM_HORTA = joinedload(Post.autor).joinedload(Usuario.horta)
+
+LIMITE_DENUNCIAS = 100
+MAX_TRECHO = 280
 
 
 def _autor(u: Optional[Usuario]) -> Optional[AutorRead]:
@@ -273,6 +276,41 @@ def apagar_resposta(id: int, db: DBDep, usuario: UserDep):
     db.commit()
 
 
+@router.get("/denuncias", response_model=list[DenunciaRead])
+def listar_denuncias(db: DBDep, _: Annotated[Usuario, Depends(get_admin_user)]):
+    autor_id = func.coalesce(Post.autor_id, Resposta.autor_id)
+    linhas = (
+        db.query(
+            Denuncia,
+            func.coalesce(Post.conteudo, Resposta.conteudo).label("conteudo"),
+            Usuario,
+            Horta.nome.label("horta"),
+            func.coalesce(Post.id, Resposta.post_id).label("post_id"),
+        )
+        .outerjoin(Post, Post.id == Denuncia.post_id)
+        .outerjoin(Resposta, Resposta.id == Denuncia.resposta_id)
+        .outerjoin(Usuario, Usuario.id == autor_id)
+        .outerjoin(Horta, Horta.id == Usuario.horta_id)
+        .order_by(Denuncia.id.desc())
+        .limit(LIMITE_DENUNCIAS)
+        .all()
+    )
+    return [
+        DenunciaRead(
+            id=d.id,
+            post_id=post_id,
+            resposta_id=d.resposta_id,
+            trecho=(conteudo or "")[:MAX_TRECHO],
+            autor=AutorRead(
+                id=autor.id, nome=autor.nome, avatar=autor.avatar, horta=horta
+            ) if autor else None,
+            motivo=d.motivo,
+            criado_em=d.criado_em,
+        )
+        for d, conteudo, autor, horta, post_id in linhas
+    ]
+
+
 @router.post("/posts/{id}/denuncia", status_code=201)
 def denunciar_post(id: int, denuncia: DenunciaCreate, db: DBDep, usuario: UserDep):
     if not db.query(Post.id).filter(Post.id == id).first():
@@ -280,6 +318,17 @@ def denunciar_post(id: int, denuncia: DenunciaCreate, db: DBDep, usuario: UserDe
     db.add(Denuncia(post_id=id, denunciante_id=usuario.id, motivo=denuncia.motivo))
     db.commit()
     return {"detail": "Denúncia registrada."}
+
+
+@router.delete("/denuncias/{id}", status_code=204)
+def arquivar_denuncia(id: int, db: DBDep, _: Annotated[Usuario, Depends(get_admin_user)]):
+    """Denúncia analisada e sem providência. Apagar o conteúdo denunciado já
+    limpa a fila sozinho, via CASCADE — isto aqui é para o caso de manter o post."""
+    denuncia = db.query(Denuncia).filter(Denuncia.id == id).first()
+    if not denuncia:
+        raise HTTPException(status_code=404, detail="Denúncia não encontrada.")
+    db.delete(denuncia)
+    db.commit()
 
 
 @router.post("/respostas/{id}/denuncia", status_code=201)

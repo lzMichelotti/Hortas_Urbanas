@@ -385,3 +385,53 @@ class TestImagens:
         _add_imagem(client, ana_headers, post["id"], fake_r2)
         assert client.delete(f"/forum/posts/{post['id']}", headers=ana_headers).status_code == 204
         assert db.query(PostImagem).count() == 0
+
+
+class TestFilaDeModeracao:
+    def test_lista_denuncia_de_post_e_de_resposta(self, client, ana_headers, bruno_headers, admin_headers):
+        post = _criar_post(client, ana_headers, "Conteúdo do post")
+        client.post(f"/forum/posts/{post['id']}/denuncia", headers=bruno_headers, json={"motivo": "spam"})
+        resp = client.post(
+            f"/forum/posts/{post['id']}/respostas", headers=ana_headers, json={"conteudo": "Resposta da Ana"}
+        ).json()
+        client.post(f"/forum/respostas/{resp['id']}/denuncia", headers=bruno_headers, json={})
+
+        r = client.get("/forum/denuncias", headers=admin_headers)
+        assert r.status_code == 200, r.json()
+        fila = r.json()
+        assert len(fila) == 2
+
+        da_resposta, do_post = fila  # mais recente primeiro
+        assert da_resposta["resposta_id"] == resp["id"]
+        assert da_resposta["post_id"] == post["id"]  # abre o post que contém a resposta
+        assert da_resposta["trecho"] == "Resposta da Ana"
+        assert da_resposta["motivo"] is None
+        assert do_post["post_id"] == post["id"]
+        assert do_post["trecho"] == "Conteúdo do post"
+        assert do_post["motivo"] == "spam"
+        assert do_post["autor"]["nome"] == "Ana"
+        assert do_post["autor"]["horta"] == "Horta Fórum"
+
+    def test_fila_restrita_ao_admin(self, client, ana_headers, carla_headers):
+        assert client.get("/forum/denuncias", headers=carla_headers).status_code == 403
+        assert client.get("/forum/denuncias", headers=ana_headers).status_code == 403
+        assert client.get("/forum/denuncias").status_code == 401
+
+    def test_arquivar_tira_da_fila_e_mantem_o_post(self, client, ana_headers, bruno_headers, admin_headers):
+        post = _criar_post(client, ana_headers)
+        client.post(f"/forum/posts/{post['id']}/denuncia", headers=bruno_headers, json={})
+        denuncia = client.get("/forum/denuncias", headers=admin_headers).json()[0]
+
+        assert client.delete(f"/forum/denuncias/{denuncia['id']}", headers=admin_headers).status_code == 204
+        assert client.get("/forum/denuncias", headers=admin_headers).json() == []
+        assert client.get(f"/forum/posts/{post['id']}").status_code == 200
+
+    def test_arquivar_inexistente_404_e_membro_403(self, client, ana_headers, admin_headers):
+        assert client.delete("/forum/denuncias/9999", headers=admin_headers).status_code == 404
+        assert client.delete("/forum/denuncias/1", headers=ana_headers).status_code == 403
+
+    def test_apagar_conteudo_esvazia_a_fila(self, client, ana_headers, bruno_headers, admin_headers):
+        post = _criar_post(client, ana_headers)
+        client.post(f"/forum/posts/{post['id']}/denuncia", headers=bruno_headers, json={})
+        assert client.delete(f"/forum/posts/{post['id']}", headers=ana_headers).status_code == 204
+        assert client.get("/forum/denuncias", headers=admin_headers).json() == []

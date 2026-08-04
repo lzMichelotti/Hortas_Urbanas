@@ -22,7 +22,7 @@ export const queryClient = new QueryClient({
   },
 })
 
-const PERSIST_BUSTER = "2"
+const PERSIST_BUSTER = "3"
 
 export const persister = createAsyncStoragePersister({
   storage: window.localStorage,
@@ -30,8 +30,11 @@ export const persister = createAsyncStoragePersister({
   throttleTime: 1000,
 })
 
+// "admin-panorama" entra porque são poucos números e servem offline; o perfil dos
+// horticultores fica de fora de propósito — dado sensível não é gravado no aparelho.
 const CHAVES_PERSISTIDAS = new Set([
   "me", "produtos", "canteiros", "ciclos", "clima", "mapa", "forum", "horta",
+  "admin-panorama",
 ])
 
 export const persistOptions = {

@@ -123,16 +123,32 @@ export function MunicipioVitrine() {
       }`}
       style={TERRA}
     >
-      {ordenadas.map((h, i) => (
-        <HortaNaRoca
-          key={h.id}
-          horta={h}
-          situacao={conta(h.id)}
-          lider={liderDe.get(h.id)}
-          estagio={ESTAGIOS[i % ESTAGIOS.length]}
-          detalhado={detalhado}
-        />
-      ))}
+      {ordenadas.map((h, i) => {
+        const planta = (
+          <HortaNaRoca
+            horta={h}
+            situacao={conta(h.id)}
+            lider={liderDe.get(h.id)}
+            estagio={ESTAGIOS[i % ESTAGIOS.length]}
+            detalhado={detalhado}
+          />
+        )
+        // Só a roça em tela cheia é clicável — a miniatura atrás do botão é
+        // decorativa (aria-hidden) e não pode virar um link invisível ao toque.
+        return detalhado ? (
+          <Dialog.Close asChild key={h.id}>
+            <Link
+              to={`/painel/hortas/${h.id}`}
+              aria-label={`Ver a horta ${h.nome}`}
+              className="rounded-xl p-1 transition-transform hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80"
+            >
+              {planta}
+            </Link>
+          </Dialog.Close>
+        ) : (
+          <div key={h.id}>{planta}</div>
+        )
+      })}
     </div>
   )
 
@@ -184,6 +200,11 @@ export function MunicipioVitrine() {
           <div className="flex-1 overflow-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             <div className="mx-auto max-w-2xl">
               <MolduraCanteiro etiqueta="Hortas">{roca(true)}</MolduraCanteiro>
+
+              <p className="mt-3 text-center text-sm text-hu-muted">
+                Toque numa horta para ver os dados dela.
+              </p>
+
               <div className="mt-6 flex justify-center">
                 <Link
                   to="/painel/hortas"

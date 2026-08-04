@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { AlertTriangle } from "lucide-react"
+import { AlertTriangle, ClipboardList, Flag } from "lucide-react"
 import { useDemandas } from "@/features/demandas/use-demandas"
 import { MunicipioVitrine } from "@/features/hortas/municipio-vitrine"
 import { Cena, type Badges } from "@/features/home/cena/cena"
@@ -8,8 +8,10 @@ import { QuadroMenu, type OpcaoMenu } from "@/features/home/quadro-menu"
 
 // "Cadastrar horta" mora dentro de Hortas (botão no topo da lista) — sem atalho duplicado.
 const OPCOES_ADMIN: OpcaoMenu[] = [
+  { label: "Resumo", icon: ClipboardList, to: "/painel/resumo" },
   { label: "Hortas", img: "/minha-horta.png", to: "/painel/hortas" },
   { label: "Usuários", img: "/membros.png", to: "/painel/usuarios" },
+  { label: "Denúncias", icon: Flag, to: "/painel/moderacao" },
   { label: "Zonas de risco", icon: AlertTriangle, to: "/painel/riscos" },
   { label: "Mapa", img: "/mapa.png", to: "/mapa" },
 ]

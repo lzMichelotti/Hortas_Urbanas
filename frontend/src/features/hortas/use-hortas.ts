@@ -29,6 +29,8 @@ export function useAtualizarHorta() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["hortas"] })
       qc.invalidateQueries({ queryKey: ["mapa", "completo"] })
+      qc.invalidateQueries({ queryKey: ["admin-horta"] })
+      qc.invalidateQueries({ queryKey: ["admin-panorama"] })
     },
   })
 }
@@ -42,6 +44,8 @@ export function useDeletarHorta() {
       qc.invalidateQueries({ queryKey: ["hortas"] })
       qc.invalidateQueries({ queryKey: ["mapa", "completo"] })
       qc.invalidateQueries({ queryKey: ["usuarios"] })
+      qc.invalidateQueries({ queryKey: ["admin-horta"] })
+      qc.invalidateQueries({ queryKey: ["admin-panorama"] })
     },
   })
 }

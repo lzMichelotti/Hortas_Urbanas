@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 from app.routers import (
     auth, hortas, produtos, canteiros, ciclos,
     demandas, intencoes, usuarios, solicitacoes, zonas_risco, clima, forum,
+    painel_admin,
 )
 from app.core.config import settings
 from app.core.logger import logger  
@@ -80,3 +81,4 @@ app.include_router(usuarios.router)
 app.include_router(zonas_risco.router)
 app.include_router(clima.router)
 app.include_router(forum.router)
+app.include_router(painel_admin.router)

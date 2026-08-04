@@ -19,6 +19,10 @@ const CadastroHortaPage = lazyComRetry(() => import("@/pages/painel/cadastro-hor
 const HortasPage = lazyComRetry(() => import("@/pages/painel/hortas").then((m) => ({ default: m.HortasPage })))
 const HortaDetalhePage = lazyComRetry(() => import("@/pages/painel/horta-detalhe").then((m) => ({ default: m.HortaDetalhePage })))
 const UsuariosPage = lazyComRetry(() => import("@/pages/painel/usuarios").then((m) => ({ default: m.UsuariosPage })))
+const ResumoPage = lazyComRetry(() => import("@/pages/painel/resumo").then((m) => ({ default: m.ResumoPage })))
+const ProducaoPage = lazyComRetry(() => import("@/pages/painel/producao").then((m) => ({ default: m.ProducaoPage })))
+const HorticultoresPage = lazyComRetry(() => import("@/pages/painel/horticultores").then((m) => ({ default: m.HorticultoresPage })))
+const ModeracaoPage = lazyComRetry(() => import("@/pages/painel/moderacao").then((m) => ({ default: m.ModeracaoPage })))
 const MinhaHortaPage = lazyComRetry(() => import("@/pages/painel/minha-horta").then((m) => ({ default: m.MinhaHortaPage })))
 const PlaceholderPainel = lazyComRetry(() => import("@/components/placeholder-painel").then((m) => ({ default: m.PlaceholderPainel })))
 const PlantarPage = lazyComRetry(() => import("@/pages/painel/plantar").then((m) => ({ default: m.PlantarPage })))
@@ -69,6 +73,10 @@ function App() {
               <Route path="hortas" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><HortasPage /></RoleRoute>} />
               <Route path="hortas/:id" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><HortaDetalhePage /></RoleRoute>} />
               <Route path="usuarios" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><UsuariosPage /></RoleRoute>} />
+              <Route path="resumo" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><ResumoPage /></RoleRoute>} />
+              <Route path="producao" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><ProducaoPage /></RoleRoute>} />
+              <Route path="horticultores" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><HorticultoresPage /></RoleRoute>} />
+              <Route path="moderacao" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><ModeracaoPage /></RoleRoute>} />
               <Route path="riscos" element={<PlaceholderPainel titulo="Zonas de risco" />} />
               <Route path="config" element={<ConfiguracoesPage />} />
               <Route path="horta" element={<RoleRoute roles={["LIDER_HORTA"]}><MinhaHortaPage /></RoleRoute>} />
