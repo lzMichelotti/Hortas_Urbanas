@@ -19,3 +19,7 @@ test_r2.py
 scripts/importar_zonas_risco.py
 requirements-scripts.txt
 shp/
+
+# Prints candidatos para o README — área de triagem, fica só local.
+# As imagens escolhidas são copiadas para docs/screenshots/, essa sim versionada.
+docs/prints/

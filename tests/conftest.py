@@ -20,8 +20,8 @@ _TEST_DB_URL = os.environ.get("DATABASE_TEST_URL")
 def test_engine():
     if not _TEST_DB_URL:
         pytest.skip(
-            "TEST_DATABASE_URL não definida — defina para rodar testes de integração. "
-            "Ex: TEST_DATABASE_URL=postgresql://horta:horta1234@localhost:5435/horta_test"
+            "DATABASE_TEST_URL não definida — defina para rodar testes de integração. "
+            "Ex: DATABASE_TEST_URL=postgresql://horta:horta1234@localhost:5435/horta_test"
         )
     engine = create_engine(_TEST_DB_URL, pool_pre_ping=True)
     with engine.connect() as conn:
