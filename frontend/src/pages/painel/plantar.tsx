@@ -15,7 +15,7 @@ import {
 } from "@/features/produtos/colheita"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Aviso, Carregando, FalhaAoCarregar } from "@/components/feedback"
 import { FalaDaGuia } from "@/components/guia"
 import { type Estagio } from "@/components/plantinha"
 import { ArtePlanta, SpriteProduto } from "@/features/produtos/sprite-produto"
@@ -136,12 +136,10 @@ export function PlantarPage() {
   }
 
   if (canteiro.isPending) return <Carregando />
-  if (canteiro.isError) {
+  if (canteiro.isLoadingError) {
     return (
       <div className="mx-auto max-w-2xl">
-        <Aviso variante="erro" className="mt-6" aoTentarNovamente={() => canteiro.refetch()}>
-          Não foi possível carregar agora. Veja sua internet e tente de novo.
-        </Aviso>
+        <FalhaAoCarregar className="mt-6" />
       </div>
     )
   }

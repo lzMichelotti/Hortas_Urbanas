@@ -16,7 +16,7 @@ import { Voltar } from "@/components/voltar"
 import { dataBR as fmt } from "@/features/ciclos/status"
 import { Button } from "@/components/ui/button"
 import type { components } from "@/lib/api/schema"
-import { Aviso, Carregando, EstadoVazio } from "@/components/feedback"
+import { Aviso, Carregando, EstadoVazio, TelaFalhaAoCarregar } from "@/components/feedback"
 import { ConfirmacaoInline } from "@/components/confirmar"
 import { DivisorCerca } from "@/components/divisor-cerca"
 
@@ -93,6 +93,9 @@ export function SolicitacoesPage() {
 
   if (solicitacoes.isPending || canteiros.isPending) {
     return <Carregando />
+  }
+  if (solicitacoes.isLoadingError || canteiros.isLoadingError || demandas.isLoadingError) {
+    return <TelaFalhaAoCarregar />
   }
 
   const emAberto = (status: StatusPedido) => status === "ABERTA" || status === "EM_ATENDIMENTO"

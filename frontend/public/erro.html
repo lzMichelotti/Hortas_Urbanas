@@ -24,11 +24,34 @@
       }
       h1 { margin: 0; font-size: 1.6rem; }
       p { margin: 0; max-width: 22rem; font-size: 1.15rem; line-height: 1.5; color: #9db3a2; }
+      button {
+        margin-top: 0.5rem;
+        min-height: 3.5rem;
+        padding: 0 2rem;
+        border: 0;
+        border-radius: 0.75rem;
+        background: #5cb860;
+        color: #121a14;
+        font: inherit;
+        font-size: 1.15rem;
+        font-weight: 700;
+      }
+      button:disabled { opacity: 0.6; }
     </style>
   </head>
   <body>
     <div style="font-size: 3.5rem" aria-hidden="true">🌱</div>
     <h1>Não foi possível abrir</h1>
-    <p>Veja se o seu celular está com internet, feche o aplicativo e abra de novo.</p>
+    <p>Veja se o seu celular está com internet e toque no botão abaixo.</p>
+    <button type="button" id="tentar">Tentar de novo</button>
+    <script>
+      // Esta página vem do APK (https://localhost), sem a bridge do Capacitor:
+      // reload() só recarregaria o próprio erro. Mesma URL de server.url.
+      document.getElementById("tentar").addEventListener("click", function () {
+        this.disabled = true
+        this.textContent = "Carregando…"
+        location.replace("https://app.hortasurbanassm.com.br/")
+      })
+    </script>
   </body>
 </html>

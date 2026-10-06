@@ -6,7 +6,7 @@ import { SemCanteiro } from "@/features/canteiro/sem-canteiro"
 import { useCiclos } from "@/features/ciclos/use-ciclos"
 import { estagioDe, progresso } from "@/features/ciclos/crescimento"
 import { useNomeProduto } from "@/features/produtos/use-nome-produto"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Carregando, FalhaAoCarregar } from "@/components/feedback"
 import { ArtePlanta } from "@/features/produtos/sprite-produto"
 import { TERRA } from "@/features/canteiro/terra"
 import { ATIVOS } from "@/features/ciclos/status"
@@ -93,12 +93,8 @@ export function CanteiroGrade({
   const nomeProduto = useNomeProduto()
 
   if (canteiro.isPending) return <Carregando />
-  if (canteiro.isError) {
-    return (
-      <Aviso variante="erro" className="mt-2" aoTentarNovamente={() => canteiro.refetch()}>
-        Não foi possível carregar agora. Veja sua internet e tente de novo.
-      </Aviso>
-    )
+  if (canteiro.isLoadingError || ciclos.isLoadingError) {
+    return <FalhaAoCarregar className="mt-2" />
   }
   if (!canteiro.data) return <SemCanteiro className="mt-2" />
 

@@ -3,7 +3,7 @@ import { useHorticultores } from "@/features/admin/use-painel-admin"
 import { Barra, Cartao, Numero } from "@/features/admin/blocos"
 import { RACAS, SEXOS } from "@/features/usuarios/horticultor"
 import { Voltar } from "@/components/voltar"
-import { Aviso, Carregando, EstadoVazio } from "@/components/feedback"
+import { Carregando, EstadoVazio, TelaFalhaAoCarregar } from "@/components/feedback"
 import { plural } from "@/lib/utils"
 
 const FAIXAS: Record<string, string> = {
@@ -21,15 +21,8 @@ export function HorticultoresPage() {
 
   if (perfil.isPending) return <Carregando />
 
-  if (perfil.isError || !perfil.data) {
-    return (
-      <div className="mx-auto max-w-2xl">
-        <Voltar />
-        <Aviso variante="erro" className="mt-6" aoTentarNovamente={() => perfil.refetch()}>
-          Não foi possível carregar os dados. Veja sua internet e tente de novo.
-        </Aviso>
-      </div>
-    )
+  if (perfil.isLoadingError || !perfil.data) {
+    return <TelaFalhaAoCarregar />
   }
 
   const p = perfil.data

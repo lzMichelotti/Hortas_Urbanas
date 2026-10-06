@@ -7,7 +7,7 @@ import { SpriteProduto } from "@/features/produtos/sprite-produto"
 import { Voltar } from "@/components/voltar"
 import { dataBR as fmt } from "@/features/ciclos/status"
 import { Button } from "@/components/ui/button"
-import { Aviso, Carregando, EstadoVazio } from "@/components/feedback"
+import { Aviso, Carregando, EstadoVazio, TelaFalhaAoCarregar } from "@/components/feedback"
 
 
 export function ColherPage() {
@@ -18,15 +18,8 @@ export function ColherPage() {
   const [colhido, setColhido] = useState<string | null>(null)
 
   if (canteiro.isPending) return <Carregando />
-  if (canteiro.isError) {
-    return (
-      <div className="mx-auto max-w-2xl">
-        <Voltar />
-        <Aviso variante="erro" className="mt-6" aoTentarNovamente={() => canteiro.refetch()}>
-          Não foi possível carregar agora. Veja sua internet e tente de novo.
-        </Aviso>
-      </div>
-    )
+  if (canteiro.isLoadingError) {
+    return <TelaFalhaAoCarregar />
   }
   if (!canteiro.data) {
     return (
@@ -37,6 +30,7 @@ export function ColherPage() {
     )
   }
   if (ciclos.isPending) return <Carregando />
+  if (ciclos.isLoadingError) return <TelaFalhaAoCarregar />
 
   const prontos = (ciclos.data ?? []).filter((c) => c.status === "PRONTO_PARA_COLHEITA")
 

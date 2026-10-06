@@ -4,7 +4,7 @@ import { useProducao } from "@/features/admin/use-painel-admin"
 import { Barra, Cartao } from "@/features/admin/blocos"
 import { rotuloMotivo, type Motivo } from "@/features/ciclos/motivos"
 import { Voltar } from "@/components/voltar"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Carregando, TelaFalhaAoCarregar } from "@/components/feedback"
 import { cn, plural } from "@/lib/utils"
 
 const PERIODOS = [
@@ -51,15 +51,8 @@ export function ProducaoPage() {
 
   if (producao.isPending) return <Carregando />
 
-  if (producao.isError || !producao.data) {
-    return (
-      <div className="mx-auto max-w-2xl">
-        <Voltar />
-        <Aviso variante="erro" className="mt-6" aoTentarNovamente={() => producao.refetch()}>
-          Não foi possível carregar a produção. Veja sua internet e tente de novo.
-        </Aviso>
-      </div>
-    )
+  if (producao.isLoadingError || !producao.data) {
+    return <TelaFalhaAoCarregar />
   }
 
   const d = producao.data

@@ -7,7 +7,7 @@ import { useNomeProduto } from "@/features/produtos/use-nome-produto"
 import { Voltar } from "@/components/voltar"
 import { Button } from "@/components/ui/button"
 import type { components } from "@/lib/api/schema"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Aviso, Carregando, TelaFalhaAoCarregar } from "@/components/feedback"
 import { EscolherMotivoPerda } from "@/features/ciclos/motivo-perda"
 import { rotuloMotivo } from "@/features/ciclos/motivos"
 import { STATUS, dataBR } from "@/features/ciclos/status"
@@ -40,15 +40,8 @@ export function CalendarioPage() {
   const [confirmarPerdaId, setConfirmarPerdaId] = useState<number | null>(null)
 
   if (canteiro.isPending) return <Carregando />
-  if (canteiro.isError) {
-    return (
-      <div className="mx-auto max-w-2xl">
-        <Voltar />
-        <Aviso variante="erro" className="mt-6" aoTentarNovamente={() => canteiro.refetch()}>
-          Não foi possível carregar agora. Veja sua internet e tente de novo.
-        </Aviso>
-      </div>
-    )
+  if (canteiro.isLoadingError) {
+    return <TelaFalhaAoCarregar />
   }
   if (!canteiro.data) {
     return (
@@ -59,6 +52,7 @@ export function CalendarioPage() {
     )
   }
   if (ciclos.isPending) return <Carregando />
+  if (ciclos.isLoadingError) return <TelaFalhaAoCarregar />
 
   const ativos = (ciclos.data ?? []).filter((c) => c.status !== "COLHIDO" && c.status !== "PERDIDO")
   const finalizados = (ciclos.data ?? []).filter((c) => c.status === "COLHIDO" || c.status === "PERDIDO")

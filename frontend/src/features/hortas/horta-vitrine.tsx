@@ -8,7 +8,7 @@ import { HortaGrade } from "@/features/hortas/horta-grade"
 import { FolhaCanteiro } from "@/features/hortas/folha-canteiro"
 import { DetalhesDaHorta } from "@/features/hortas/detalhes-horta"
 import { MolduraCanteiro } from "@/features/canteiro/decoracoes"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Carregando, FalhaAoCarregar } from "@/components/feedback"
 
 export function HortaVitrine() {
   const [aberto, setAberto] = useState(false)
@@ -19,12 +19,8 @@ export function HortaVitrine() {
   const lista = produtividade.data ?? []
 
   if (me.isPending || produtividade.isPending) return <Carregando />
-  if (produtividade.isError) {
-    return (
-      <Aviso variante="erro" aoTentarNovamente={() => produtividade.refetch()}>
-        Não foi possível carregar sua horta. Veja sua internet e tente de novo.
-      </Aviso>
-    )
+  if (produtividade.isLoadingError) {
+    return <FalhaAoCarregar />
   }
 
   if (lista.length === 0) {

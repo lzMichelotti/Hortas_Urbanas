@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { CircleAlert, CircleCheck, Info, RotateCcw } from "lucide-react"
+import { Voltar } from "@/components/voltar"
 import { cn } from "@/lib/utils"
 
 export function Carregando({
@@ -103,6 +104,32 @@ export function Aviso({
           {rotuloTentar}
         </button>
       )}
+    </div>
+  )
+}
+
+// Recarregar a página (e não só refazer a busca) destrava qualquer estado preso, e é
+// barato: JS/CSS vêm do cache do service worker e os dados salvos são restaurados.
+function recarregar() {
+  window.location.reload()
+}
+
+const MSG_FALHA_AO_CARREGAR = "Não foi possível carregar agora. Veja sua internet e tente de novo."
+
+// Só para quando não há nada salvo para mostrar (query.isLoadingError).
+export function FalhaAoCarregar({ className }: { className?: string }) {
+  return (
+    <Aviso variante="erro" className={className} aoTentarNovamente={recarregar}>
+      {MSG_FALHA_AO_CARREGAR}
+    </Aviso>
+  )
+}
+
+export function TelaFalhaAoCarregar({ voltarPara }: { voltarPara?: string }) {
+  return (
+    <div className="mx-auto max-w-2xl">
+      <Voltar to={voltarPara} />
+      <FalhaAoCarregar className="mt-6" />
     </div>
   )
 }

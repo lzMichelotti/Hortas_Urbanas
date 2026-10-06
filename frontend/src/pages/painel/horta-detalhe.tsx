@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plantinha } from "@/components/plantinha"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Aviso, Carregando, TelaFalhaAoCarregar } from "@/components/feedback"
 import { endereco, plural } from "@/lib/utils"
 import { dataCurta } from "@/lib/tempo"
 
@@ -41,15 +41,8 @@ export function HortaDetalhePage() {
 
   if (ficha.isPending) return <Carregando />
 
-  if (ficha.isError || !ficha.data) {
-    return (
-      <div className="mx-auto max-w-2xl">
-        <Voltar to="/painel/hortas" />
-        <Aviso variante="erro" className="mt-6" aoTentarNovamente={() => ficha.refetch()}>
-          Não foi possível carregar esta horta. Veja sua internet e tente de novo.
-        </Aviso>
-      </div>
-    )
+  if (ficha.isLoadingError || !ficha.data) {
+    return <TelaFalhaAoCarregar voltarPara="/painel/hortas" />
   }
 
   const f = ficha.data

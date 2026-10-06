@@ -8,7 +8,7 @@ import { useUsuarios } from "@/features/usuarios/use-usuarios"
 import { MolduraCanteiro } from "@/features/canteiro/decoracoes"
 import { TERRA } from "@/features/canteiro/terra"
 import { Plantinha, type Estagio } from "@/components/plantinha"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Carregando, FalhaAoCarregar } from "@/components/feedback"
 
 type Horta = NonNullable<ReturnType<typeof useHortas>["data"]>[number]
 interface Situacao {
@@ -72,12 +72,8 @@ export function MunicipioVitrine() {
   const usuarios = useUsuarios()
 
   if (hortas.isPending || demandas.isPending || usuarios.isPending) return <Carregando />
-  if (hortas.isError) {
-    return (
-      <Aviso variante="erro" aoTentarNovamente={() => hortas.refetch()}>
-        Não foi possível carregar as hortas. Veja sua internet e tente de novo.
-      </Aviso>
-    )
+  if (hortas.isLoadingError) {
+    return <FalhaAoCarregar />
   }
 
   const lista = hortas.data ?? []

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { components } from "@/lib/api/schema"
-import { Aviso, Carregando, EstadoVazio } from "@/components/feedback"
+import { Aviso, Carregando, EstadoVazio, TelaFalhaAoCarregar } from "@/components/feedback"
 import { ConfirmacaoInline } from "@/components/confirmar"
 import { DivisorCerca } from "@/components/divisor-cerca"
 
@@ -174,6 +174,9 @@ export function MembrosPage() {
 
   if (me.isPending || canteiros.isPending || usuarios.isPending) {
     return <Carregando />
+  }
+  if (me.isLoadingError || canteiros.isLoadingError || usuarios.isLoadingError) {
+    return <TelaFalhaAoCarregar />
   }
 
   return (

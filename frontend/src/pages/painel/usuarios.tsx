@@ -8,7 +8,7 @@ import { Voltar } from "@/components/voltar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Aviso, Carregando, TelaFalhaAoCarregar } from "@/components/feedback"
 import type { components } from "@/lib/api/schema"
 
 type Usuario = components["schemas"]["UsuarioRead"]
@@ -100,15 +100,8 @@ export function UsuariosPage() {
 
   if (usuarios.isPending) return <Carregando />
 
-  if (usuarios.isError) {
-    return (
-      <div className="mx-auto max-w-2xl">
-        <Voltar />
-        <Aviso variante="erro" className="mt-6" aoTentarNovamente={() => usuarios.refetch()}>
-          Não foi possível carregar os usuários. Veja sua internet e tente de novo.
-        </Aviso>
-      </div>
-    )
+  if (usuarios.isLoadingError) {
+    return <TelaFalhaAoCarregar />
   }
 
   const total = usuarios.data?.length ?? 0

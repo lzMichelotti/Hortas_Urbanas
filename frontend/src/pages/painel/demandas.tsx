@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { components } from "@/lib/api/schema"
-import { Aviso, Carregando, EstadoVazio } from "@/components/feedback"
+import { Aviso, Carregando, EstadoVazio, TelaFalhaAoCarregar } from "@/components/feedback"
 import { ConfirmacaoInline } from "@/components/confirmar"
 import { DivisorCerca } from "@/components/divisor-cerca"
 import { dataCurta } from "@/lib/tempo"
@@ -97,6 +97,9 @@ export function DemandasPage() {
 
   if (me.isPending || demandas.isPending) {
     return <Carregando />
+  }
+  if (me.isLoadingError || demandas.isLoadingError) {
+    return <TelaFalhaAoCarregar />
   }
 
   const proprias = (demandas.data ?? []).filter((d) => d.canteiro_id == null)

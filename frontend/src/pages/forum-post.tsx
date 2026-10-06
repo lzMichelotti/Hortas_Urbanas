@@ -14,7 +14,7 @@ import { Avatar, BotaoCurtir, GaleriaFotos } from "@/features/forum/ui"
 import { isAuthenticated } from "@/lib/auth/session"
 import { ApiError } from "@/lib/api/errors"
 import { tempoRelativo, dataCompleta } from "@/lib/tempo"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Aviso, Carregando, FalhaAoCarregar } from "@/components/feedback"
 import { ConfirmacaoInline } from "@/components/confirmar"
 import { Button } from "@/components/ui/button"
 import { Voltar } from "@/components/voltar"
@@ -206,24 +206,16 @@ export function ForumPostPage() {
 
         {post.isPending && <Carregando className="mt-6" />}
 
-        {post.isError && (
-          <Aviso
-            variante="erro"
-            className="mt-6"
-            aoTentarNovamente={naoExiste ? undefined : () => post.refetch()}
-          >
-            {naoExiste ? (
-              <>
-                Este post não existe mais.{" "}
-                <Link to="/forum" className="font-bold underline">
-                  Voltar à comunidade
-                </Link>
-                .
-              </>
-            ) : (
-              "Não foi possível carregar. Veja sua internet e tente de novo."
-            )}
+        {naoExiste ? (
+          <Aviso variante="erro" className="mt-6">
+            Este post não existe mais.{" "}
+            <Link to="/forum" className="font-bold underline">
+              Voltar à comunidade
+            </Link>
+            .
           </Aviso>
+        ) : (
+          post.isLoadingError && <FalhaAoCarregar className="mt-6" />
         )}
 
         {post.data && (

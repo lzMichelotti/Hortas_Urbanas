@@ -2,7 +2,7 @@ import { Flag, Leaf, Package, Sprout, Users } from "lucide-react"
 import { usePanorama } from "@/features/admin/use-painel-admin"
 import { Atalho, Cartao, Fala, Numero } from "@/features/admin/blocos"
 import { Voltar } from "@/components/voltar"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Carregando, TelaFalhaAoCarregar } from "@/components/feedback"
 import { plural } from "@/lib/utils"
 
 const m2 = (v: number) => `${v.toLocaleString("pt-BR")} m²`
@@ -12,15 +12,8 @@ export function ResumoPage() {
 
   if (panorama.isPending) return <Carregando />
 
-  if (panorama.isError || !panorama.data) {
-    return (
-      <div className="mx-auto max-w-2xl">
-        <Voltar />
-        <Aviso variante="erro" className="mt-6" aoTentarNovamente={() => panorama.refetch()}>
-          Não foi possível carregar o resumo. Veja sua internet e tente de novo.
-        </Aviso>
-      </div>
-    )
+  if (panorama.isLoadingError || !panorama.data) {
+    return <TelaFalhaAoCarregar />
   }
 
   const p = panorama.data

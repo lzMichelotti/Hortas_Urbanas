@@ -395,8 +395,8 @@ export function MapaPage() {
           <span role="status" aria-live="polite" className="hidden text-xs text-hu-text/80 sm:inline">
             {completo.isPending
               ? "Carregando hortas…"
-              : completo.isError
-                ? "Erro ao carregar — tente recarregar"
+              : completo.isLoadingError
+                ? <BotaoRecarregar />
                 : `${resumo.total} horta(s)${resumo.dentro > 0 ? ` · ${resumo.dentro} em risco` : ""}${resumo.alerta > 0 ? ` · ${resumo.alerta} em alerta` : ""}`}
           </span>
           {/* Mobile: status compacto sempre visível (carregando/erro/contagem) */}
@@ -406,8 +406,8 @@ export function MapaPage() {
                 <span className="hu-spin size-3.5 rounded-full border-2 border-hu-soft border-t-hu-bright" aria-hidden />
                 hortas…
               </>
-            ) : completo.isError ? (
-              "erro — recarregue"
+            ) : completo.isLoadingError ? (
+              <BotaoRecarregar />
             ) : (
               `${resumo.total} hortas`
             )}
@@ -464,5 +464,13 @@ export function MapaPage() {
 
       <ClimaWidget />
     </div>
+  )
+}
+
+function BotaoRecarregar() {
+  return (
+    <button type="button" onClick={() => window.location.reload()} className="font-bold underline">
+      Não carregou — tentar de novo
+    </button>
   )
 }

@@ -6,7 +6,7 @@ import { escolherDaGaleria, tirarFoto, MAX_FOTOS } from "@/features/forum/fotos"
 import { Avatar, BotaoCurtir, GaleriaFotos, MiniPrevia } from "@/features/forum/ui"
 import { isAuthenticated } from "@/lib/auth/session"
 import { tempoRelativo, dataCompleta } from "@/lib/tempo"
-import { Aviso, Carregando, EstadoVazio } from "@/components/feedback"
+import { Carregando, EstadoVazio, FalhaAoCarregar } from "@/components/feedback"
 import { Button } from "@/components/ui/button"
 
 const MAX = 2000
@@ -132,7 +132,7 @@ function BarraPostar() {
 export function ForumPage() {
   const feed = useFeed()
   const posts = feed.data?.pages.flatMap((p) => p.items) ?? []
-  const vazio = !feed.isPending && !feed.isError && posts.length === 0
+  const vazio = !feed.isPending && !feed.isLoadingError && posts.length === 0
 
   return (
     <div className="flex h-svh flex-col bg-hu-bg">
@@ -141,11 +141,7 @@ export function ForumPage() {
       <main className="flex-1 overflow-y-auto px-4 py-4">
         {feed.isPending && <Carregando className="mt-6" />}
 
-        {feed.isError && (
-          <Aviso variante="erro" className="mt-6" aoTentarNovamente={() => feed.refetch()}>
-            Não foi possível carregar a comunidade. Veja sua internet e tente de novo.
-          </Aviso>
-        )}
+        {feed.isLoadingError && <FalhaAoCarregar className="mt-6" />}
 
         {vazio && (
           <EstadoVazio ilustracao="/personagem-crianca.webp">

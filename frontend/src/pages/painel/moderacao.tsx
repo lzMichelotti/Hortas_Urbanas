@@ -5,7 +5,7 @@ import { useArquivarDenuncia, useDenuncias } from "@/features/admin/use-painel-a
 import { Voltar } from "@/components/voltar"
 import { Button } from "@/components/ui/button"
 import { ConfirmacaoInline } from "@/components/confirmar"
-import { Aviso, Carregando, EstadoVazio } from "@/components/feedback"
+import { Aviso, Carregando, EstadoVazio, TelaFalhaAoCarregar } from "@/components/feedback"
 import { tempoRelativo } from "@/lib/tempo"
 
 export function ModeracaoPage() {
@@ -15,15 +15,8 @@ export function ModeracaoPage() {
 
   if (denuncias.isPending) return <Carregando />
 
-  if (denuncias.isError) {
-    return (
-      <div className="mx-auto max-w-2xl">
-        <Voltar />
-        <Aviso variante="erro" className="mt-6" aoTentarNovamente={() => denuncias.refetch()}>
-          Não foi possível carregar as denúncias. Veja sua internet e tente de novo.
-        </Aviso>
-      </div>
-    )
+  if (denuncias.isLoadingError) {
+    return <TelaFalhaAoCarregar />
   }
 
   const lista = denuncias.data ?? []

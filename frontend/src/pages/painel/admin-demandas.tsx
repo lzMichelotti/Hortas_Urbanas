@@ -8,7 +8,7 @@ import { spriteProduto } from "@/features/produtos/sprites"
 import { Voltar } from "@/components/voltar"
 import { Button } from "@/components/ui/button"
 import type { components } from "@/lib/api/schema"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Aviso, Carregando, TelaFalhaAoCarregar } from "@/components/feedback"
 
 type StatusPedido = components["schemas"]["StatusPedido"]
 
@@ -50,6 +50,9 @@ export function AdminDemandasPage() {
 
   if (demandas.isPending || solicitacoes.isPending || hortas.isPending) {
     return <Carregando />
+  }
+  if (demandas.isLoadingError || solicitacoes.isLoadingError) {
+    return <TelaFalhaAoCarregar />
   }
 
   const materiais = demandas.data ?? []

@@ -7,7 +7,7 @@ import { ATIVOS, STATUS, dataBR, prazoEmPalavras } from "@/features/ciclos/statu
 import { motivosDoCanteiro } from "@/features/canteiros/bandeira"
 import { srcAvatar } from "@/features/perfil/avatares"
 import { FolhaInferior } from "@/components/ui/folha-inferior"
-import { Aviso } from "@/components/feedback"
+import { FalhaAoCarregar } from "@/components/feedback"
 import { plural } from "@/lib/utils"
 import type { components } from "@/lib/api/schema"
 
@@ -113,10 +113,8 @@ function Conteudo({ canteiro }: { canteiro: Produtividade }) {
 
           {ciclos.isPending ? (
             <p className="mt-2 text-sm text-hu-muted">Carregando as plantas…</p>
-          ) : ciclos.isError ? (
-            <Aviso variante="erro" className="mt-2" aoTentarNovamente={() => ciclos.refetch()}>
-              Não foi possível carregar as plantas deste canteiro.
-            </Aviso>
+          ) : ciclos.isLoadingError ? (
+            <FalhaAoCarregar className="mt-2" />
           ) : (
             <ul className="mt-2 flex flex-col gap-2">
               {plantios.map((c) => {

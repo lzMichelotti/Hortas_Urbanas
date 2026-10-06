@@ -3,7 +3,7 @@ import { useProdutividade } from "@/features/canteiros/use-produtividade"
 import { BANDEIRA_INFO, bandeiraDoCanteiro } from "@/features/canteiros/bandeira"
 import { BandeiraPixel } from "@/features/canteiros/bandeira-pixel"
 import { TERRA } from "@/features/canteiro/terra"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Carregando, FalhaAoCarregar } from "@/components/feedback"
 import type { components } from "@/lib/api/schema"
 
 type Produtividade = components["schemas"]["ProdutividadeCanteiro"]
@@ -77,12 +77,8 @@ export function HortaGrade({ aoTocar }: { aoTocar?: (id: number) => void }) {
   const produtividade = useProdutividade(me.data?.horta_id ?? null)
 
   if (me.isPending || produtividade.isPending) return <Carregando />
-  if (produtividade.isError) {
-    return (
-      <Aviso variante="erro" aoTentarNovamente={() => produtividade.refetch()}>
-        Não foi possível carregar sua horta. Veja sua internet e tente de novo.
-      </Aviso>
-    )
+  if (produtividade.isLoadingError) {
+    return <FalhaAoCarregar />
   }
 
   const lista = produtividade.data ?? []

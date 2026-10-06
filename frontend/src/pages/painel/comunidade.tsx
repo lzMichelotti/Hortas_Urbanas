@@ -23,7 +23,7 @@ import {
 import { Voltar } from "@/components/voltar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Aviso, Carregando, EstadoVazio } from "@/components/feedback"
+import { Aviso, Carregando, EstadoVazio, FalhaAoCarregar, TelaFalhaAoCarregar } from "@/components/feedback"
 import { FalaDaGuia } from "@/components/guia"
 import { ConfirmacaoInline } from "@/components/confirmar"
 import { CelebracaoOverlay } from "@/components/celebracao"
@@ -218,15 +218,8 @@ export function ComunidadePage() {
   }
 
   if (canteiro.isPending) return <Carregando />
-  if (canteiro.isError) {
-    return (
-      <div className="mx-auto max-w-2xl">
-        <Voltar />
-        <Aviso variante="erro" className="mt-6" aoTentarNovamente={() => canteiro.refetch()}>
-          Não foi possível carregar agora. Veja sua internet e tente de novo.
-        </Aviso>
-      </div>
-    )
+  if (canteiro.isLoadingError) {
+    return <TelaFalhaAoCarregar />
   }
   if (!canteiro.data) {
     return (
@@ -293,10 +286,8 @@ export function ComunidadePage() {
               />
               {produtos.isPending ? (
                 <Carregando className="mt-3" />
-              ) : produtos.isError ? (
-                <Aviso variante="erro" className="mt-3" aoTentarNovamente={() => produtos.refetch()}>
-                  Não consegui carregar a lista de plantas.
-                </Aviso>
+              ) : produtos.isLoadingError ? (
+                <FalhaAoCarregar className="mt-3" />
               ) : (
                 <div className="mt-3 grid max-h-72 grid-cols-2 gap-2 overflow-auto sm:grid-cols-3">
                   {produtosFiltrados.map((p) => (
@@ -474,7 +465,8 @@ export function ComunidadePage() {
   const plantas = solicitacoes.data ?? []
   const materiais = demandas.data ?? []
   const carregando = solicitacoes.isPending || demandas.isPending
-  const vazio = !carregando && plantas.length === 0 && materiais.length === 0
+  const falhou = solicitacoes.isLoadingError || demandas.isLoadingError
+  const vazio = !carregando && !falhou && plantas.length === 0 && materiais.length === 0
 
   const emAberto = (status: StatusPedido) => status === "ABERTA" || status === "EM_ATENDIMENTO"
 
@@ -503,6 +495,7 @@ export function ComunidadePage() {
       </Button>
 
       {carregando && <Carregando className="mt-6" />}
+      {falhou && <FalhaAoCarregar className="mt-6" />}
 
       {vazio && (
         <EstadoVazio ilustracao="/personagem-cachorro.webp">

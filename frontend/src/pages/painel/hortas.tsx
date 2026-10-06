@@ -6,7 +6,7 @@ import { useUsuarios } from "@/features/usuarios/use-usuarios"
 import { Voltar } from "@/components/voltar"
 import { Button } from "@/components/ui/button"
 import { Plantinha, type Estagio } from "@/components/plantinha"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Carregando, TelaFalhaAoCarregar } from "@/components/feedback"
 
 // Variedade decorativa, como a roça da home — o estágio não significa nada.
 const ESTAGIOS: Estagio[] = ["crescendo", "pronta", "broto", "quase", "semente"]
@@ -18,15 +18,8 @@ export function HortasPage() {
 
   if (hortas.isPending) return <Carregando />
 
-  if (hortas.isError) {
-    return (
-      <div className="mx-auto max-w-2xl">
-        <Voltar />
-        <Aviso variante="erro" className="mt-6" aoTentarNovamente={() => hortas.refetch()}>
-          Não foi possível carregar as hortas. Veja sua internet e tente de novo.
-        </Aviso>
-      </div>
-    )
+  if (hortas.isLoadingError) {
+    return <TelaFalhaAoCarregar />
   }
 
   const lista = hortas.data ?? []

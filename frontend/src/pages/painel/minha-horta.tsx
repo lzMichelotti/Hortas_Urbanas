@@ -8,7 +8,7 @@ import { FolhaCanteiro } from "@/features/hortas/folha-canteiro"
 import { DetalhesDaHorta } from "@/features/hortas/detalhes-horta"
 import { MolduraCanteiro } from "@/features/canteiro/decoracoes"
 import { Voltar } from "@/components/voltar"
-import { Aviso, Carregando, EstadoVazio } from "@/components/feedback"
+import { Carregando, EstadoVazio, FalhaAoCarregar, TelaFalhaAoCarregar } from "@/components/feedback"
 
 export function MinhaHortaPage() {
   const me = useMe()
@@ -32,15 +32,8 @@ export function MinhaHortaPage() {
   }
 
   if (horta.isPending) return <Carregando />
-  if (horta.isError || !horta.data) {
-    return (
-      <div className="mx-auto max-w-2xl">
-        <Voltar />
-        <Aviso variante="erro" className="mt-6" aoTentarNovamente={() => horta.refetch()}>
-          Não foi possível carregar a horta. Veja sua internet e tente de novo.
-        </Aviso>
-      </div>
-    )
+  if (horta.isLoadingError || !horta.data) {
+    return <TelaFalhaAoCarregar />
   }
 
   const h = horta.data
@@ -58,7 +51,9 @@ export function MinhaHortaPage() {
     <div className="mx-auto max-w-2xl pb-4">
       <Voltar />
 
-      {rows.length === 0 && !produtividade.isPending ? (
+      {produtividade.isLoadingError ? (
+        <FalhaAoCarregar className="mt-6" />
+      ) : rows.length === 0 && !produtividade.isPending ? (
         <EstadoVazio ilustracao="/personagem-idoso.webp">
           Nenhum canteiro ainda. Crie canteiros em <strong>Membros</strong> para acompanhar a horta.
         </EstadoVazio>
