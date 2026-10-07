@@ -279,6 +279,8 @@ uvicorn app.main:app --reload
 A documentação interativa fica em <http://localhost:8000/docs>.
 
 Usuário demo criado pelo seed: `admin@hortasurbanas.com` / CPF `92263020063`.
+Vale só para o ambiente local — em produção o admin vem das variáveis `SEED_ADMIN_*`
+do `.env` (ver `.env.example`).
 
 ### 3. Frontend
 

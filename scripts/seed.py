@@ -6,6 +6,7 @@ Rode depois de criar o esquema com `alembic upgrade head`:
 
 É idempotente — faz upsert do catálogo, então pode rodar quantas vezes quiser.
 """
+import os
 import sys
 from pathlib import Path
 
@@ -19,12 +20,15 @@ from app.database.models import Usuario, Produto
 from app.core.security import get_password_hash
 
 
-# Admin demo. O login é e-mail + CPF; a senha é o próprio CPF.
+# Admin demo. O login é e-mail + CPF; a senha é o próprio CPF — por isso os valores
+# abaixo são só o default de desenvolvimento. Em produção o compose injeta o .env no
+# ambiente do container (env_file), e estas variáveis sobrescrevem: a credencial do
+# admin real NÃO pode ser a que está versionada aqui.
 ADMIN = {
-    "nome": "Adm",
-    "email": "admin@hortasurbanas.com",
-    "cpf": "92263020063",
-    "telefone": "55981083084",
+    "nome": os.environ.get("SEED_ADMIN_NOME", "Adm"),
+    "email": os.environ.get("SEED_ADMIN_EMAIL", "admin@hortasurbanas.com"),
+    "cpf": os.environ.get("SEED_ADMIN_CPF", "92263020063"),
+    "telefone": os.environ.get("SEED_ADMIN_TELEFONE", "55981083084"),
     "privilegio": "ADMIN_SUPREMO",
 }
 
@@ -107,7 +111,8 @@ def seed_admin(db):
         print(f"Admin {ADMIN['email']} já existe — pulando.")
         return
     db.add(Usuario(**ADMIN, senha_hash=get_password_hash(ADMIN["cpf"])))
-    print(f"Admin criado: {ADMIN['email']} (senha = CPF {ADMIN['cpf']}).")
+    # Sem imprimir o CPF: ele é a senha, e esta saída vai parar no log do deploy.
+    print(f"Admin criado: {ADMIN['email']} (a senha é o CPF cadastrado).")
 
 
 def seed_produtos(db):
