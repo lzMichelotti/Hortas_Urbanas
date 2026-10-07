@@ -88,10 +88,12 @@ def _encaminhar(client, headers, horta_id, demanda_id, encaminhada=True):
 
 
 class TestEncaminharAoAdmin:
-    def test_pedido_do_membro_nao_chega_ao_admin_sem_encaminhar(
+    def test_admin_ve_o_pedido_do_membro_mesmo_sem_encaminhar(
         self, client, admin_headers, pedido
     ):
-        assert client.get("/demandas", headers=admin_headers).json() == []
+        fila = client.get("/demandas", headers=admin_headers).json()
+        assert [d["id"] for d in fila] == [pedido["id"]]
+        assert fila[0]["encaminhada_em"] is None
 
     def test_lider_encaminha_e_o_admin_passa_a_ver(
         self, client, admin_headers, lider_headers, horta, pedido
@@ -118,7 +120,8 @@ class TestEncaminharAoAdmin:
         r = _encaminhar(client, lider_headers, horta.id, pedido["id"], encaminhada=False)
         assert r.status_code == 200
         assert r.json()["encaminhada_em"] is None
-        assert client.get("/demandas", headers=admin_headers).json() == []
+        fila = client.get("/demandas", headers=admin_headers).json()
+        assert [d["encaminhada_em"] for d in fila] == [None]
 
     def test_o_pedido_continua_com_o_lider_depois_de_encaminhado(
         self, client, lider_headers, horta, pedido
@@ -181,15 +184,9 @@ class TestEncaminharAoAdmin:
         headers = {"Authorization": f"Bearer {r.json()['access_token']}"}
         assert _encaminhar(client, headers, horta.id, pedido["id"]).status_code == 403
 
-    def test_panorama_conta_o_pedido_encaminhado(
-        self, client, admin_headers, lider_headers, horta, pedido
-    ):
-        antes = client.get("/painel/admin/panorama", headers=admin_headers).json()
-        assert antes["demandas"]["abertas"] == 0
-
-        _encaminhar(client, lider_headers, horta.id, pedido["id"])
-        depois = client.get("/painel/admin/panorama", headers=admin_headers).json()
-        assert depois["demandas"]["abertas"] == 1
+    def test_panorama_conta_o_pedido_desde_que_e_criado(self, client, admin_headers, pedido):
+        body = client.get("/painel/admin/panorama", headers=admin_headers).json()
+        assert body["demandas"]["abertas"] == 1
 
 
 class TestListaLimitada:
@@ -312,8 +309,9 @@ def _encaminhar_planta(client, headers, solicitacao_id, encaminhada=True):
 
 
 class TestEncaminharPlantaAoAdmin:
-    def test_planta_nao_chega_ao_admin_sem_encaminhar(self, client, admin_headers, pedido_planta):
-        assert client.get("/solicitacoes", headers=admin_headers).json() == []
+    def test_admin_ve_a_planta_mesmo_sem_encaminhar(self, client, admin_headers, pedido_planta):
+        fila = client.get("/solicitacoes", headers=admin_headers).json()
+        assert [s["id"] for s in fila] == [pedido_planta["id"]]
 
     def test_lider_encaminha_e_o_admin_ve(
         self, client, admin_headers, lider_headers, pedido_planta
@@ -325,12 +323,13 @@ class TestEncaminharPlantaAoAdmin:
         fila = client.get("/solicitacoes", headers=admin_headers).json()
         assert [s["id"] for s in fila] == [pedido_planta["id"]]
 
-    def test_desfazer_tira_da_fila_do_admin(
+    def test_desfazer_tira_so_o_destaque_de_repassado(
         self, client, admin_headers, lider_headers, pedido_planta
     ):
         _encaminhar_planta(client, lider_headers, pedido_planta["id"])
         _encaminhar_planta(client, lider_headers, pedido_planta["id"], encaminhada=False)
-        assert client.get("/solicitacoes", headers=admin_headers).json() == []
+        fila = client.get("/solicitacoes", headers=admin_headers).json()
+        assert [s["encaminhada_em"] for s in fila] == [None]
 
     def test_encaminhar_de_novo_mantem_a_data(self, client, lider_headers, pedido_planta):
         primeira = _encaminhar_planta(client, lider_headers, pedido_planta["id"]).json()
@@ -355,12 +354,6 @@ class TestEncaminharPlantaAoAdmin:
         do_lider = client.get("/solicitacoes", headers=lider_headers).json()
         assert [s["id"] for s in do_lider] == [pedido_planta["id"]]
 
-    def test_panorama_conta_planta_encaminhada(
-        self, client, admin_headers, lider_headers, pedido_planta
-    ):
-        antes = client.get("/painel/admin/panorama", headers=admin_headers).json()
-        assert antes["demandas"]["abertas"] == 0
-
-        _encaminhar_planta(client, lider_headers, pedido_planta["id"])
-        depois = client.get("/painel/admin/panorama", headers=admin_headers).json()
-        assert depois["demandas"]["abertas"] == 1
+    def test_panorama_conta_a_planta_desde_que_e_criada(self, client, admin_headers, pedido_planta):
+        body = client.get("/painel/admin/panorama", headers=admin_headers).json()
+        assert body["demandas"]["abertas"] == 1

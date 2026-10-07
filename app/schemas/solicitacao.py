@@ -20,10 +20,6 @@ class SolicitacaoCreate(BaseModel):
         return valor_data
 
 
-class SolicitacaoUpdateStatus(BaseModel):
-    status: StatusPedido
-
-
 class SolicitacaoUpdateEncaminhamento(BaseModel):
     encaminhada: bool
 
@@ -36,6 +32,8 @@ class SolicitacaoRead(BaseModel):
     justificativa: Optional[str] = None
     data_desejada_plantio: Optional[date] = None
     status: StatusPedido
+    criado_em: datetime
     encaminhada_em: Optional[datetime] = None
+    previsao_entrega: Optional[date] = None
 
     model_config = ConfigDict(from_attributes=True)

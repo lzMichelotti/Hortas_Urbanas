@@ -1,9 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api/client"
 import { unwrap } from "@/lib/api/errors"
-import type { components } from "@/lib/api/schema"
-
-type StatusPedido = components["schemas"]["StatusPedido"]
+import { corpoAtualizacao, invalidarPedidos, type AtualizacaoPedido } from "@/features/demandas/use-demandas"
 
 export function useSolicitacoesLider() {
   return useQuery({
@@ -22,20 +20,20 @@ export function useEncaminharSolicitacao() {
           body: { encaminhada },
         }),
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["solicitacoes", "lider"] }),
+    onSuccess: () => invalidarPedidos(qc),
   })
 }
 
 export function useResponderSolicitacao() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, status }: { id: number; status: StatusPedido }) =>
+    mutationFn: ({ id, ...atualizacao }: AtualizacaoPedido & { id: number }) =>
       unwrap(
         api.PATCH("/solicitacoes/{id}/status", {
           params: { path: { id } },
-          body: { status },
+          body: corpoAtualizacao(atualizacao),
         }),
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["solicitacoes", "lider"] }),
+    onSuccess: () => invalidarPedidos(qc),
   })
 }

@@ -1,10 +1,23 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api/client"
 import { unwrap } from "@/lib/api/errors"
 import type { components } from "@/lib/api/schema"
 
 type DemandaCreate = components["schemas"]["DemandaCreate"]
 type StatusPedido = components["schemas"]["StatusPedido"]
+
+// previsao: undefined = não mexe; null = apaga.
+export type AtualizacaoPedido = { status: StatusPedido; previsao?: string | null }
+
+export const corpoAtualizacao = ({ status, previsao }: AtualizacaoPedido) =>
+  previsao === undefined ? { status } : { status, previsao_entrega: previsao }
+
+// Um mesmo pedido aparece para o membro, o líder e o admin.
+export function invalidarPedidos(qc: QueryClient) {
+  for (const queryKey of [["demandas"], ["demandas-membro"], ["solicitacoes"], ["admin-pedidos"]]) {
+    qc.invalidateQueries({ queryKey })
+  }
+}
 
 export function useDemandas() {
   return useQuery({
@@ -24,35 +37,35 @@ export function useCriarDemanda(hortaId: number) {
           body,
         }),
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["demandas"] }),
+    onSuccess: () => invalidarPedidos(qc),
   })
 }
 
 export function useAtualizarStatusDemanda(hortaId: number) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ demandaId, status }: { demandaId: number; status: StatusPedido }) =>
+    mutationFn: ({ demandaId, ...atualizacao }: AtualizacaoPedido & { demandaId: number }) =>
       unwrap(
         api.PATCH("/hortas/{horta_id}/demandas/{demanda_id}/status", {
           params: { path: { horta_id: hortaId, demanda_id: demandaId } },
-          body: { status },
+          body: corpoAtualizacao(atualizacao),
         }),
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["demandas"] }),
+    onSuccess: () => invalidarPedidos(qc),
   })
 }
 
 export function useAtualizarStatusDemandaAdmin() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ hortaId, demandaId, status }: { hortaId: number; demandaId: number; status: StatusPedido }) =>
+    mutationFn: ({ hortaId, demandaId, ...atualizacao }: AtualizacaoPedido & { hortaId: number; demandaId: number }) =>
       unwrap(
         api.PATCH("/hortas/{horta_id}/demandas/{demanda_id}/status", {
           params: { path: { horta_id: hortaId, demanda_id: demandaId } },
-          body: { status },
+          body: corpoAtualizacao(atualizacao),
         }),
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["demandas"] }),
+    onSuccess: () => invalidarPedidos(qc),
   })
 }
 
@@ -61,7 +74,7 @@ export function useDeletarDemanda() {
   return useMutation({
     mutationFn: (id: number) =>
       unwrap(api.DELETE("/demandas/{id}", { params: { path: { id } } })),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["demandas"] }),
+    onSuccess: () => invalidarPedidos(qc),
   })
 }
 
@@ -75,7 +88,7 @@ export function useEncaminharDemanda(hortaId: number) {
           body: { encaminhada },
         }),
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["demandas"] }),
+    onSuccess: () => invalidarPedidos(qc),
   })
 }
 

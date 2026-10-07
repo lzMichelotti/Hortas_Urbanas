@@ -1,8 +1,9 @@
-from datetime import date
-from typing import Optional
+from datetime import date, datetime
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 
+from app.database.enums import StatusPedido
 from app.schemas.horta import HortaPublica
 
 
@@ -35,8 +36,7 @@ class ResumoProducao(BaseModel):
 
 
 class ResumoDemandas(BaseModel):
-    """Mesmo universo de GET /demandas para o admin: pedido aberto pela horta ou
-    pedido de canteiro que o líder encaminhou."""
+    """Pedidos de material e de planta de todas as hortas ativas."""
     abertas: int
     em_atendimento: int
 
@@ -129,3 +129,25 @@ class PerfilHorticultores(BaseModel):
     grupo_familiar_medio: Optional[float] = None
     # Soma dos grupos familiares de quem informou — não extrapola para os demais.
     alcance_estimado: int
+
+
+# --- Pedidos ---
+
+class PedidoAdmin(BaseModel):
+    """Pedido de planta ou de material, no formato da tela de pedidos do admin.
+    `solicitante` e `canteiro_numero` vazios = pedido feito pelo líder, para a horta."""
+    tipo: Literal["PLANTA", "MATERIAL"]
+    id: int
+    horta_id: int
+    canteiro_numero: Optional[int] = None
+    solicitante: Optional[str] = None
+    produto_id: Optional[int] = None
+    descricao: Optional[str] = None
+    observacao: Optional[str] = None
+    quantidade: float
+    unidade: Optional[str] = None
+    status: StatusPedido
+    criado_em: datetime
+    previsao_entrega: Optional[date] = None
+    encaminhada: bool
+    atraso: Optional[Literal["SEM_RESPOSTA", "PREVISAO_VENCIDA"]] = None

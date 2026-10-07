@@ -3,7 +3,7 @@ import { Link } from "react-router"
 import { Dialog } from "radix-ui"
 import { Maximize2, X } from "lucide-react"
 import { useHortas } from "@/features/hortas/use-hortas"
-import { useDemandas } from "@/features/demandas/use-demandas"
+import { usePedidosAdmin } from "@/features/admin/use-painel-admin"
 import { useUsuarios } from "@/features/usuarios/use-usuarios"
 import { MolduraCanteiro } from "@/features/canteiro/decoracoes"
 import { TERRA } from "@/features/canteiro/terra"
@@ -68,10 +68,10 @@ function HortaNaRoca({
 export function MunicipioVitrine() {
   const [aberta, setAberta] = useState(false)
   const hortas = useHortas()
-  const demandas = useDemandas()
+  const pedidos = usePedidosAdmin()
   const usuarios = useUsuarios()
 
-  if (hortas.isPending || demandas.isPending || usuarios.isPending) return <Carregando />
+  if (hortas.isPending || pedidos.isPending || usuarios.isPending) return <Carregando />
   if (hortas.isLoadingError) {
     return <FalhaAoCarregar />
   }
@@ -98,7 +98,7 @@ export function MunicipioVitrine() {
       .map((u) => [u.horta_id as number, u.nome.split(" ")[0]]),
   )
   const porHorta = new Map<number, Situacao>()
-  for (const d of demandas.data ?? []) {
+  for (const d of pedidos.data ?? []) {
     const atual = porHorta.get(d.horta_id) ?? { abertas: 0, andamento: 0 }
     if (d.status === "ABERTA") atual.abertas++
     else if (d.status === "EM_ATENDIMENTO") atual.andamento++

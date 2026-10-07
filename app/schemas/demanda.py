@@ -1,7 +1,8 @@
-from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field
+from datetime import date, datetime
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Optional
 
+from app.core.config import hoje
 from app.database.enums import StatusPedido
 
 
@@ -12,8 +13,18 @@ class DemandaCreate(BaseModel):
     unidade_medida: str = Field(..., description="Ex: kg, unidades, litros")
 
 
-class DemandaUpdateStatus(BaseModel):
+class PedidoUpdateStatus(BaseModel):
+    """Vale para pedido de material e de planta. Sem `previsao_entrega` no corpo, a
+    previsão atual fica como está; com `null`, é apagada."""
     status: StatusPedido
+    previsao_entrega: Optional[date] = None
+
+    @field_validator("previsao_entrega")
+    @classmethod
+    def check_previsao_futura(cls, valor):
+        if valor is not None and valor < hoje():
+            raise ValueError("A previsão de entrega não pode ser antes de hoje.")
+        return valor
 
 
 class DemandaUpdateEncaminhamento(BaseModel):
@@ -32,5 +43,6 @@ class DemandaRead(BaseModel):
     criado_em: datetime
     finalizado_em: Optional[datetime] = None
     encaminhada_em: Optional[datetime] = None
+    previsao_entrega: Optional[date] = None
 
     model_config = ConfigDict(from_attributes=True)

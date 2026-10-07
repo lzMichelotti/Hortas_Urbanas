@@ -1,15 +1,15 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from app.core.config import hoje
 from app.core.http import aplica_etag
 from app.database.session import get_db
 from app.database.enums import StatusPedido
 from app.database.models import Canteiro, Demanda, Usuario
 from app.schemas.demanda import (
-    DemandaCreate, DemandaRead, DemandaUpdateEncaminhamento, DemandaUpdateStatus,
+    DemandaCreate, DemandaRead, DemandaUpdateEncaminhamento, PedidoUpdateStatus,
 )
 from app.dependencies import get_current_user, get_lider_user
 from app.permissions import (
@@ -20,13 +20,6 @@ from app.core.idempotency import IdempotencyKeyHeader, commit_idempotente
 router = APIRouter(tags=["Demandas"])
 
 DBDep = Annotated[Session, Depends(get_db)]
-
-# O que chega à administração: o pedido aberto pela horta, ou o do canteiro que o
-# líder encaminhou. Importado pelo painel do admin para as duas telas não divergirem.
-CHEGA_A_ADMINISTRACAO = or_(
-    Demanda.canteiro_id.is_(None),
-    Demanda.encaminhada_em.isnot(None),
-)
 
 _STATUS_FINAIS = (StatusPedido.ATENDIDA.value, StatusPedido.CANCELADA.value)
 _EM_ABERTO = (StatusPedido.ABERTA.value, StatusPedido.EM_ATENDIMENTO.value)
@@ -48,6 +41,26 @@ def aplicar_encaminhamento(pedido, encaminhada: bool):
         pedido.encaminhada_em = None
     elif pedido.encaminhada_em is None:
         pedido.encaminhada_em = datetime.now(timezone.utc)
+
+
+def aplicar_status(pedido, update: PedidoUpdateStatus):
+    pedido.status = update.status
+    if "previsao_entrega" in update.model_fields_set:
+        pedido.previsao_entrega = update.previsao_entrega
+
+
+DIAS_SEM_RESPOSTA = 2
+
+
+def atraso_do_pedido(pedido) -> str | None:
+    """Por que o pedido está atrasado, ou None. O líder tem DIAS_SEM_RESPOSTA para
+    aprovar ou recusar; depois de aprovado, vale a previsão de entrega."""
+    if pedido.status == StatusPedido.ABERTA.value:
+        limite = datetime.now(timezone.utc) - timedelta(days=DIAS_SEM_RESPOSTA)
+        return "SEM_RESPOSTA" if pedido.criado_em <= limite else None
+    if pedido.status == StatusPedido.EM_ATENDIMENTO.value and pedido.previsao_entrega is not None:
+        return "PREVISAO_VENCIDA" if pedido.previsao_entrega < hoje() else None
+    return None
 
 
 def abertos_e_historico(query, status, ordem, limite: int = LIMITE_HISTORICO):
@@ -76,8 +89,6 @@ def read_demandas(
     query = db.query(Demanda)
     if horta_id is not None:
         query = query.filter(Demanda.horta_id == horta_id)
-    else:
-        query = query.filter(CHEGA_A_ADMINISTRACAO)
 
     payload = [
         DemandaRead.model_validate(d)
@@ -180,7 +191,7 @@ def create_demanda(
 def update_demanda_status(
     horta_id: int,
     demanda_id: int,
-    update_data: DemandaUpdateStatus,
+    update_data: PedidoUpdateStatus,
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
@@ -193,7 +204,7 @@ def update_demanda_status(
     if not db_demanda:
         raise HTTPException(status_code=404, detail="Demanda não encontrada nesta horta.")
 
-    db_demanda.status = update_data.status
+    aplicar_status(db_demanda, update_data)
     db.commit()
     return db_demanda
 

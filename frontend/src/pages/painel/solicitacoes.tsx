@@ -18,6 +18,9 @@ import { Button } from "@/components/ui/button"
 import type { components } from "@/lib/api/schema"
 import { Aviso, Carregando, EstadoVazio, TelaFalhaAoCarregar } from "@/components/feedback"
 import { ConfirmacaoInline } from "@/components/confirmar"
+import { FolhaAprovarPedido } from "@/features/pedidos/folha-aprovar"
+import { LinhaPrevisao } from "@/features/pedidos/linha-previsao"
+import { BOTAO_LINK, BOTAO_OUTLINE_VERMELHO, BOTAO_PIXEL } from "@/features/pedidos/estilos"
 import { DivisorCerca } from "@/components/divisor-cerca"
 
 type StatusPedido = components["schemas"]["StatusPedido"]
@@ -45,10 +48,6 @@ const STATUS: Record<StatusPedido, { rotulo: string; chip: string }> = {
 const ABA_CLASSE =
   "flex min-h-11 items-center justify-center gap-2 rounded-xl border-2 border-[#5b3a1a] bg-hu-panel font-bold text-hu-text shadow-[0_3px_0_#5b3a1a] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hu-bright data-[state=inactive]:hover:-translate-y-0.5 data-[state=active]:translate-y-0.5 data-[state=active]:bg-hu-bright data-[state=active]:text-hu-bg data-[state=active]:shadow-[0_1px_0_#5b3a1a]"
 
-const BOTAO_PIXEL =
-  "flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-[#5b3a1a] bg-hu-bright font-bold text-hu-bg shadow-[0_3px_0_#5b3a1a] transition-transform hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[0_1px_0_#5b3a1a] disabled:pointer-events-none disabled:opacity-50"
-const BOTAO_OUTLINE_VERMELHO =
-  "flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-red-400/50 bg-transparent text-red-600 hover:bg-red-500/15 disabled:pointer-events-none disabled:opacity-50"
 const BOTAO_OUTLINE =
   "flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border-2 border-hu-soft bg-transparent font-bold text-hu-text hover:bg-black/5 disabled:pointer-events-none disabled:opacity-50"
 const CHIP_QUANTIDADE =
@@ -69,6 +68,14 @@ export function SolicitacoesPage() {
   const [aba, setAba] = useState<"plantas" | "materiais">("plantas")
   const [confirmarRecusarId, setConfirmarRecusarId] = useState<number | null>(null)
   const [confirmarRecusarMaterialId, setConfirmarRecusarMaterialId] = useState<number | null>(null)
+  const [folha, setFolha] = useState<{
+    tipo: "planta" | "material"
+    id: number
+    oQue: string
+    canteiroId: number | null | undefined
+    modo: "aprovar" | "previsao"
+    previsaoAtual?: string | null
+  } | null>(null)
 
   // Melhoria progressiva: cruza canteiro→responsável via useUsuarios(), já
   // cacheada por outras telas. Se a query ainda não voltou (ou falhar), o mapa
@@ -82,6 +89,24 @@ export function SolicitacoesPage() {
     const responsavel = c.usuario_id != null ? usuarioPorId.get(c.usuario_id)?.nome : undefined
     return [`Placa ${c.numero}`, c.identificacao, responsavel].filter(Boolean).join(" · ")
   }
+  const responsavelDo = (id: number | null | undefined) => {
+    const c = id != null ? canteiroPorId.get(id) : undefined
+    return (c?.usuario_id != null ? usuarioPorId.get(c.usuario_id)?.nome : undefined) ?? "quem pediu"
+  }
+
+  // Previsão (ou a falta dela) de um pedido já aprovado, com o atalho para mudar.
+  const previsaoDoAprovado = (previsao: string | null | undefined, abrir: () => void) => (
+    <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2">
+      {previsao ? (
+        <LinhaPrevisao previsao={previsao} />
+      ) : (
+        <p className="text-sm text-hu-muted">Sem previsão de entrega</p>
+      )}
+      <button type="button" onClick={abrir} className={BOTAO_LINK}>
+        {previsao ? "Mudar previsão" : "Definir previsão"}
+      </button>
+    </div>
+  )
 
   function toggleRecusar(id: number) {
     setConfirmarRecusarId((atual) => (atual === id ? null : id))
@@ -190,14 +215,20 @@ export function SolicitacoesPage() {
                           <>
                             <Button
                               size="sm"
-                              onClick={() => responder.mutate({ id: s.id, status: "EM_ATENDIMENTO" })}
+                              onClick={() =>
+                                setFolha({
+                                  tipo: "planta",
+                                  id: s.id,
+                                  oQue: `${nomeProduto(s.produto_id)} · ${s.quantidade} muda${s.quantidade > 1 ? "s" : ""}`,
+                                  canteiroId: s.canteiro_id,
+                                  modo: "aprovar",
+                                })
+                              }
                               disabled={responder.isPending}
                               className={BOTAO_PIXEL}
                             >
                               <Check className="size-4" aria-hidden />
-                              {respondendoEste && responder.variables?.status === "EM_ATENDIMENTO"
-                                ? "Aprovando…"
-                                : "Aprovar"}
+                              Aprovar
                             </Button>
                             <Button
                               size="sm"
@@ -223,6 +254,18 @@ export function SolicitacoesPage() {
                           </Button>
                         )}
                       </div>
+
+                      {s.status === "EM_ATENDIMENTO" &&
+                        previsaoDoAprovado(s.previsao_entrega, () =>
+                          setFolha({
+                            tipo: "planta",
+                            id: s.id,
+                            oQue: `${nomeProduto(s.produto_id)} · ${s.quantidade} muda${s.quantidade > 1 ? "s" : ""}`,
+                            canteiroId: s.canteiro_id,
+                            modo: "previsao",
+                            previsaoAtual: s.previsao_entrega,
+                          }),
+                        )}
 
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         {s.encaminhada_em == null ? (
@@ -384,14 +427,20 @@ export function SolicitacoesPage() {
                           <>
                             <Button
                               size="sm"
-                              onClick={() => responderMaterial.mutate({ demandaId: m.id, status: "EM_ATENDIMENTO" })}
+                              onClick={() =>
+                                setFolha({
+                                  tipo: "material",
+                                  id: m.id,
+                                  oQue: `${m.descricao} · ${m.quantidade} ${m.unidade_medida}`,
+                                  canteiroId: m.canteiro_id,
+                                  modo: "aprovar",
+                                })
+                              }
                               disabled={responderMaterial.isPending}
                               className={BOTAO_PIXEL}
                             >
                               <Check className="size-4" aria-hidden />
-                              {respondendoEste && responderMaterial.variables?.status === "EM_ATENDIMENTO"
-                                ? "Aceitando…"
-                                : "Aceitar"}
+                              Aceitar
                             </Button>
                             <Button
                               size="sm"
@@ -417,6 +466,18 @@ export function SolicitacoesPage() {
                           </Button>
                         )}
                       </div>
+
+                      {m.status === "EM_ATENDIMENTO" &&
+                        previsaoDoAprovado(m.previsao_entrega, () =>
+                          setFolha({
+                            tipo: "material",
+                            id: m.id,
+                            oQue: `${m.descricao} · ${m.quantidade} ${m.unidade_medida}`,
+                            canteiroId: m.canteiro_id,
+                            modo: "previsao",
+                            previsaoAtual: m.previsao_entrega,
+                          }),
+                        )}
 
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         {m.encaminhada_em == null ? (
@@ -515,6 +576,24 @@ export function SolicitacoesPage() {
           )}
         </Tabs.Content>
       </Tabs.Root>
+
+      {folha && (
+        <FolhaAprovarPedido
+          key={`${folha.tipo}${folha.id}${folha.modo}`}
+          oQue={folha.oQue}
+          paraQuem={responsavelDo(folha.canteiroId)}
+          modo={folha.modo}
+          previsaoAtual={folha.previsaoAtual}
+          salvando={folha.tipo === "planta" ? responder.isPending : responderMaterial.isPending}
+          erro={(folha.tipo === "planta" ? responder.error : responderMaterial.error)?.message}
+          aoFechar={() => setFolha(null)}
+          aoConfirmar={(previsao) => {
+            const fechar = { onSuccess: () => setFolha(null) }
+            if (folha.tipo === "planta") responder.mutate({ id: folha.id, status: "EM_ATENDIMENTO", previsao }, fechar)
+            else responderMaterial.mutate({ demandaId: folha.id, status: "EM_ATENDIMENTO", previsao }, fechar)
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -130,7 +130,7 @@ class TestPanorama:
         assert body["hortas"]["ativas"] == 1
         assert body["canteiros"]["ativos"] == 2
 
-    def test_conta_so_demanda_encaminhada_a_administracao(self, client, admin_headers, cenario, db):
+    def test_conta_os_pedidos_de_todas_as_origens(self, client, admin_headers, cenario, db):
         canteiro = db.query(Canteiro).filter(Canteiro.numero == 1).first()
         db.add_all([
             Demanda(
@@ -145,7 +145,7 @@ class TestPanorama:
         db.commit()
 
         demandas = client.get("/painel/admin/panorama", headers=admin_headers).json()["demandas"]
-        assert demandas == {"abertas": 1, "em_atendimento": 0}
+        assert demandas == {"abertas": 2, "em_atendimento": 0}
 
     def test_etag_devolve_304(self, client, admin_headers, cenario):
         primeira = client.get("/painel/admin/panorama", headers=admin_headers)

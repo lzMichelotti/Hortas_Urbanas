@@ -53,3 +53,10 @@ export function useArquivarDenuncia() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-denuncias"] }),
   })
 }
+
+export function usePedidosAdmin() {
+  return useQuery({
+    queryKey: ["admin-pedidos"],
+    queryFn: ({ signal }) => unwrap(api.GET("/painel/admin/pedidos", { signal })),
+  })
+}

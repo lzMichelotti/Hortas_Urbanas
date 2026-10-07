@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import type { components } from "@/lib/api/schema"
 import { Aviso, Carregando, EstadoVazio, TelaFalhaAoCarregar } from "@/components/feedback"
 import { ConfirmacaoInline } from "@/components/confirmar"
+import { LinhaPrevisao } from "@/features/pedidos/linha-previsao"
 import { DivisorCerca } from "@/components/divisor-cerca"
 import { dataCurta } from "@/lib/tempo"
 
@@ -244,6 +245,9 @@ export function DemandasPage() {
                       {d.quantidade} {d.unidade_medida}
                     </span>
                     <p className="mt-2 text-xs text-hu-muted">Pedido em {dataCurta(d.criado_em)}</p>
+                    {d.status === "EM_ATENDIMENTO" && d.previsao_entrega && (
+                      <LinhaPrevisao previsao={d.previsao_entrega} className="mt-2" />
+                    )}
                   </div>
                   <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-bold ${cfg.chip}`}>
                     {cfg.rotulo}

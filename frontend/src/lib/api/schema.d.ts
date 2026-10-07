@@ -983,6 +983,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/painel/admin/pedidos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pedidos
+         * @description Todos os pedidos de todas as hortas, já com quem pediu e o atraso calculado:
+         *     uma ida ao servidor monta a tela inteira, sem baixar a lista de usuários.
+         */
+        get: operations["pedidos_painel_admin_pedidos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/painel/admin/producao": {
         parameters: {
             query?: never;
@@ -1266,15 +1287,13 @@ export interface components {
             finalizado_em?: string | null;
             /** Encaminhada Em */
             encaminhada_em?: string | null;
+            /** Previsao Entrega */
+            previsao_entrega?: string | null;
         };
         /** DemandaUpdateEncaminhamento */
         DemandaUpdateEncaminhamento: {
             /** Encaminhada */
             encaminhada: boolean;
-        };
-        /** DemandaUpdateStatus */
-        DemandaUpdateStatus: {
-            status: components["schemas"]["StatusPedido"];
         };
         /** DenunciaCreate */
         DenunciaCreate: {
@@ -1609,6 +1628,58 @@ export interface components {
             pessoas: components["schemas"]["ResumoPessoas"];
             producao: components["schemas"]["ResumoProducao"];
             demandas: components["schemas"]["ResumoDemandas"];
+        };
+        /**
+         * PedidoAdmin
+         * @description Pedido de planta ou de material, no formato da tela de pedidos do admin.
+         *     `solicitante` e `canteiro_numero` vazios = pedido feito pelo líder, para a horta.
+         */
+        PedidoAdmin: {
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "PLANTA" | "MATERIAL";
+            /** Id */
+            id: number;
+            /** Horta Id */
+            horta_id: number;
+            /** Canteiro Numero */
+            canteiro_numero?: number | null;
+            /** Solicitante */
+            solicitante?: string | null;
+            /** Produto Id */
+            produto_id?: number | null;
+            /** Descricao */
+            descricao?: string | null;
+            /** Observacao */
+            observacao?: string | null;
+            /** Quantidade */
+            quantidade: number;
+            /** Unidade */
+            unidade?: string | null;
+            status: components["schemas"]["StatusPedido"];
+            /**
+             * Criado Em
+             * Format: date-time
+             */
+            criado_em: string;
+            /** Previsao Entrega */
+            previsao_entrega?: string | null;
+            /** Encaminhada */
+            encaminhada: boolean;
+            /** Atraso */
+            atraso?: ("SEM_RESPOSTA" | "PREVISAO_VENCIDA") | null;
+        };
+        /**
+         * PedidoUpdateStatus
+         * @description Vale para pedido de material e de planta. Sem `previsao_entrega` no corpo, a
+         *     previsão atual fica como está; com `null`, é apagada.
+         */
+        PedidoUpdateStatus: {
+            status: components["schemas"]["StatusPedido"];
+            /** Previsao Entrega */
+            previsao_entrega?: string | null;
         };
         /** PerdaPorMotivo */
         PerdaPorMotivo: {
@@ -2031,8 +2102,7 @@ export interface components {
         };
         /**
          * ResumoDemandas
-         * @description Mesmo universo de GET /demandas para o admin: pedido aberto pela horta ou
-         *     pedido de canteiro que o líder encaminhou.
+         * @description Pedidos de material e de planta de todas as hortas ativas.
          */
         ResumoDemandas: {
             /** Abertas */
@@ -2106,17 +2176,20 @@ export interface components {
             /** Data Desejada Plantio */
             data_desejada_plantio?: string | null;
             status: components["schemas"]["StatusPedido"];
+            /**
+             * Criado Em
+             * Format: date-time
+             */
+            criado_em: string;
             /** Encaminhada Em */
             encaminhada_em?: string | null;
+            /** Previsao Entrega */
+            previsao_entrega?: string | null;
         };
         /** SolicitacaoUpdateEncaminhamento */
         SolicitacaoUpdateEncaminhamento: {
             /** Encaminhada */
             encaminhada: boolean;
-        };
-        /** SolicitacaoUpdateStatus */
-        SolicitacaoUpdateStatus: {
-            status: components["schemas"]["StatusPedido"];
         };
         /**
          * StatusCiclo
@@ -3229,7 +3302,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DemandaUpdateStatus"];
+                "application/json": components["schemas"]["PedidoUpdateStatus"];
             };
         };
         responses: {
@@ -3571,7 +3644,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SolicitacaoUpdateStatus"];
+                "application/json": components["schemas"]["PedidoUpdateStatus"];
             };
         };
         responses: {
@@ -4488,6 +4561,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Panorama"];
+                };
+            };
+        };
+    };
+    pedidos_painel_admin_pedidos_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PedidoAdmin"][];
                 };
             };
         };

@@ -33,6 +33,7 @@ const SolicitacoesPage = lazyComRetry(() => import("@/pages/painel/solicitacoes"
 const MembrosPage = lazyComRetry(() => import("@/pages/painel/membros").then((m) => ({ default: m.MembrosPage })))
 const DemandasPage = lazyComRetry(() => import("@/pages/painel/demandas").then((m) => ({ default: m.DemandasPage })))
 const AdminDemandasPage = lazyComRetry(() => import("@/pages/painel/admin-demandas").then((m) => ({ default: m.AdminDemandasPage })))
+const AdminPedidosHortaPage = lazyComRetry(() => import("@/pages/painel/admin-demandas").then((m) => ({ default: m.AdminPedidosHortaPage })))
 const ConfiguracoesPage = lazyComRetry(() => import("@/pages/painel/configuracoes").then((m) => ({ default: m.ConfiguracoesPage })))
 const PlantaDetalhePage = lazyComRetry(() => import("@/pages/painel/planta").then((m) => ({ default: m.PlantaDetalhePage })))
 const MeuCanteiroPage = lazyComRetry(() => import("@/pages/painel/meu-canteiro").then((m) => ({ default: m.MeuCanteiroPage })))
@@ -85,6 +86,7 @@ function App() {
               <Route path="solicitacoes" element={<RoleRoute roles={["LIDER_HORTA", "ADMIN_SUPREMO"]}><SolicitacoesPage /></RoleRoute>} />
               <Route path="demandas" element={<RoleRoute roles={["LIDER_HORTA"]}><DemandasPage /></RoleRoute>} />
               <Route path="admin-demandas" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><AdminDemandasPage /></RoleRoute>} />
+              <Route path="admin-demandas/:hortaId" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><AdminPedidosHortaPage /></RoleRoute>} />
               <Route path="membros" element={<RoleRoute roles={["LIDER_HORTA", "ADMIN_SUPREMO"]}><MembrosPage /></RoleRoute>} />
               <Route path="meu-canteiro" element={<RoleRoute roles={["LIDER_HORTA"]}><MeuCanteiroPage /></RoleRoute>} />
               {/* Líder também cuida do próprio canteiro — mesmas telas do membro. */}

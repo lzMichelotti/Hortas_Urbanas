@@ -15,10 +15,10 @@ from app.database.models import (
 from app.database.session import get_db
 from app.dependencies import get_admin_user
 from app.routers.canteiros import TOLERANCIA_ATRASO_DIAS
-from app.routers.demandas import CHEGA_A_ADMINISTRACAO
+from app.routers.demandas import abertos_e_historico, atraso_do_pedido
 from app.routers.hortas import _indice_biodiversidade, _to_publica
 from app.schemas.painel_admin import (
-    Fatia, FichaHorta, LiderResumo, Panorama, PerdaPorMotivo, PerfilHorticultores,
+    Fatia, FichaHorta, LiderResumo, Panorama, PedidoAdmin, PerdaPorMotivo, PerfilHorticultores,
     PontoSerie, Producao, ProducaoHorta, ProdutoNoPeriodo,
     ResumoCanteiros, ResumoDemandas, ResumoHortas, ResumoPessoas, ResumoProducao,
 )
@@ -181,7 +181,7 @@ def panorama(request: Request, db: DBDep):
             func.count().filter(Demanda.status == "EM_ATENDIMENTO"),
         )
         .join(Horta, Horta.id == Demanda.horta_id)
-        .filter(CHEGA_A_ADMINISTRACAO, Horta.ativo == True)
+        .filter(Horta.ativo == True)
         .one()
     )
 
@@ -192,11 +192,7 @@ def panorama(request: Request, db: DBDep):
         )
         .join(Canteiro, Canteiro.id == SolicitacaoPlantio.canteiro_id)
         .join(Horta, Horta.id == Canteiro.horta_id)
-        .filter(
-            SolicitacaoPlantio.encaminhada_em.isnot(None),
-            Canteiro.ativo == True,
-            Horta.ativo == True,
-        )
+        .filter(Canteiro.ativo == True, Horta.ativo == True)
         .one()
     )
 
@@ -217,6 +213,55 @@ def panorama(request: Request, db: DBDep):
         ),
     )
     return aplica_etag(request, payload, cache_control="private, max-age=60")
+
+
+@router.get("/pedidos", response_model=list[PedidoAdmin])
+def pedidos(request: Request, db: DBDep):
+    """Todos os pedidos de todas as hortas, já com quem pediu e o atraso calculado:
+    uma ida ao servidor monta a tela inteira, sem baixar a lista de usuários."""
+    plantas = abertos_e_historico(
+        db.query(SolicitacaoPlantio, Canteiro, Usuario.nome)
+        .join(Canteiro, Canteiro.id == SolicitacaoPlantio.canteiro_id)
+        .join(Horta, Horta.id == Canteiro.horta_id)
+        .outerjoin(Usuario, Usuario.id == Canteiro.usuario_id)
+        .filter(Canteiro.ativo == True, Horta.ativo == True),
+        SolicitacaoPlantio.status, SolicitacaoPlantio.id,
+    )
+    materiais = abertos_e_historico(
+        db.query(Demanda, Canteiro, Usuario.nome)
+        .join(Horta, Horta.id == Demanda.horta_id)
+        .outerjoin(Canteiro, Canteiro.id == Demanda.canteiro_id)
+        .outerjoin(Usuario, Usuario.id == Canteiro.usuario_id)
+        .filter(Horta.ativo == True),
+        Demanda.status, Demanda.id,
+    )
+
+    def comum(pedido, canteiro, nome):
+        return dict(
+            id=pedido.id,
+            canteiro_numero=canteiro.numero if canteiro else None,
+            solicitante=nome,
+            status=pedido.status,
+            criado_em=pedido.criado_em,
+            previsao_entrega=pedido.previsao_entrega,
+            encaminhada=pedido.encaminhada_em is not None,
+            atraso=atraso_do_pedido(pedido),
+        )
+
+    payload = [
+        PedidoAdmin(
+            tipo="PLANTA", horta_id=c.horta_id, produto_id=s.produto_id,
+            quantidade=s.quantidade, observacao=s.justificativa, **comum(s, c, nome),
+        )
+        for s, c, nome in plantas
+    ] + [
+        PedidoAdmin(
+            tipo="MATERIAL", horta_id=d.horta_id, descricao=d.descricao,
+            quantidade=d.quantidade, unidade=d.unidade_medida, **comum(d, c, nome),
+        )
+        for d, c, nome in materiais
+    ]
+    return aplica_etag(request, payload, cache_control="private, no-cache")
 
 
 def _serie_de(db: Session, coluna_data, desde: date, ate: date, *filtros) -> dict[str, int]:

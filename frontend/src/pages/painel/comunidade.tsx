@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input"
 import { Aviso, Carregando, EstadoVazio, FalhaAoCarregar, TelaFalhaAoCarregar } from "@/components/feedback"
 import { FalaDaGuia } from "@/components/guia"
 import { ConfirmacaoInline } from "@/components/confirmar"
+import { LinhaPrevisao } from "@/features/pedidos/linha-previsao"
 import { CelebracaoOverlay } from "@/components/celebracao"
 import type { components } from "@/lib/api/schema"
 
@@ -521,6 +522,9 @@ export function ComunidadePage() {
                     </div>
                     <ChipStatus info={STATUS[s.status]} />
                   </div>
+                  {s.status === "EM_ATENDIMENTO" && s.previsao_entrega && (
+                    <LinhaPrevisao previsao={s.previsao_entrega} className="mt-2 text-base" />
+                  )}
                   <button
                     onClick={() => setConfirmarCancelar(confirmarCancelar === `p${s.id}` ? null : `p${s.id}`)}
                     disabled={cancelarPlanta.isPending}
@@ -557,6 +561,9 @@ export function ComunidadePage() {
                     </div>
                     <ChipStatus info={STATUS[d.status]} />
                   </div>
+                  {d.status === "EM_ATENDIMENTO" && d.previsao_entrega && (
+                    <LinhaPrevisao previsao={d.previsao_entrega} className="mt-2 text-base" />
+                  )}
                   <button
                     onClick={() => setConfirmarCancelar(confirmarCancelar === `m${d.id}` ? null : `m${d.id}`)}
                     disabled={cancelarMaterial.isPending}

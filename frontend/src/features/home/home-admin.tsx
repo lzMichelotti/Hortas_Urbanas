@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { AlertTriangle, ClipboardList, Flag } from "lucide-react"
-import { useDemandas } from "@/features/demandas/use-demandas"
+import { usePedidosAdmin } from "@/features/admin/use-painel-admin"
 import { MunicipioVitrine } from "@/features/hortas/municipio-vitrine"
 import { Cena, type Badges } from "@/features/home/cena/cena"
 import { cenaAdmin } from "@/features/home/cena/cena-admin"
@@ -19,10 +19,12 @@ const OPCOES_ADMIN: OpcaoMenu[] = [
 export function HomeAdmin() {
   const [menu, setMenu] = useState(false)
 
-  const demandas = useDemandas()
-  const abertas = (demandas.data ?? []).filter((d) => d.status === "ABERTA").length
+  const pedidos = usePedidosAdmin()
+  const atencao = (pedidos.data ?? []).filter(
+    (p) => (p.status === "ABERTA" || p.status === "EM_ATENDIMENTO") && (p.atraso != null || p.encaminhada),
+  ).length
 
-  const badges: Badges = { demandas: { valor: abertas } }
+  const badges: Badges = { demandas: { valor: atencao } }
 
   return (
     <div className="absolute inset-x-0 top-0 bottom-0">

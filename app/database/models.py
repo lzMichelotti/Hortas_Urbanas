@@ -240,7 +240,9 @@ class SolicitacaoPlantio(Base):
     data_desejada_plantio = Column(Date, nullable=True)
     status = Column(String(50), nullable=False, default="ABERTA")
     idempotency_key = Column(UUID(as_uuid=True), nullable=True)
+    criado_em = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     encaminhada_em = Column(DateTime(timezone=True), nullable=True)
+    previsao_entrega = Column(Date, nullable=True)
 
     canteiro = relationship("Canteiro", back_populates="solicitacoes")
     produto = relationship("Produto", back_populates="solicitacoes")
@@ -273,6 +275,7 @@ class Demanda(Base):
     # nullable: só recebe data ao ser concluída/cancelada — enquanto aberta, não há.
     finalizado_em = Column(DateTime(timezone=True), nullable=True)
     encaminhada_em = Column(DateTime(timezone=True), nullable=True)
+    previsao_entrega = Column(Date, nullable=True)
 
     horta = relationship("Horta", back_populates="demandas")
     canteiro = relationship("Canteiro", back_populates="demandas")

@@ -5,13 +5,14 @@ from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.database.models import Canteiro, Produto, SolicitacaoPlantio, Usuario
 from app.schemas.solicitacao import (
-    SolicitacaoCreate, SolicitacaoRead, SolicitacaoUpdateEncaminhamento, SolicitacaoUpdateStatus,
+    SolicitacaoCreate, SolicitacaoRead, SolicitacaoUpdateEncaminhamento,
 )
+from app.schemas.demanda import PedidoUpdateStatus
 from app.dependencies import get_current_user, get_lider_user
 from app.permissions import exigir_acesso_horta, exigir_dono_do_canteiro, exigir_lider_da_horta
 from app.core.http import aplica_etag
 from app.core.idempotency import IdempotencyKeyHeader, commit_idempotente
-from app.routers.demandas import abertos_e_historico, aplicar_encaminhamento
+from app.routers.demandas import abertos_e_historico, aplicar_encaminhamento, aplicar_status
 
 router = APIRouter(tags=["Solicitações de Plantio"])
 
@@ -40,8 +41,6 @@ def read_solicitacoes(
         query = query.join(Canteiro).filter(
             Canteiro.horta_id == lider.horta_id, Canteiro.ativo == True
         )
-    else:
-        query = query.filter(SolicitacaoPlantio.encaminhada_em.isnot(None))
     return _pagina(request, query)
 
 
@@ -119,7 +118,7 @@ def encaminhar_solicitacao(
 @router.patch("/solicitacoes/{id}/status", response_model=SolicitacaoRead)
 def update_solicitacao_status(
     id: int,
-    update_data: SolicitacaoUpdateStatus,
+    update_data: PedidoUpdateStatus,
     db: DBDep,
     lider: Annotated[Usuario, Depends(get_lider_user)]
 ):
@@ -135,7 +134,7 @@ def update_solicitacao_status(
 
     exigir_lider_da_horta(lider, canteiro.horta_id)
 
-    db_solicitacao.status = update_data.status
+    aplicar_status(db_solicitacao, update_data)
     db.commit()
     return db_solicitacao
 
