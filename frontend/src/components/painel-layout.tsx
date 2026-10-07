@@ -1,12 +1,14 @@
 import { Suspense } from "react"
 import { Outlet, useLocation } from "react-router"
 import { useLembretesColheita } from "@/features/ciclos/use-lembretes"
+import { useAvisosPedidos } from "@/features/pedidos/use-avisos-pedidos"
 import { RouteBoundary } from "@/components/error-boundary"
 import { Carregando } from "@/components/feedback"
 import { NavInferior } from "@/components/nav-inferior"
 
 export function PainelLayout() {
   useLembretesColheita()
+  useAvisosPedidos()
   const naInicio = useLocation().pathname === "/painel"
 
   return (

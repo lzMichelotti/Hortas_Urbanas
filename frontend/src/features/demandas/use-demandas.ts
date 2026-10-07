@@ -19,9 +19,10 @@ export function invalidarPedidos(qc: QueryClient) {
   }
 }
 
-export function useDemandas() {
+export function useDemandas(ativo = true) {
   return useQuery({
     queryKey: ["demandas"],
+    enabled: ativo,
     queryFn: ({ signal }) => unwrap(api.GET("/demandas", { signal })),
   })
 }

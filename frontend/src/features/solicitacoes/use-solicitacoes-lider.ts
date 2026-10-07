@@ -3,9 +3,10 @@ import { api } from "@/lib/api/client"
 import { unwrap } from "@/lib/api/errors"
 import { corpoAtualizacao, invalidarPedidos, type AtualizacaoPedido } from "@/features/demandas/use-demandas"
 
-export function useSolicitacoesLider() {
+export function useSolicitacoesLider(ativo = true) {
   return useQuery({
     queryKey: ["solicitacoes", "lider"],
+    enabled: ativo,
     queryFn: ({ signal }) => unwrap(api.GET("/solicitacoes", { signal })),
   })
 }

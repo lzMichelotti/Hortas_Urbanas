@@ -64,7 +64,7 @@ function planejar(ciclos: Ciclo[], nomeProduto: NomeProduto): LocalNotificationS
   return out
 }
 
-async function garantirPermissao(): Promise<boolean> {
+export async function garantirPermissao(): Promise<boolean> {
   const atual = await LocalNotifications.checkPermissions()
   if (atual.display === "granted") return true
   if (atual.display === "denied") return false

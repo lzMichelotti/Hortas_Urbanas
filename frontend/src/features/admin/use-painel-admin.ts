@@ -54,9 +54,10 @@ export function useArquivarDenuncia() {
   })
 }
 
-export function usePedidosAdmin() {
+export function usePedidosAdmin(ativo = true) {
   return useQuery({
     queryKey: ["admin-pedidos"],
+    enabled: ativo,
     queryFn: ({ signal }) => unwrap(api.GET("/painel/admin/pedidos", { signal })),
   })
 }
