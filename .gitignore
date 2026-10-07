@@ -24,3 +24,6 @@ shp/
 # Prints candidatos para o README — área de triagem, fica só local.
 # As imagens escolhidas são copiadas para docs/screenshots/, essa sim versionada.
 docs/prints/
+
+# Roadmap da arquitetura AWS — ainda não vai para o repo.
+docs/arquitetura-aws.md
