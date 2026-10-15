@@ -49,17 +49,15 @@ services:
     restart: always
     depends_on:
       - api
-    # IMPORTANTE: o firewall da VPS (Hostinger / ufw) PRECISA liberar 80 e 443.
-    # A 80 é usada no desafio ACME (HTTP-01) e no redirect HTTP->HTTPS; a 443 no
-    # tráfego TLS (e no fallback TLS-ALPN-01). Sem essas portas abertas no host,
-    # o Caddy não consegue emitir o certificado Let's Encrypt e o HTTPS não sobe.
+    # A máquina do CTISM fica atrás de NAT e não recebe conexão direta da internet.
+    # O acesso entra pelo Cloudflare, que conecta no IP público do CTISM na 8443, e de
+    # lá o encaminhamento leva até esta VM. Por isso só a 8443 é publicada: a 80 e a 443
+    # daquele IP já pertencem a outro serviço.
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"   # HTTP/3 (QUIC), habilitado por padrão pelo Caddy
+      - "8443:8443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data       # certificados TLS — PRECISA persistir (rate limit do Let's Encrypt)
+      - caddy_data:/data       # estado interno do Caddy; persiste certificados quando houver
       - caddy_config:/config
 
 volumes:

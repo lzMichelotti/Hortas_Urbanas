@@ -1,8 +1,12 @@
-api.hortasurbanassm.com.br {
+# Porta 8443 porque a 443 do IP público do CTISM já é de outro serviço; o Cloudflare
+# recebe o visitante na 443 e conecta aqui na 8443 (Origin Rules). O prefixo `http://`
+# é obrigatório: sem ele o Caddy liga o HTTPS automático, tenta emitir certificado no
+# Let's Encrypt e falha em laço, porque o desafio ACME exige a porta 80 vinda da internet.
+http://api.hortasurbanassm.com.br:8443 {
 	reverse_proxy api:8000
 }
 
-app.hortasurbanassm.com.br {
+http://app.hortasurbanassm.com.br:8443 {
 	root * /srv/app
 	encode gzip
 
