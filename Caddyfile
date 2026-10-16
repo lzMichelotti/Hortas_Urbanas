@@ -18,6 +18,6 @@ http://app.hortasurbanassm.com.br:8443 {
 	@nohash not path /assets/*
 	header @nohash Cache-Control "no-cache"
 
-	try_files {path} /index.html
+	try_files {path} {path}.html /index.html
 	file_server
 }

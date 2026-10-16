@@ -33,7 +33,14 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
-        globIgnores: ["**/geist-cyrillic*", "**/geist-vietnamese*", "**/geist-latin-ext*"],
+        globIgnores: [
+          "**/geist-cyrillic*",
+          "**/geist-vietnamese*",
+          "**/geist-latin-ext*",
+          "baixar.html",
+        ],
+        // /baixar é para quem ainda não tem o app; sem isto o SW responde com o index.html.
+        navigateFallbackDenylist: [/^\/baixar/],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
