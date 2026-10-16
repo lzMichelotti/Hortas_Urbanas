@@ -11,7 +11,7 @@ import { ArtePlanta } from "@/features/produtos/sprite-produto"
 import { FalaDaGuia } from "@/components/guia"
 import { CelebracaoOverlay } from "@/components/celebracao"
 import { EscolherMotivoPerda } from "@/features/ciclos/motivo-perda"
-import { Aviso, Carregando } from "@/components/feedback"
+import { Aviso, Carregando, TelaFalhaAoCarregar } from "@/components/feedback"
 import { Button } from "@/components/ui/button"
 import type { components } from "@/lib/api/schema"
 
@@ -51,6 +51,8 @@ export function PlantaDetalhePage() {
   const [colhido, setColhido] = useState(false)
 
   if (canteiro.isPending || ciclos.isPending) return <Carregando />
+  if (canteiro.isLoadingError || ciclos.isLoadingError)
+    return <TelaFalhaAoCarregar voltarPara="/painel" />
 
   const ciclo = (ciclos.data ?? []).find((c) => c.id === Number(id))
   if (!ciclo) {
