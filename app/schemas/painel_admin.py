@@ -97,7 +97,7 @@ class LiderResumo(BaseModel):
     id: int
     nome: str
     email: str
-    telefone: str
+    telefone: Optional[str] = None
 
 
 class FichaHorta(BaseModel):

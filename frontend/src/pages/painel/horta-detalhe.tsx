@@ -175,12 +175,14 @@ export function HortaDetalhePage() {
                 {f.lider.email}
               </a>
             </p>
-            <p className="flex items-center gap-2 text-hu-muted">
-              <Phone className="size-4 shrink-0 text-hu-bright" aria-hidden />
-              <a href={`tel:${f.lider.telefone}`} className="underline underline-offset-2">
-                {f.lider.telefone}
-              </a>
-            </p>
+            {f.lider.telefone && (
+              <p className="flex items-center gap-2 text-hu-muted">
+                <Phone className="size-4 shrink-0 text-hu-bright" aria-hidden />
+                <a href={`tel:${f.lider.telefone}`} className="underline underline-offset-2">
+                  {f.lider.telefone}
+                </a>
+              </p>
+            )}
           </div>
         ) : (
           <p className="text-sm font-bold text-amber-600 dark:text-amber-400">

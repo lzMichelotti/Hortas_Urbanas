@@ -170,10 +170,12 @@ export function UsuariosPage() {
                     <Mail className="size-3.5 shrink-0" aria-hidden />
                     <span className="truncate">{u.email}</span>
                   </p>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-sm text-hu-muted">
-                    <Phone className="size-3.5 shrink-0" aria-hidden />
-                    {formatTelefone(u.telefone)}
-                  </p>
+                  {u.telefone && (
+                    <p className="mt-0.5 flex items-center gap-1.5 text-sm text-hu-muted">
+                      <Phone className="size-3.5 shrink-0" aria-hidden />
+                      {formatTelefone(u.telefone)}
+                    </p>
+                  )}
                   {horta && (
                     <p className="mt-0.5 flex items-center gap-1.5 text-xs text-hu-text">
                       <Sprout className="size-3.5 shrink-0 text-hu-bright" aria-hidden />

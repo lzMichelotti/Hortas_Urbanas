@@ -45,7 +45,8 @@ export function MembrosPage() {
   const [tentouEnviar, setTentouEnviar] = useState(false)
 
   const cpfValido = validarCPF(cpf)
-  const telValido = validarTelefone(telefone)
+  // Telefone é opcional: vazio passa, preenchido pela metade não.
+  const telValido = !digitos(telefone) || validarTelefone(telefone)
   const cpfCompleto = digitos(cpf).length === 11
   const telCompleto = digitos(telefone).length >= 10
 

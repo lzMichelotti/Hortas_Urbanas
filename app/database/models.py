@@ -91,7 +91,7 @@ class Usuario(Base):
     email = Column(String(255), unique=True, nullable=False)
     cpf = Column(String(14), unique=True, nullable=False)
     senha_hash = Column(String(255), nullable=False)
-    telefone = Column(String(20), nullable=False)
+    telefone = Column(String(20), nullable=True)
     privilegio = Column(String(50), nullable=False)
 
     nascimento_ano = Column(SmallInteger, nullable=True)

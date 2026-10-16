@@ -43,7 +43,7 @@ class UsuarioCreate(DadosHorticultor):
     nome: str
     email: EmailStr
     cpf: str
-    telefone: str
+    telefone: Optional[str] = None
     privilegio: Privilegio
     horta_id: Optional[int] = None
 
@@ -92,7 +92,7 @@ class UsuarioRead(BaseModel):
     nome: str
     email: EmailStr
     cpf: str = Field(exclude=True)
-    telefone: str
+    telefone: Optional[str] = None
     privilegio: Privilegio
     avatar: str
     horta_id: Optional[int] = None
@@ -117,7 +117,7 @@ class UsuarioReadCompleto(BaseModel):
     nome: str
     email: EmailStr
     cpf: str
-    telefone: str
+    telefone: Optional[str] = None
     privilegio: Privilegio
     avatar: str
     horta_id: Optional[int] = None
