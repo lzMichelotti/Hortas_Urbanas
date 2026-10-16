@@ -293,11 +293,12 @@ export function MapaPage() {
         zoomControl={false}
         className="absolute inset-0 z-0"
       >
+        {/* O CARTO passou a exigir chave e devolve um PNG "API KEY REQUIRED" no lugar do
+            mapa. A política do OSM pede a URL exata, sem subdomínios, e sem o sufixo {r}. */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-          subdomains="abcd"
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={ZOOM_MAX}
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         />
         <ZoomControl position="bottomright" />
 

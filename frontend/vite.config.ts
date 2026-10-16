@@ -37,7 +37,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.hostname.endsWith("basemaps.cartocdn.com"),
+            urlPattern: ({ url }) => url.hostname === "tile.openstreetmap.org",
             handler: "CacheFirst",
             options: {
               cacheName: "mapa-tiles",
