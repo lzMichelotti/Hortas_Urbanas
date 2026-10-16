@@ -1,6 +1,8 @@
-import { useState } from "react"
-import { ChevronDown } from "lucide-react"
+import { useRef, useState, type Ref } from "react"
+import { ChevronDown, LoaderCircle } from "lucide-react"
 import { useCadastrarHorta } from "@/features/hortas/use-cadastrar-horta"
+import { buscarCep } from "@/features/hortas/buscar-cep"
+import { digitos, formatCEP } from "@/lib/br"
 import { Voltar } from "@/components/voltar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -49,6 +51,7 @@ function Campo({
   inputMode,
   placeholder,
   maxLength,
+  ref,
 }: {
   id: string
   label: string
@@ -58,6 +61,7 @@ function Campo({
   inputMode?: "text" | "numeric" | "email" | "tel"
   placeholder?: string
   maxLength?: number
+  ref?: Ref<HTMLInputElement>
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -65,6 +69,7 @@ function Campo({
         {label}
       </Label>
       <Input
+        ref={ref}
         id={id}
         type={type}
         inputMode={inputMode}
@@ -131,7 +136,43 @@ export function CadastroHortaPage() {
   const [nivelVulnerabilidade, setNivelVulnerabilidade] = useState<NivelVulnerabilidade | null>(null)
   const [praticas, setPraticas] = useState<PraticaCultivo[]>([])
 
+  const [cepStatus, setCepStatus] = useState<"ocioso" | "buscando" | "nao-achou" | "sem-rede">("ocioso")
+  const cepPedido = useRef("")
+  const numeroRef = useRef<HTMLInputElement>(null)
+
   const set = (campo: keyof Campos, valor: string) => setForm((f) => ({ ...f, [campo]: valor }))
+
+  function mudarCep(valor: string) {
+    const cep = formatCEP(valor)
+    set("cep", cep)
+    const d = digitos(cep)
+    if (d.length !== 8) {
+      cepPedido.current = ""
+      setCepStatus("ocioso")
+      return
+    }
+    if (d === cepPedido.current) return
+    cepPedido.current = d
+    setCepStatus("buscando")
+    buscarCep(d)
+      .then((end) => {
+        if (cepPedido.current !== d) return
+        if (!end) return setCepStatus("nao-achou")
+        // Campo vazio na resposta (ex.: distrito rural sem rua) não apaga o que a pessoa digitou.
+        setForm((f) => ({
+          ...f,
+          rua: end.rua || f.rua,
+          bairro: end.bairro || f.bairro,
+          cidade: end.cidade || f.cidade,
+          uf: UFS.some((u) => u.valor === end.uf) ? end.uf : f.uf,
+        }))
+        setCepStatus("ocioso")
+        numeroRef.current?.focus()
+      })
+      .catch(() => {
+        if (cepPedido.current === d) setCepStatus("sem-rede")
+      })
+  }
 
   function togglePratica(p: PraticaCultivo) {
     setPraticas((prev) =>
@@ -204,6 +245,8 @@ export function CadastroHortaPage() {
           setSucesso(`Horta "${data.horta.nome}" cadastrada! Líder: ${data.lider.email}`)
           setForm(VAZIO)
           setLocal(null)
+          cepPedido.current = ""
+          setCepStatus("ocioso")
           resetAdicional()
           setAdicionalAberto(false)
           setTentou(false)
@@ -226,12 +269,38 @@ export function CadastroHortaPage() {
         <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo id="nome" label="Nome da horta *" value={form.nome} onChange={(v) => set("nome", v)} placeholder="Ex.: Horta do Centro" />
           <Campo id="area" label="Área total (m²) *" value={form.area_total} onChange={(v) => set("area_total", v)} inputMode="numeric" placeholder="450" />
+          <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <Label htmlFor="cep" className="text-sm text-hu-text">
+              CEP
+            </Label>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <Input
+                id="cep"
+                inputMode="numeric"
+                autoComplete="postal-code"
+                placeholder="00000-000"
+                maxLength={9}
+                value={form.cep}
+                onChange={(e) => mudarCep(e.target.value)}
+                className={`${INPUT_CLASS} w-40`}
+              />
+              <span role="status" aria-live="polite" className="flex items-center gap-1.5 text-sm text-hu-muted">
+                {cepStatus === "buscando" && (
+                  <>
+                    <LoaderCircle className="size-4 animate-spin" aria-hidden />
+                    Procurando endereço…
+                  </>
+                )}
+                {cepStatus === "nao-achou" && "Não achamos esse CEP. Pode escrever o endereço abaixo."}
+                {cepStatus === "sem-rede" && "Não deu para buscar agora. Pode escrever o endereço abaixo."}
+              </span>
+            </div>
+          </div>
           <Campo id="rua" label="Rua" value={form.rua} onChange={(v) => set("rua", v)} />
-          <Campo id="numero" label="Número" value={form.numero} onChange={(v) => set("numero", v)} />
+          <Campo id="numero" label="Número" value={form.numero} onChange={(v) => set("numero", v)} ref={numeroRef} />
           <Campo id="bairro" label="Bairro" value={form.bairro} onChange={(v) => set("bairro", v)} />
           <Campo id="cidade" label="Cidade" value={form.cidade} onChange={(v) => set("cidade", v)} />
           <Selecionar id="uf" label="Estado (UF)" value={form.uf || null} onChange={(v) => set("uf", v ?? "")} opcoes={UFS} placeholder="Escolha" />
-          <Campo id="cep" label="CEP" value={form.cep} onChange={(v) => set("cep", v)} inputMode="numeric" />
         </div>
         <div className="mt-4">
           <Campo id="publico" label="Público atendido" value={form.publico_atendido} onChange={(v) => set("publico_atendido", v)} placeholder="Ex.: moradores e escolas da região" />
