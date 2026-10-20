@@ -353,22 +353,6 @@ frontend/
 └── android/            # projeto Capacitor
 ```
 
-## Limitações conhecidas e próximos passos
-
-Sendo honesto sobre o que ainda falta:
-
-- [ ] **Ativar a camada de risco climático** — construída e testada, aguardando a
-      importação das zonas do município e o lançamento da gestão.
-- [ ] **Rate limiting** na autenticação — apontado na auditoria de segurança, ainda não
-      implementado.
-- [ ] **Backup automatizado** do banco em produção.
-- [ ] **CI** — os testes rodam localmente; falta automatizar no push.
-- [ ] Documentação de tratamento de dados pessoais (LGPD) para os usuários finais.
-
-Decisões deliberadas que podem parecer omissão: não há fila de tarefas, cache distribuído
-nem sharding. O sistema atende as hortas de um único município — adicionar essa
-complexidade seria otimizar para uma escala que o projeto não tem, ao custo de manutenção
-que uma pessoa só teria que carregar.
 
 ## Autor
 
