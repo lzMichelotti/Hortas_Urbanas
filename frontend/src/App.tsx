@@ -37,6 +37,7 @@ const AdminPedidosHortaPage = lazyComRetry(() => import("@/pages/painel/admin-de
 const ConfiguracoesPage = lazyComRetry(() => import("@/pages/painel/configuracoes").then((m) => ({ default: m.ConfiguracoesPage })))
 const PlantaDetalhePage = lazyComRetry(() => import("@/pages/painel/planta").then((m) => ({ default: m.PlantaDetalhePage })))
 const MeuCanteiroPage = lazyComRetry(() => import("@/pages/painel/meu-canteiro").then((m) => ({ default: m.MeuCanteiroPage })))
+const SensoresPage = lazyComRetry(() => import("@/pages/painel/sensores").then((m) => ({ default: m.SensoresPage })))
 
 function Carregando() {
   return (
@@ -78,6 +79,7 @@ function App() {
               <Route path="producao" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><ProducaoPage /></RoleRoute>} />
               <Route path="horticultores" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><HorticultoresPage /></RoleRoute>} />
               <Route path="moderacao" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><ModeracaoPage /></RoleRoute>} />
+              <Route path="sensores" element={<RoleRoute roles={["ADMIN_SUPREMO"]}><SensoresPage /></RoleRoute>} />
               <Route path="riscos" element={<PlaceholderPainel titulo="Zonas de risco" />} />
               <Route path="config" element={<ConfiguracoesPage />} />
               <Route path="horta" element={<RoleRoute roles={["LIDER_HORTA"]}><MinhaHortaPage /></RoleRoute>} />

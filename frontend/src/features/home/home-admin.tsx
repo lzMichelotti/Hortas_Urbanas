@@ -1,6 +1,7 @@
 import { useState } from "react"
-import { AlertTriangle, ClipboardList, Flag } from "lucide-react"
+import { AlertTriangle, ClipboardList, Flag, Thermometer } from "lucide-react"
 import { usePedidosAdmin } from "@/features/admin/use-painel-admin"
+import { coordenadorDisponivel } from "@/features/coordenador/disponivel"
 import { MunicipioVitrine } from "@/features/hortas/municipio-vitrine"
 import { Cena, type Badges } from "@/features/home/cena/cena"
 import { cenaAdmin } from "@/features/home/cena/cena-admin"
@@ -14,6 +15,7 @@ const OPCOES_ADMIN: OpcaoMenu[] = [
   { label: "Denúncias", icon: Flag, to: "/painel/moderacao" },
   { label: "Zonas de risco", icon: AlertTriangle, to: "/painel/riscos" },
   { label: "Mapa", img: "/mapa.png", to: "/mapa" },
+  ...(coordenadorDisponivel ? [{ label: "Sensores", icon: Thermometer, to: "/painel/sensores" }] : []),
 ]
 
 export function HomeAdmin() {
