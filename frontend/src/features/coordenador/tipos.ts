@@ -6,6 +6,8 @@ export type ClasseSolo = "seco" | "umido" | "encharcado"
 export type ModoEnergia = "normal" | "economia" | "critico"
 
 export interface StatusCoordenador {
+  // Revisão 1.1: chave de uma leitura fora do coordenador = (coordenador, geracao, id).
+  coordenador: string
   firmware: string
   protocolo: number
   api: number
@@ -18,6 +20,7 @@ export interface StatusCoordenador {
   }
   armazenamento: {
     estado: "ok" | "formatado_no_boot" | "espaco_baixo" | "falhas_de_gravacao" | "nao_montado"
+    geracao: string | null
     total_kb: number
     usado_kb: number
     registros: number
