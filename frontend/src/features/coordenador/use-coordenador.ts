@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from "react"
 import { App } from "@capacitor/app"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { lerStatus } from "./api"
+import { lerAlertas, lerNos, lerStatus } from "./api"
 import { Coordenador } from "./plugin"
 
 export type EstadoWifi = "procurando" | "com_wifi" | "sem_wifi"
 
-const INTERVALO_STATUS_MS = 15_000
+// O nó envia a cada 15 min no campo: 30 s já mostra uma leitura nova logo que chega,
+// sem disputar o coordenador (uma requisição por vez) com a sincronização da 10.4.
+const INTERVALO_MS = 30_000
 
 function pedirRede(setWifi: (e: EstadoWifi) => void) {
   return Coordenador.conectar().then(
@@ -54,14 +56,23 @@ export function useWifiDaHorta() {
   }
 }
 
+// Sem resposta, para de repetir: fora da rede da horta não adianta insistir. Volta
+// sozinha quando a rede reaparece (redeDisponivel invalida as consultas) ou no "Já conectei".
+const opcoesComuns = {
+  // A rede da horta não tem Internet: o modo padrão ("online") pausaria a consulta.
+  networkMode: "always",
+  retry: 1,
+  refetchInterval: (q: { state: { status: string } }) => (q.state.status === "error" ? false : INTERVALO_MS),
+} as const
+
 export function useStatusCoordenador(ativo: boolean) {
-  return useQuery({
-    queryKey: ["coordenador", "status"],
-    queryFn: lerStatus,
-    enabled: ativo,
-    // A rede da horta não tem Internet: o modo padrão ("online") pausaria a consulta.
-    networkMode: "always",
-    retry: 1,
-    refetchInterval: INTERVALO_STATUS_MS,
-  })
+  return useQuery({ queryKey: ["coordenador", "status"], queryFn: lerStatus, enabled: ativo, ...opcoesComuns })
+}
+
+export function useNosCoordenador(ativo: boolean) {
+  return useQuery({ queryKey: ["coordenador", "nos"], queryFn: lerNos, enabled: ativo, ...opcoesComuns })
+}
+
+export function useAlertasCoordenador(ativo: boolean) {
+  return useQuery({ queryKey: ["coordenador", "alertas"], queryFn: lerAlertas, enabled: ativo, ...opcoesComuns })
 }

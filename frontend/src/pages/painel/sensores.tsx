@@ -1,18 +1,29 @@
 import type { ReactNode } from "react"
-import { Clock, Database, HardDrive, Wifi, type LucideIcon } from "lucide-react"
+import { Bell, Clock, Database, HardDrive, type LucideIcon } from "lucide-react"
 import { Aviso } from "@/components/feedback"
 import { FalaDaGuia } from "@/components/guia"
 import { Voltar } from "@/components/voltar"
-import { Button } from "@/components/ui/button"
+import { Atalho } from "@/features/admin/blocos"
+import { CartaoNo } from "@/features/coordenador/cartao-no"
+import { estaParado } from "@/features/coordenador/classificacao"
 import { coordenadorDisponivel } from "@/features/coordenador/disponivel"
-import { Chao, PlacaDaHorta } from "@/features/coordenador/placa"
-import { useStatusCoordenador, useWifiDaHorta } from "@/features/coordenador/use-coordenador"
-import type { StatusCoordenador } from "@/features/coordenador/tipos"
-import { cn } from "@/lib/utils"
+import { PlacaConectar, PlacaProcurando } from "@/features/coordenador/placa"
+import { IndicadorPuxar } from "@/features/coordenador/puxar"
+import { usePuxarParaAtualizar } from "@/features/coordenador/use-puxar"
+import type { NoCoordenador, StatusCoordenador } from "@/features/coordenador/tipos"
+import { useNosCoordenador, useStatusCoordenador, useWifiDaHorta } from "@/features/coordenador/use-coordenador"
+import { cn, plural } from "@/lib/utils"
 
-function veredito(s: StatusCoordenador): string {
-  if (s.armazenamento.estado !== "ok") return "A memória dos sensores precisa de atenção."
-  if (!s.hora.valida) return "O relógio dos sensores está errado."
+function veredito(nos: NoCoordenador[], s: StatusCoordenador | undefined): string {
+  if (nos.length === 0) return "Nenhum sensor mandou leitura ainda."
+  const parados = nos.filter(estaParado).length
+  if (parados > 0) return `${plural(parados, "sensor está parado", "sensores estão parados")}.`
+  const comProblema = nos.some((n) => {
+    const e = n.ultima_leitura?.estados
+    return e != null && (e.temperatura !== "ok" || e.umidade_ar !== "ok" || e.solo !== "ok")
+  })
+  if (comProblema) return "Um sensor precisa de atenção."
+  if (s && !s.hora.valida) return "Os sensores estão bem, mas o relógio da central está errado."
   return "Tudo certo com os sensores! 🌱"
 }
 
@@ -31,57 +42,44 @@ export function SensoresPage() {
 
 function Sensores() {
   const { wifi, procurarDeNovo, abrirWifi } = useWifiDaHorta()
-  const status = useStatusCoordenador(wifi === "com_wifi")
+  const naRede = wifi === "com_wifi"
+  const nos = useNosCoordenador(naRede)
+  const status = useStatusCoordenador(naRede)
+  const { gestos, puxada, atualizando } = usePuxarParaAtualizar(() => Promise.all([nos.refetch(), status.refetch()]))
 
   // Perdeu o contato: volta para a placa em vez de mostrar números velhos com um alerta.
-  if (status.data && !status.isError) return <Painel s={status.data} />
-
-  const procurando = wifi === "procurando" || (wifi === "com_wifi" && !status.isError)
-  if (procurando) {
+  if (nos.data && !nos.isError) {
     return (
-      <div role="status" aria-live="polite" className="mt-6">
-        <PlacaDaHorta>
-          <Wifi className="size-14 animate-pulse" aria-hidden />
-          <p className="text-lg font-bold leading-snug">Procurando os sensores…</p>
-        </PlacaDaHorta>
-        <Chao />
+      <div {...gestos} className="flex flex-col gap-4">
+        <IndicadorPuxar puxada={puxada} atualizando={atualizando} />
+        <FalaDaGuia>{veredito(nos.data, status.data)}</FalaDaGuia>
+        {nos.data.map((no) => (
+          <CartaoNo key={no.mac} no={no} />
+        ))}
+        <Atalho para="/painel/sensores/avisos" icone={Bell}>
+          Avisos dos sensores
+        </Atalho>
+        {status.data && <Central s={status.data} />}
       </div>
     )
   }
 
+  if (wifi === "procurando" || (naRede && !nos.isError)) return <PlacaProcurando />
+
   return (
-    <div className="mt-6 flex flex-col gap-6">
-      <div>
-        <PlacaDaHorta>
-          <Wifi className="size-14" aria-hidden />
-          <p className="text-lg font-bold leading-snug">Conecte no Wi-Fi da horta</p>
-        </PlacaDaHorta>
-        <Chao />
-      </div>
-      <Button
-        onClick={() => void abrirWifi()}
-        className="h-14 gap-3 rounded-xl bg-hu-bright text-lg font-bold text-hu-bg hover:bg-hu-bright/90"
-      >
-        <Wifi className="size-6" aria-hidden />
-        Conectar
-      </Button>
-      <button
-        type="button"
-        onClick={() => void (wifi === "sem_wifi" ? procurarDeNovo() : status.refetch())}
-        className="-mt-2 self-center rounded-lg p-2 text-base font-medium text-hu-bright hover:bg-black/5 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-hu-bright/50"
-      >
-        Já conectei
-      </button>
-    </div>
+    <PlacaConectar
+      aoConectar={() => void abrirWifi()}
+      aoJaConectei={() => void (wifi === "sem_wifi" ? procurarDeNovo() : nos.refetch())}
+    />
   )
 }
 
-function Painel({ s }: { s: StatusCoordenador }) {
+function Central({ s }: { s: StatusCoordenador }) {
   const usado = s.armazenamento.total_kb > 0 ? Math.round((s.armazenamento.usado_kb / s.armazenamento.total_kb) * 100) : 0
   const memoriaOk = s.armazenamento.estado === "ok"
   return (
-    <>
-      <FalaDaGuia humor={memoriaOk && s.hora.valida ? "feliz" : "neutra"}>{veredito(s)}</FalaDaGuia>
+    <section className="mt-2 flex flex-col gap-3">
+      <h2 className="text-base font-bold text-hu-text">Central da horta</h2>
       <div className="grid grid-cols-3 gap-3">
         <Bloco icone={Clock} ok={s.hora.valida} rotulo="relógio">
           {s.hora.valida ? "Certo" : "Errado"}
@@ -99,7 +97,7 @@ function Painel({ s }: { s: StatusCoordenador }) {
           {s.armazenamento.registros.toLocaleString("pt-BR")}
         </Bloco>
       </div>
-    </>
+    </section>
   )
 }
 

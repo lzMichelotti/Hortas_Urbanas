@@ -1,6 +1,6 @@
 import { registrarMedicao } from "./medicoes"
 import { Coordenador } from "./plugin"
-import type { ErroApiCoordenador, StatusCoordenador } from "./tipos"
+import type { Alerta, ErroApiCoordenador, NoCoordenador, StatusCoordenador } from "./tipos"
 
 const BASE = import.meta.env.VITE_COORDENADOR_URL
 
@@ -67,3 +67,5 @@ async function pedir<T>(rota: string, metodo = "GET", corpo?: unknown): Promise<
 }
 
 export const lerStatus = () => pedir<StatusCoordenador>("/status")
+export const lerNos = () => pedir<{ nos: NoCoordenador[] }>("/nos").then((r) => r.nos)
+export const lerAlertas = () => pedir<{ alertas: Alerta[] }>("/alertas").then((r) => r.alertas)
