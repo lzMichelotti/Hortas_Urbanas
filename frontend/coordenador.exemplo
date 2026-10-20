@@ -1,0 +1,6 @@
+# Copie para "coordenador.local" (ignorado pelo Git, via *.local) e preencha.
+# NÃO use o prefixo VITE_ aqui: tudo que é VITE_* vai para dentro do bundle.
+# Este arquivo não é lido pelo Vite; serve de referência para os testes (10.6).
+COORD_WIFI_SSID=
+COORD_WIFI_SENHA=
+COORD_TOKEN=
