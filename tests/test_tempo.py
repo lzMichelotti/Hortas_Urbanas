@@ -108,7 +108,9 @@ class TestDataDaPerda:
         ignoraria este valor e o teste quebraria."""
         import app.routers.ciclos as rota
 
-        dia_local = date(2026, 8, 3)
+        # Relativo ao relógio real: uma data fixa acabaria ficando antes do plantio
+        # (60 dias atrás) e o CHECK de perdido_em >= data_plantio mascararia o teste.
+        dia_local = hoje() - timedelta(days=30)
         monkeypatch.setattr(rota, "hoje", lambda: dia_local)
 
         ciclo = _plantar(client, admin_headers, canteiro, produto, dias_atras=60).json()

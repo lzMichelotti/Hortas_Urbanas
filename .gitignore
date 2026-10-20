@@ -18,6 +18,7 @@ test_r2.py
 
 # Importação de zonas de risco — tooling + dados geoespaciais, entram junto com o mapa.
 scripts/importar_zonas_risco.py
+tests/test_importador_zonas_risco.py
 requirements-scripts.txt
 shp/
 
