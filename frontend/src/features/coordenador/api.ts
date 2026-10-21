@@ -1,6 +1,6 @@
 import { registrarMedicao } from "./medicoes"
 import { Coordenador } from "./plugin"
-import type { Alerta, ErroApiCoordenador, NoCoordenador, StatusCoordenador } from "./tipos"
+import type { Alerta, ErroApiCoordenador, NoCoordenador, PaginaLeituras, StatusCoordenador } from "./tipos"
 
 const BASE = import.meta.env.VITE_COORDENADOR_URL
 
@@ -26,7 +26,7 @@ export class ErroCoordenador extends Error {
   }
 }
 
-async function pedir<T>(rota: string, metodo = "GET", corpo?: unknown): Promise<T> {
+async function pedir<T>(rota: string, metodo = "GET", corpo?: unknown, esperaMs?: number): Promise<T> {
   const inicio = performance.now()
   const medir = (status: number, msNativo: number | null, bytes: number) =>
     registrarMedicao({
@@ -45,6 +45,7 @@ async function pedir<T>(rota: string, metodo = "GET", corpo?: unknown): Promise<
       url: `${BASE}/api/v1${rota}`,
       metodo,
       corpo: corpo === undefined ? undefined : JSON.stringify(corpo),
+      esperaMs,
     })
   } catch (e) {
     const { code, data } = (e ?? {}) as { code?: unknown; data?: { duracaoMs?: unknown } }
@@ -68,4 +69,8 @@ async function pedir<T>(rota: string, metodo = "GET", corpo?: unknown): Promise<
 
 export const lerStatus = () => pedir<StatusCoordenador>("/status")
 export const lerNos = () => pedir<{ nos: NoCoordenador[] }>("/nos").then((r) => r.nos)
+// Página de 100: as de 200 fizeram o nó perder confirmações na bancada.
+// Prazo de 30 s: no teste com a placa real, páginas oscilaram de 0,5 a 15 s.
+export const lerPagina = (cursor: number | null) =>
+  pedir<PaginaLeituras>(`/leituras?ordem=asc&limite=100${cursor == null ? "" : `&cursor=${cursor}`}`, "GET", undefined, 30_000)
 export const lerAlertas = () => pedir<{ alertas: Alerta[] }>("/alertas").then((r) => r.alertas)

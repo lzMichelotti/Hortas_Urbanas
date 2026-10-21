@@ -7,6 +7,8 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.provider.Settings;
 import com.getcapacitor.JSObject;
@@ -38,23 +40,44 @@ public class CoordenadorPlugin extends Plugin {
     // ocupar a thread que o Capacitor divide entre todos os plugins.
     private final ExecutorService fila = Executors.newSingleThreadExecutor();
 
+    private final Handler principal = new Handler(Looper.getMainLooper());
+
     private ConnectivityManager conectividade;
     private ConnectivityManager.NetworkCallback pedidoAtual;
     private volatile Network rede;
+    private PluginCall chamadaPendente;
 
     @Override
     public void load() {
         conectividade = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
     }
 
+    // O pedido de rede fica ativo até desconectar(): assim o Android avisa sempre que um
+    // Wi-Fi aparece (inclusive depois de cair). Só a resposta ao conectar() tem prazo.
     @PluginMethod
     public void conectar(PluginCall call) {
+        if (pedidoAtual == null) registrarPedido();
         if (rede != null) {
             call.resolve();
             return;
         }
-        liberarRede();
+        synchronized (this) {
+            if (chamadaPendente != null) chamadaPendente.reject("Sem Wi-Fi", "SEM_WIFI");
+            chamadaPendente = call;
+        }
+        principal.postDelayed(
+            () -> {
+                synchronized (this) {
+                    if (chamadaPendente != call) return;
+                    chamadaPendente = null;
+                }
+                call.reject("Sem Wi-Fi", "SEM_WIFI");
+            },
+            ESPERA_REDE_MS
+        );
+    }
 
+    private void registrarPedido() {
         // Sem exigir Internet: o Wi-Fi da horta não tem.
         NetworkRequest pedido = new NetworkRequest.Builder()
             .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
@@ -62,26 +85,16 @@ public class CoordenadorPlugin extends Plugin {
             .build();
 
         ConnectivityManager.NetworkCallback callback = new ConnectivityManager.NetworkCallback() {
-            private boolean respondido;
-
             @Override
             public void onAvailable(Network network) {
                 rede = network;
-                if (!respondido) {
-                    respondido = true;
-                    call.resolve();
-                } else {
-                    // O pedido continua ativo: trocar de Wi-Fi (de casa para o da horta) chega aqui.
-                    notifyListeners("redeDisponivel", new JSObject());
+                PluginCall pendente;
+                synchronized (CoordenadorPlugin.this) {
+                    pendente = chamadaPendente;
+                    chamadaPendente = null;
                 }
-            }
-
-            @Override
-            public void onUnavailable() {
-                if (!respondido) {
-                    respondido = true;
-                    call.reject("Sem Wi-Fi", "SEM_WIFI");
-                }
+                if (pendente != null) pendente.resolve();
+                else notifyListeners("redeDisponivel", new JSObject());
             }
 
             @Override
@@ -93,7 +106,7 @@ public class CoordenadorPlugin extends Plugin {
             }
         };
         pedidoAtual = callback;
-        conectividade.requestNetwork(pedido, callback, ESPERA_REDE_MS);
+        conectividade.requestNetwork(pedido, callback);
     }
 
     @PluginMethod
@@ -107,6 +120,7 @@ public class CoordenadorPlugin extends Plugin {
         String url = call.getString("url");
         String metodo = call.getString("metodo", "GET");
         String corpo = call.getString("corpo");
+        int esperaLeitura = call.getInt("esperaMs", ESPERA_LEITURA_MS);
         Network alvo = rede;
         if (url == null) {
             call.reject("url ausente");
@@ -123,7 +137,7 @@ public class CoordenadorPlugin extends Plugin {
             try {
                 conexao = (HttpURLConnection) alvo.openConnection(new URL(url));
                 conexao.setConnectTimeout(ESPERA_CONEXAO_MS);
-                conexao.setReadTimeout(ESPERA_LEITURA_MS);
+                conexao.setReadTimeout(esperaLeitura);
                 conexao.setRequestMethod(metodo);
                 conexao.setRequestProperty("Accept", "application/json");
                 if (corpo != null) {
@@ -172,7 +186,7 @@ public class CoordenadorPlugin extends Plugin {
         try {
             conectividade.unregisterNetworkCallback(pedidoAtual);
         } catch (IllegalArgumentException ignorado) {
-            // O pedido já tinha expirado e foi liberado pelo próprio sistema.
+            // O callback já não estava registrado.
         }
         pedidoAtual = null;
     }

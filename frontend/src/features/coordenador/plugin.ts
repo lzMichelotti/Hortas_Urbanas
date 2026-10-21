@@ -9,7 +9,7 @@ export interface RespostaNativa {
 interface CoordenadorPlugin {
   conectar(): Promise<void>
   desconectar(): Promise<void>
-  requisitar(opcoes: { url: string; metodo?: string; corpo?: string }): Promise<RespostaNativa>
+  requisitar(opcoes: { url: string; metodo?: string; corpo?: string; esperaMs?: number }): Promise<RespostaNativa>
   abrirConfiguracoesWifi(): Promise<void>
   addListener(evento: "redePerdida" | "redeDisponivel", fn: () => void): Promise<PluginListenerHandle>
 }

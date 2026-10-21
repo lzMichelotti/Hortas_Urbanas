@@ -5,7 +5,7 @@ import type { ClasseSolo, EstadoSensor, Leitura, ModoEnergia, NoCoordenador, Ori
 // O nó envia a cada 15 min no campo: parado = mais de ~2,5 ciclos sem notícia.
 export const LIMITES_PROVISORIOS = {
   soloSecoAbaixoPct: 25,
-  soloEncharcadoAcimaPct: 90,
+  soloMuitoUmidoAcimaPct: 90,
   paradoAposS: 40 * 60,
 }
 
@@ -13,14 +13,14 @@ export function classeSolo(l: Leitura): ClasseSolo | null {
   if (l.solo_classe) return l.solo_classe
   if (l.estados.solo !== "ok" || l.solo_pct == null) return null
   if (l.solo_pct < LIMITES_PROVISORIOS.soloSecoAbaixoPct) return "seco"
-  if (l.solo_pct > LIMITES_PROVISORIOS.soloEncharcadoAcimaPct) return "encharcado"
+  if (l.solo_pct > LIMITES_PROVISORIOS.soloMuitoUmidoAcimaPct) return "muito_umido"
   return "umido"
 }
 
 export const TEXTO_SOLO: Record<ClasseSolo, string> = {
   seco: "Solo seco",
   umido: "Solo úmido",
-  encharcado: "Solo encharcado",
+  muito_umido: "Solo muito úmido",
 }
 
 export function textoSolo(l: Leitura): string {

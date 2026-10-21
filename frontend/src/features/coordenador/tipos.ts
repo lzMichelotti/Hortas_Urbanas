@@ -2,7 +2,7 @@
 
 export type OrigemHora = "valida" | "reconstruida" | "sem_hora"
 export type EstadoSensor = "ok" | "erro" | "fora_de_faixa"
-export type ClasseSolo = "seco" | "umido" | "encharcado"
+export type ClasseSolo = "seco" | "umido" | "muito_umido"
 export type ModoEnergia = "normal" | "economia" | "critico"
 
 export interface StatusCoordenador {
@@ -43,6 +43,21 @@ export interface Leitura {
   estados: { temperatura: EstadoSensor; umidade_ar: EstadoSensor; solo: EstadoSensor; alimentacao: EstadoSensor }
   // Ainda não existe na API: a classificação passa ao coordenador na Etapa 9.
   solo_classe?: ClasseSolo
+}
+
+export interface LeituraHistorico extends Leitura {
+  id: number
+  rssi_dbm: number | null
+  no_boot: number
+  no_seq: number
+  perdidos_antes: number
+}
+
+export interface PaginaLeituras {
+  leituras: LeituraHistorico[]
+  proximo_cursor: number | null
+  fim: boolean
+  cursor_rotacionado: boolean
 }
 
 export interface NoCoordenador {

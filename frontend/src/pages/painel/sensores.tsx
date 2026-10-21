@@ -1,10 +1,11 @@
 import type { ReactNode } from "react"
-import { Bell, Clock, Database, HardDrive, type LucideIcon } from "lucide-react"
+import { Bell, Clock, Database, HardDrive, History, type LucideIcon } from "lucide-react"
 import { Aviso } from "@/components/feedback"
 import { FalaDaGuia } from "@/components/guia"
 import { Voltar } from "@/components/voltar"
 import { Atalho } from "@/features/admin/blocos"
 import { CartaoNo } from "@/features/coordenador/cartao-no"
+import { CartaoSincronia, ROTA_HISTORICO } from "@/features/coordenador/cartao-sincronia"
 import { estaParado } from "@/features/coordenador/classificacao"
 import { coordenadorDisponivel } from "@/features/coordenador/disponivel"
 import { PlacaConectar, PlacaProcurando } from "@/features/coordenador/placa"
@@ -12,6 +13,7 @@ import { IndicadorPuxar } from "@/features/coordenador/puxar"
 import { usePuxarParaAtualizar } from "@/features/coordenador/use-puxar"
 import type { NoCoordenador, StatusCoordenador } from "@/features/coordenador/tipos"
 import { useNosCoordenador, useStatusCoordenador, useWifiDaHorta } from "@/features/coordenador/use-coordenador"
+import { useSincronia } from "@/features/coordenador/use-sincronia"
 import { cn, plural } from "@/lib/utils"
 
 function veredito(nos: NoCoordenador[], s: StatusCoordenador | undefined): string {
@@ -45,14 +47,20 @@ function Sensores() {
   const naRede = wifi === "com_wifi"
   const nos = useNosCoordenador(naRede)
   const status = useStatusCoordenador(naRede)
-  const { gestos, puxada, atualizando } = usePuxarParaAtualizar(() => Promise.all([nos.refetch(), status.refetch()]))
+  // Sem Wi-Fi a consulta fica desligada e guarda os dados velhos: não contam como contato.
+  const emContato = naRede && Boolean(nos.data) && !nos.isError
+  const { estado, sincronizarAgora } = useSincronia(emContato ? nos.dataUpdatedAt : 0)
+  const { gestos, puxada, atualizando } = usePuxarParaAtualizar(() =>
+    Promise.all([nos.refetch(), status.refetch(), sincronizarAgora()]),
+  )
 
   // Perdeu o contato: volta para a placa em vez de mostrar números velhos com um alerta.
-  if (nos.data && !nos.isError) {
+  if (nos.data && emContato) {
     return (
       <div {...gestos} className="flex flex-col gap-4">
         <IndicadorPuxar puxada={puxada} atualizando={atualizando} />
         <FalaDaGuia>{veredito(nos.data, status.data)}</FalaDaGuia>
+        <CartaoSincronia estado={estado} />
         {nos.data.map((no) => (
           <CartaoNo key={no.mac} no={no} />
         ))}
@@ -67,10 +75,16 @@ function Sensores() {
   if (wifi === "procurando" || (naRede && !nos.isError)) return <PlacaProcurando />
 
   return (
-    <PlacaConectar
-      aoConectar={() => void abrirWifi()}
-      aoJaConectei={() => void (wifi === "sem_wifi" ? procurarDeNovo() : nos.refetch())}
-    />
+    <>
+      <PlacaConectar
+        aoConectar={() => void abrirWifi()}
+        aoJaConectei={() => void (wifi === "sem_wifi" ? procurarDeNovo() : nos.refetch())}
+      />
+      {/* O histórico guardado não depende de conexão nenhuma. */}
+      <Atalho para={ROTA_HISTORICO} icone={History}>
+        Ver o histórico guardado no celular
+      </Atalho>
+    </>
   )
 }
 
