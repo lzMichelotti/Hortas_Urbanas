@@ -9,5 +9,6 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(CoordenadorPlugin.class);
         super.onCreate(savedInstanceState);
+        bridge.setWebViewClient(new ClienteWebView(bridge));
     }
 }
